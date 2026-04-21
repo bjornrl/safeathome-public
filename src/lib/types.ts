@@ -41,7 +41,8 @@ export type ResourceType =
   | "policy_brief"
   | "toolkit"
   | "practice_guide"
-  | "teaching_guide";
+  | "teaching_guide"
+  | "experience";
 
 export interface PublicStory {
   id: string;
@@ -104,6 +105,9 @@ export interface PublicResource {
   description: string;
   type: ResourceType;
   url: string;
+  authors: string | null;
+  year: number | null;
+  field_site: FieldSite | null;
   theme: HouseTheme | null;
   published: boolean;
   created_at: string;

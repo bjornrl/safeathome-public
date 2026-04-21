@@ -1,7 +1,8 @@
 import { supabase } from "./supabase";
-import type { PublicStory, PublicConnection, CareFriction } from "./types";
+import type { PublicStory, PublicConnection, PublicResource, CareFriction, ResourceType } from "./types";
 import { SEED_STORIES, SEED_CONNECTIONS } from "./seed-data";
 import { SEED_SOLUTIONS } from "./seed-solutions";
+import { SEED_RESOURCES } from "./seed-resources";
 
 export async function getMapStories(): Promise<PublicStory[]> {
   const { data, error } = await supabase
@@ -75,4 +76,26 @@ export async function getDesignResponses(): Promise<SolutionItem[]> {
     outcome: r.outcome ?? null,
     source_stories: (r.source_stories ?? []) as string[],
   }));
+}
+
+export async function getResources(types?: ResourceType[]): Promise<PublicResource[]> {
+  let query = supabase
+    .from("public_resources")
+    .select("*")
+    .eq("published", true)
+    .order("created_at", { ascending: false });
+
+  if (types && types.length > 0) {
+    query = query.in("type", types);
+  }
+
+  const { data, error } = await query;
+
+  if (error || !data || data.length === 0) {
+    const seed = SEED_RESOURCES.filter((r) => r.published);
+    return types && types.length > 0
+      ? seed.filter((r) => types.includes(r.type))
+      : seed;
+  }
+  return data as PublicResource[];
 }

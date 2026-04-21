@@ -1,30 +1,37 @@
 import type { Metadata } from "next";
 import Nav from "@/components/Nav";
+import ResourceList from "@/components/ResourceList";
+import { getResources } from "@/lib/queries";
+import { MUNICIPAL_TYPES } from "@/lib/seed-resources";
 
 export const metadata: Metadata = {
   title: "For Municipalities — safe@home",
-  description: "Resources for municipalities and care service providers.",
+  description:
+    "Toolkits, practice guides, and municipal experiences from the safe@home project.",
 };
 
-export default function ForMunicipalitiesPage() {
+export const revalidate = 60;
+
+export default async function ForMunicipalitiesPage() {
+  const resources = await getResources(MUNICIPAL_TYPES);
+
   return (
     <>
       <Nav />
       <main
         style={{
-          maxWidth: 760,
+          maxWidth: 1120,
           margin: "0 auto",
-          padding: "80px 24px 96px",
-          fontFamily: "var(--font-source-serif)",
+          padding: "72px 24px 96px",
+          fontFamily: "var(--font-dm-sans)",
         }}
       >
         <p
           style={{
-            fontFamily: "var(--font-dm-sans)",
             fontSize: 12,
             fontWeight: 600,
             textTransform: "uppercase",
-            letterSpacing: "0.14em",
+            letterSpacing: "0.18em",
             color: "#A09A8E",
             marginBottom: 12,
           }}
@@ -33,38 +40,38 @@ export default function ForMunicipalitiesPage() {
         </p>
         <h1
           style={{
-            fontSize: 44,
+            fontFamily: "var(--font-source-serif)",
+            fontSize: "clamp(38px, 6vw, 60px)",
             fontWeight: 700,
-            lineHeight: 1.1,
-            color: "#2C2A25",
-            marginBottom: 24,
+            lineHeight: 1.05,
             letterSpacing: "-0.02em",
+            color: "#2C2A25",
+            marginBottom: 18,
           }}
         >
-          Working with us
+          Tools &amp; experiences from the field.
         </h1>
         <p
           style={{
-            fontSize: 19,
-            lineHeight: 1.7,
-            color: "#2C2A25",
-            marginBottom: 20,
-          }}
-        >
-          We partner with Alna District, S&oslash;ndre Nordstrand, and Skien
-          Municipality. Practical briefings, toolkits, and co-design invitations
-          for municipal staff will live here.
-        </p>
-        <p
-          style={{
+            fontFamily: "var(--font-source-serif)",
             fontSize: 19,
             lineHeight: 1.7,
             color: "#7A756B",
+            maxWidth: 680,
+            marginBottom: 56,
           }}
         >
-          If your municipality is interested in adapting these findings to
-          local services, get in touch through the project lead.
+          Editable toolkits, practice guides, and plain-language accounts of
+          what partner municipalities are trying &mdash; what is working, what
+          broke, and where the compromises live. Intended for homecare
+          coordinators, planners, and service designers.
         </p>
+
+        <ResourceList
+          resources={resources}
+          emptyMessage="No tools or experiences published yet."
+          groupByType
+        />
       </main>
     </>
   );

@@ -1,30 +1,37 @@
 import type { Metadata } from "next";
 import Nav from "@/components/Nav";
+import ResourceList from "@/components/ResourceList";
+import { getResources } from "@/lib/queries";
+import { READING_ROOM_TYPES } from "@/lib/seed-resources";
 
 export const metadata: Metadata = {
   title: "Reading Room — safe@home",
-  description: "Publications, policy briefs, and toolkits from the safe@home project.",
+  description:
+    "Publications, policy briefs, and teaching materials from the safe@home project and allied researchers.",
 };
 
-export default function ReadingRoomPage() {
+export const revalidate = 60;
+
+export default async function ReadingRoomPage() {
+  const resources = await getResources(READING_ROOM_TYPES);
+
   return (
     <>
       <Nav />
       <main
         style={{
-          maxWidth: 760,
+          maxWidth: 1120,
           margin: "0 auto",
-          padding: "80px 24px 96px",
-          fontFamily: "var(--font-source-serif)",
+          padding: "72px 24px 96px",
+          fontFamily: "var(--font-dm-sans)",
         }}
       >
         <p
           style={{
-            fontFamily: "var(--font-dm-sans)",
             fontSize: 12,
             fontWeight: 600,
             textTransform: "uppercase",
-            letterSpacing: "0.14em",
+            letterSpacing: "0.18em",
             color: "#A09A8E",
             marginBottom: 12,
           }}
@@ -33,26 +40,38 @@ export default function ReadingRoomPage() {
         </p>
         <h1
           style={{
-            fontSize: 44,
+            fontFamily: "var(--font-source-serif)",
+            fontSize: "clamp(38px, 6vw, 60px)",
             fontWeight: 700,
-            lineHeight: 1.1,
-            color: "#2C2A25",
-            marginBottom: 24,
+            lineHeight: 1.05,
             letterSpacing: "-0.02em",
+            color: "#2C2A25",
+            marginBottom: 18,
           }}
         >
-          Publications &amp; resources
+          Publications &amp; teaching materials.
         </h1>
         <p
           style={{
+            fontFamily: "var(--font-source-serif)",
             fontSize: 19,
             lineHeight: 1.7,
             color: "#7A756B",
+            maxWidth: 680,
+            marginBottom: 56,
           }}
         >
-          Research papers, policy briefs, teaching materials, and practice
-          guides will be collected here as the project produces them.
+          Papers, policy briefs, and teaching guides &mdash; authored by the
+          safe@home group or by researchers whose work helps us see more
+          clearly. The collection grows as the project produces new writing and
+          as we add the work that shaped ours.
         </p>
+
+        <ResourceList
+          resources={resources}
+          emptyMessage="No publications yet. Check back once the first working papers are out."
+          groupByType
+        />
       </main>
     </>
   );
