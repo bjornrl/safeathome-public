@@ -12,7 +12,7 @@ export default function AuthPage() {
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [magicNotice, setMagicNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -27,6 +27,7 @@ export default function AuthPage() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setNotice(null);
     setSubmitting(true);
     const { error: signErr } = await supabase.auth.signInWithPassword({
       email,
@@ -42,7 +43,7 @@ export default function AuthPage() {
 
   async function onMagicLink() {
     setError(null);
-    setMagicNotice(null);
+    setNotice(null);
     if (!email) {
       setError("Enter your email first.");
       return;
@@ -60,9 +61,29 @@ export default function AuthPage() {
       setError(signErr.message);
       return;
     }
-    setMagicNotice(
+    setNotice(
       "Check your email for a sign-in link. You can close this tab while you wait.",
     );
+  }
+
+  async function onForgotPassword() {
+    setError(null);
+    setNotice(null);
+    if (!email) {
+      setError("Enter your email first.");
+      return;
+    }
+    setSubmitting(true);
+    const { error: resetErr } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo:
+        typeof window !== "undefined" ? `${window.location.origin}/auth/reset` : undefined,
+    });
+    setSubmitting(false);
+    if (resetErr) {
+      setError(resetErr.message);
+      return;
+    }
+    setNotice("Check your email for a password reset link.");
   }
 
   return (
@@ -164,7 +185,7 @@ export default function AuthPage() {
             </p>
           )}
 
-          {magicNotice && (
+          {notice && (
             <p
               style={{
                 fontSize: 13,
@@ -174,7 +195,7 @@ export default function AuthPage() {
                 borderRadius: 8,
               }}
             >
-              {magicNotice}
+              {notice}
             </p>
           )}
 
@@ -212,6 +233,24 @@ export default function AuthPage() {
             }}
           >
             Email me a magic link instead
+          </button>
+
+          <button
+            type="button"
+            onClick={onForgotPassword}
+            disabled={submitting}
+            style={{
+              padding: "10px 12px",
+              background: "transparent",
+              color: "#7A756B",
+              borderRadius: 8,
+              border: "1px solid #E8E4DB",
+              fontSize: 13,
+              fontWeight: 500,
+              cursor: "pointer",
+            }}
+          >
+            Forgot password?
           </button>
         </form>
 

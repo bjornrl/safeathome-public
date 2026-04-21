@@ -61,7 +61,7 @@ export default function AdminPage() {
           marginBottom: 8,
         }}
       >
-        Dashboard
+        Content editor
       </h1>
       <p style={{ fontSize: 15, color: "#7A756B", marginBottom: 24 }}>
         Post new insights, design challenges, or reading-room entries.
@@ -386,37 +386,28 @@ interface ResponseRow {
   id: string;
   title: string;
   body: string | null;
+  theme: HouseTheme;
   stage: string;
   frictions: CareFriction[];
   outcome: string | null;
-  source_stories: string[] | null;
   published: boolean;
   created_at?: string;
 }
 
 function ChallengesPanel() {
   const [rows, setRows] = useState<ResponseRow[]>([]);
-  const [stories, setStories] = useState<{ id: string; title: string }[]>([]);
   const [loading, setLoading] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [rsp, st] = await Promise.all([
-      supabase
-        .from("public_design_responses")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(25),
-      supabase
-        .from("public_stories")
-        .select("id,title")
-        .order("created_at", { ascending: false })
-        .limit(200),
-    ]);
+    const { data, error } = await supabase
+      .from("public_design_responses")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(25);
     setLoading(false);
-    if (rsp.error) console.warn("Load responses:", rsp.error.message);
-    setRows((rsp.data as ResponseRow[]) ?? []);
-    setStories((st.data as { id: string; title: string }[]) ?? []);
+    if (error) console.warn("Load responses:", error.message);
+    setRows((data as ResponseRow[]) ?? []);
   }, []);
 
   useEffect(() => {
@@ -428,7 +419,7 @@ function ChallengesPanel() {
     <div style={{ display: "grid", gridTemplateColumns: "minmax(320px, 1fr) minmax(320px, 1.2fr)", gap: 32 }}>
       <section>
         <SectionHeading>New design challenge</SectionHeading>
-        <ChallengeForm stories={stories} onCreated={load} />
+        <ChallengeForm onCreated={load} />
       </section>
 
       <section>
@@ -465,19 +456,13 @@ function ChallengesPanel() {
   );
 }
 
-function ChallengeForm({
-  stories,
-  onCreated,
-}: {
-  stories: { id: string; title: string }[];
-  onCreated: () => void;
-}) {
+function ChallengeForm({ onCreated }: { onCreated: () => void }) {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [stage, setStage] = useState(STAGES[0].key);
+  const [theme, setTheme] = useState<HouseTheme>("living_room");
   const [frictions, setFrictions] = useState<CareFriction[]>([]);
   const [outcome, setOutcome] = useState("");
-  const [sourceStories, setSourceStories] = useState<string[]>([]);
   const [published, setPublished] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [status, setStatus] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
@@ -492,10 +477,10 @@ function ChallengeForm({
       id: crypto.randomUUID(),
       title: title.trim(),
       body: body.trim(),
+      theme,
       stage,
       frictions,
       outcome: outcome.trim() || null,
-      source_stories: sourceStories,
       published,
       published_at: published ? new Date().toISOString() : null,
       sort_order: 0,
@@ -514,7 +499,6 @@ function ChallengeForm({
     setBody("");
     setOutcome("");
     setFrictions([]);
-    setSourceStories([]);
     onCreated();
   }
 
@@ -541,6 +525,19 @@ function ChallengeForm({
             ))}
           </select>
         </FormField>
+        <FormField label="Theme / room">
+          <select
+            style={inputStyle}
+            value={theme}
+            onChange={(e) => setTheme(e.target.value as HouseTheme)}
+          >
+            {THEMES.map((t) => (
+              <option key={t} value={t}>
+                {t.replace(/_/g, " ")}
+              </option>
+            ))}
+          </select>
+        </FormField>
       </FormRow>
       <FormField label="Frictions addressed">
         <CheckboxGroup
@@ -560,53 +557,6 @@ function ChallengeForm({
           onChange={(e) => setOutcome(e.target.value)}
         />
       </FormField>
-      <FormField label="Source insights">
-        <div
-          style={{
-            border: "1px solid #E8E4DB",
-            borderRadius: 8,
-            padding: 8,
-            maxHeight: 180,
-            overflowY: "auto",
-            background: "#F7F5F0",
-          }}
-        >
-          {stories.length === 0 ? (
-            <p style={{ fontSize: 13, color: "#A09A8E", padding: 8 }}>
-              No insights yet. Publish an insight first to link it here.
-            </p>
-          ) : (
-            stories.map((s) => {
-              const on = sourceStories.includes(s.id);
-              return (
-                <label
-                  key={s.id}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    padding: "6px 8px",
-                    cursor: "pointer",
-                    borderRadius: 6,
-                    background: on ? "#fff" : "transparent",
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={on}
-                    onChange={() =>
-                      setSourceStories((prev) =>
-                        on ? prev.filter((x) => x !== s.id) : [...prev, s.id],
-                      )
-                    }
-                  />
-                  <span style={{ fontSize: 13, color: "#2C2A25" }}>{s.title}</span>
-                </label>
-              );
-            })
-          )}
-        </div>
-      </FormField>
 
       <PublishToggle value={published} onChange={setPublished} />
       <SubmitBar status={status} submitting={submitting} label="Save challenge" />
@@ -619,12 +569,9 @@ function ChallengeForm({
 interface ResourceRow {
   id: string;
   title: string;
-  description: string;
+  description: string | null;
   type: ResourceType;
-  url: string;
-  authors: string | null;
-  year: number | null;
-  field_site: FieldSite | null;
+  url: string | null;
   published: boolean;
   created_at?: string;
 }
@@ -664,7 +611,7 @@ function ResourcesPanel() {
           rows={rows.map((r) => ({
             id: r.id,
             title: r.title,
-            subtitle: `${RESOURCE_TYPE_LABELS[r.type]}${r.year ? ` · ${r.year}` : ""}${r.authors ? ` · ${r.authors}` : ""}`,
+            subtitle: RESOURCE_TYPE_LABELS[r.type],
             published: r.published,
             tags: [],
           }))}
@@ -693,9 +640,6 @@ function ResourceForm({ onCreated }: { onCreated: () => void }) {
   const [description, setDescription] = useState("");
   const [type, setType] = useState<ResourceType>("publication");
   const [url, setUrl] = useState("");
-  const [authors, setAuthors] = useState("");
-  const [year, setYear] = useState("");
-  const [fieldSite, setFieldSite] = useState<FieldSite | "">("");
   const [published, setPublished] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [status, setStatus] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
@@ -709,12 +653,9 @@ function ResourceForm({ onCreated }: { onCreated: () => void }) {
     const row = {
       id: crypto.randomUUID(),
       title: title.trim(),
-      description: description.trim(),
+      description: description.trim() || null,
       type,
-      url: url.trim(),
-      authors: authors.trim() || null,
-      year: year ? Number(year) : null,
-      field_site: fieldSite || null,
+      url: url.trim() || null,
       theme: null,
       published,
     };
@@ -731,9 +672,6 @@ function ResourceForm({ onCreated }: { onCreated: () => void }) {
     setTitle("");
     setDescription("");
     setUrl("");
-    setAuthors("");
-    setYear("");
-    setFieldSite("");
     onCreated();
   }
 
@@ -763,38 +701,7 @@ function ResourceForm({ onCreated }: { onCreated: () => void }) {
             ))}
           </select>
         </FormField>
-        <FormField label="Year">
-          <input
-            style={inputStyle}
-            type="number"
-            value={year}
-            onChange={(e) => setYear(e.target.value)}
-            placeholder="2026"
-          />
-        </FormField>
-        <FormField label="Field site">
-          <select
-            style={inputStyle}
-            value={fieldSite}
-            onChange={(e) => setFieldSite(e.target.value as FieldSite | "")}
-          >
-            <option value="">—</option>
-            {FIELD_SITES.map((f) => (
-              <option key={f} value={f}>
-                {f}
-              </option>
-            ))}
-          </select>
-        </FormField>
       </FormRow>
-      <FormField label="Authors / attribution">
-        <input
-          style={inputStyle}
-          value={authors}
-          onChange={(e) => setAuthors(e.target.value)}
-          placeholder="Durham University · safe@home"
-        />
-      </FormField>
       <FormField label="Link (URL)">
         <input
           style={inputStyle}
