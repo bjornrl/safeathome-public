@@ -7,6 +7,7 @@ import { QUALITIES, FRICTIONS } from "@/lib/constants";
 import type { CareQuality, PublicStory } from "@/lib/types";
 import { getMapStories } from "@/lib/queries";
 
+const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
 const QUALITY_KEYS = Object.keys(QUALITIES) as CareQuality[];
 
 const QUALITY_COPY: Record<CareQuality, string> = {
@@ -33,7 +34,7 @@ export default function QualitiesPage() {
       <Nav />
       <main
         style={{
-          fontFamily: "var(--font-dm-sans)",
+          fontFamily: FONT_STACK,
           paddingTop: 72,
           paddingBottom: 96,
         }}
@@ -51,31 +52,29 @@ export default function QualitiesPage() {
               fontWeight: 600,
               textTransform: "uppercase",
               letterSpacing: "0.18em",
-              color: "#A09A8E",
-              marginBottom: 12,
+              color: "#808080",
+              marginBottom: 16,
             }}
           >
             Care qualities
           </p>
           <h1
             style={{
-              fontFamily: "var(--font-source-serif)",
               fontSize: "clamp(38px, 6vw, 60px)",
               fontWeight: 700,
               lineHeight: 1.05,
               letterSpacing: "-0.02em",
-              color: "#2C2A25",
-              marginBottom: 18,
+              color: "#2a2859",
+              marginBottom: 24,
             }}
           >
             How people actually live and cope.
           </h1>
           <p
             style={{
-              fontFamily: "var(--font-source-serif)",
               fontSize: 19,
               lineHeight: 1.7,
-              color: "#7A756B",
+              color: "#666666",
               maxWidth: 680,
             }}
           >
@@ -95,7 +94,7 @@ export default function QualitiesPage() {
             className="qualities-scroll"
             style={{
               display: "flex",
-              gap: 20,
+              gap: 16,
               overflowX: "auto",
               scrollSnapType: "x mandatory",
               paddingBottom: 32,
@@ -111,14 +110,14 @@ export default function QualitiesPage() {
                   style={{
                     flex: "0 0 320px",
                     scrollSnapAlign: "start",
-                    background: "#fff",
-                    border: "1px solid #E8E4DB",
+                    background: "#ffffff",
+                    border: "1px solid #e6e6e6",
                     borderTop: `4px solid ${q.color}`,
-                    borderRadius: 14,
-                    padding: 20,
+                    borderRadius: 8,
+                    padding: 24,
                     display: "flex",
                     flexDirection: "column",
-                    gap: 12,
+                    gap: 16,
                   }}
                 >
                   <div>
@@ -137,17 +136,16 @@ export default function QualitiesPage() {
                     </span>
                     <h2
                       style={{
-                        fontFamily: "var(--font-source-serif)",
                         fontSize: 22,
                         fontWeight: 700,
                         lineHeight: 1.2,
-                        color: "#2C2A25",
-                        marginBottom: 6,
+                        color: "#2a2859",
+                        marginBottom: 8,
                       }}
                     >
                       {q.label}
                     </h2>
-                    <p style={{ fontSize: 14, lineHeight: 1.55, color: "#7A756B" }}>
+                    <p style={{ fontSize: 14, lineHeight: 1.55, color: "#666666" }}>
                       {QUALITY_COPY[k]}
                     </p>
                   </div>
@@ -156,16 +154,14 @@ export default function QualitiesPage() {
                     style={{
                       display: "flex",
                       flexDirection: "column",
-                      gap: 10,
+                      gap: 8,
                     }}
                   >
                     {bucket.length === 0 ? (
                       <p
                         style={{
-                          fontFamily: "var(--font-source-serif)",
-                          fontStyle: "italic",
                           fontSize: 14,
-                          color: "#A09A8E",
+                          color: "#9a9a9a",
                         }}
                       >
                         No stories yet.
@@ -192,10 +188,10 @@ export default function QualitiesPage() {
       </main>
 
       <style>{`
-        .qualities-scroll { scrollbar-width: thin; scrollbar-color: #E8E4DB transparent; }
+        .qualities-scroll { scrollbar-width: thin; scrollbar-color: #e6e6e6 transparent; }
         .qualities-scroll::-webkit-scrollbar { height: 10px; }
         .qualities-scroll::-webkit-scrollbar-track { background: transparent; }
-        .qualities-scroll::-webkit-scrollbar-thumb { background: #E8E4DB; border-radius: 4px; }
+        .qualities-scroll::-webkit-scrollbar-thumb { background: #e6e6e6; border-radius: 4px; }
 
         @media (max-width: 767px) {
           .qualities-scroll {
@@ -236,29 +232,28 @@ function QualityStoryCard({
       onMouseLeave={onLeave}
       style={{
         display: "block",
-        padding: 14,
-        background: highlighted ? accent + "10" : "#F7F5F0",
-        border: `1px solid ${highlighted ? accent + "88" : "#E8E4DB"}`,
-        borderRadius: 10,
+        padding: 16,
+        background: highlighted ? accent + "10" : "#f9f9f9",
+        border: `1px solid ${highlighted ? accent + "88" : "#e6e6e6"}`,
+        borderRadius: 8,
         textDecoration: "none",
-        color: "#2C2A25",
+        color: "#2c2c2c",
         opacity: dimmed ? 0.45 : 1,
         transition: "opacity .15s, background .15s, border-color .15s",
       }}
     >
       <h3
         style={{
-          fontFamily: "var(--font-source-serif)",
           fontSize: 16,
           fontWeight: 600,
           lineHeight: 1.3,
-          marginBottom: 6,
-          color: "#2C2A25",
+          marginBottom: 8,
+          color: "#2a2859",
         }}
       >
         {story.title}
       </h3>
-      <p style={{ fontSize: 13, lineHeight: 1.5, color: "#7A756B", marginBottom: 8 }}>
+      <p style={{ fontSize: 13, lineHeight: 1.5, color: "#666666", marginBottom: 8 }}>
         {preview}
         {story.body.length > 120 ? "…" : ""}
       </p>
@@ -268,9 +263,9 @@ function QualityStoryCard({
             style={{
               fontSize: 10,
               padding: "2px 8px",
-              borderRadius: 99,
-              background: "#EDE9E0",
-              color: "#7A756B",
+              borderRadius: 4,
+              background: "#f2f2f2",
+              color: "#666666",
               fontWeight: 500,
             }}
           >
@@ -283,7 +278,7 @@ function QualityStoryCard({
             style={{
               fontSize: 10,
               padding: "2px 8px",
-              borderRadius: 99,
+              borderRadius: 4,
               background: FRICTIONS[f]?.color + "18",
               color: FRICTIONS[f]?.color,
               fontWeight: 500,

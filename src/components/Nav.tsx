@@ -16,6 +16,8 @@ const NAV_LINKS: { href: string; label: string }[] = [
   { href: "/about", label: "About" },
 ];
 
+const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
+
 function useAuthState() {
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
 
@@ -50,12 +52,12 @@ export default function Nav({ variant = "default" }: { variant?: NavVariant }) {
           left: 0,
           right: 0,
           zIndex: 50,
-          padding: "12px 16px",
+          padding: "16px 16px",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           pointerEvents: "none",
-          fontFamily: "var(--font-dm-sans)",
+          fontFamily: FONT_STACK,
           gap: 8,
         }}
       >
@@ -66,19 +68,18 @@ export default function Nav({ variant = "default" }: { variant?: NavVariant }) {
             display: "inline-flex",
             alignItems: "center",
             gap: 8,
-            padding: "8px 14px",
-            background: "rgba(255,255,255,.95)",
+            padding: "8px 16px",
+            background: "#ffffff",
             borderRadius: 8,
-            border: "1px solid #E8E4DB",
+            border: "1px solid #e6e6e6",
             fontSize: 14,
             fontWeight: 600,
-            color: "#2C2A25",
+            color: "#2a2859",
             textDecoration: "none",
-            boxShadow: "0 2px 6px rgba(0,0,0,.08)",
           }}
         >
           <span aria-hidden style={{ fontSize: 16 }}>←</span>
-          <span style={{ fontFamily: "var(--font-source-serif)", fontWeight: 700 }}>safe@home</span>
+          <span style={{ fontWeight: 700 }}>safe@home</span>
         </Link>
 
         <Link
@@ -87,15 +88,14 @@ export default function Nav({ variant = "default" }: { variant?: NavVariant }) {
             pointerEvents: "auto",
             display: "inline-flex",
             alignItems: "center",
-            padding: "8px 14px",
-            background: "rgba(255,255,255,.95)",
+            padding: "8px 16px",
+            background: signedIn ? "#2a2859" : "#ffffff",
             borderRadius: 8,
-            border: "1px solid #E8E4DB",
+            border: `1px solid ${signedIn ? "#2a2859" : "#e6e6e6"}`,
             fontSize: 13,
             fontWeight: 600,
-            color: signedIn ? "#C45D3E" : "#2C2A25",
+            color: signedIn ? "#ffffff" : "#2c2c2c",
             textDecoration: "none",
-            boxShadow: "0 2px 6px rgba(0,0,0,.08)",
           }}
         >
           {authLabel}
@@ -107,20 +107,19 @@ export default function Nav({ variant = "default" }: { variant?: NavVariant }) {
   return (
     <header
       style={{
-        borderBottom: "1px solid #E8E4DB",
-        background: "rgba(247,245,240,.85)",
-        backdropFilter: "saturate(140%) blur(8px)",
+        borderBottom: "1px solid #e6e6e6",
+        background: "#ffffff",
         position: "sticky",
         top: 0,
         zIndex: 50,
-        fontFamily: "var(--font-dm-sans)",
+        fontFamily: FONT_STACK,
       }}
     >
       <div
         style={{
           maxWidth: 1200,
           margin: "0 auto",
-          padding: "14px 24px",
+          padding: "16px 24px",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
@@ -131,10 +130,9 @@ export default function Nav({ variant = "default" }: { variant?: NavVariant }) {
         <Link
           href="/"
           style={{
-            fontFamily: "var(--font-source-serif)",
             fontSize: 20,
             fontWeight: 700,
-            color: "#2C2A25",
+            color: "#2a2859",
             textDecoration: "none",
             letterSpacing: "-0.01em",
           }}
@@ -146,7 +144,7 @@ export default function Nav({ variant = "default" }: { variant?: NavVariant }) {
           style={{
             display: "flex",
             alignItems: "center",
-            gap: 4,
+            gap: 8,
             flexWrap: "wrap",
             justifyContent: "flex-end",
           }}
@@ -156,12 +154,12 @@ export default function Nav({ variant = "default" }: { variant?: NavVariant }) {
               key={link.href}
               href={link.href}
               style={{
-                padding: "8px 12px",
+                padding: "8px 16px",
                 fontSize: 14,
                 fontWeight: 500,
-                color: "#2C2A25",
+                color: "#2c2c2c",
                 textDecoration: "none",
-                borderRadius: 6,
+                borderRadius: 4,
               }}
             >
               {link.label}
@@ -172,12 +170,12 @@ export default function Nav({ variant = "default" }: { variant?: NavVariant }) {
             href={authHref}
             style={{
               marginLeft: 8,
-              padding: "8px 14px",
+              padding: "8px 16px",
               fontSize: 13,
               fontWeight: 600,
-              color: signedIn ? "#fff" : "#2C2A25",
-              background: signedIn ? "#C45D3E" : "transparent",
-              border: `1px solid ${signedIn ? "#C45D3E" : "#E8E4DB"}`,
+              color: signedIn ? "#ffffff" : "#2a2859",
+              background: signedIn ? "#2a2859" : "transparent",
+              border: `1px solid ${signedIn ? "#2a2859" : "#2a2859"}`,
               textDecoration: "none",
               borderRadius: 8,
             }}

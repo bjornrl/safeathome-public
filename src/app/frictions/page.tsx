@@ -8,6 +8,7 @@ import { FRICTIONS } from "@/lib/constants";
 import type { CareFriction, PublicStory } from "@/lib/types";
 import { getMapStories } from "@/lib/queries";
 
+const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
 const FRICTION_KEYS = Object.keys(FRICTIONS) as CareFriction[];
 
 type Selection =
@@ -73,7 +74,7 @@ export default function FrictionsPage() {
           maxWidth: 1120,
           margin: "0 auto",
           padding: "72px 24px 96px",
-          fontFamily: "var(--font-dm-sans)",
+          fontFamily: FONT_STACK,
         }}
       >
         <p
@@ -82,31 +83,29 @@ export default function FrictionsPage() {
             fontWeight: 600,
             textTransform: "uppercase",
             letterSpacing: "0.18em",
-            color: "#A09A8E",
-            marginBottom: 12,
+            color: "#808080",
+            marginBottom: 16,
           }}
         >
           Care frictions
         </p>
         <h1
           style={{
-            fontFamily: "var(--font-source-serif)",
             fontSize: "clamp(38px, 6vw, 60px)",
             fontWeight: 700,
             lineHeight: 1.05,
             letterSpacing: "-0.02em",
-            color: "#2C2A25",
-            marginBottom: 18,
+            color: "#2a2859",
+            marginBottom: 24,
           }}
         >
           Seven ways the system collides with reality.
         </h1>
         <p
           style={{
-            fontFamily: "var(--font-source-serif)",
             fontSize: 19,
             lineHeight: 1.7,
-            color: "#7A756B",
+            color: "#666666",
             maxWidth: 680,
             marginBottom: 48,
           }}
@@ -138,8 +137,8 @@ export default function FrictionsPage() {
                 fontWeight: 600,
                 textTransform: "uppercase",
                 letterSpacing: "0.14em",
-                color: "#A09A8E",
-                marginBottom: 12,
+                color: "#808080",
+                marginBottom: 16,
               }}
             >
               Legend
@@ -170,6 +169,7 @@ export default function FrictionsPage() {
                       borderRadius: 8,
                       cursor: "pointer",
                       textAlign: "left",
+                      fontFamily: FONT_STACK,
                     }}
                   >
                     <span
@@ -185,10 +185,9 @@ export default function FrictionsPage() {
                     <span style={{ display: "block" }}>
                       <span
                         style={{
-                          fontFamily: "var(--font-source-serif)",
                           fontSize: 16,
                           fontWeight: 600,
-                          color: "#2C2A25",
+                          color: "#2a2859",
                         }}
                       >
                         {FRICTIONS[k].label}
@@ -197,8 +196,8 @@ export default function FrictionsPage() {
                         style={{
                           display: "block",
                           fontSize: 13,
-                          lineHeight: 1.45,
-                          color: "#7A756B",
+                          lineHeight: 1.5,
+                          color: "#666666",
                           marginTop: 2,
                         }}
                       >
@@ -219,16 +218,16 @@ export default function FrictionsPage() {
               alignItems: "center",
               justifyContent: "space-between",
               gap: 16,
-              marginBottom: 20,
+              marginBottom: 24,
               flexWrap: "wrap",
             }}
           >
             <h2
               style={{
-                fontFamily: "var(--font-source-serif)",
                 fontSize: 26,
                 fontWeight: 700,
-                color: "#2C2A25",
+                color: "#2a2859",
+                letterSpacing: "-0.01em",
               }}
             >
               <SelectionHeading selection={selection} count={results.length} />
@@ -239,12 +238,13 @@ export default function FrictionsPage() {
                 onClick={() => setSelection({ kind: "none" })}
                 style={{
                   fontSize: 13,
-                  color: "#C45D3E",
+                  color: "#1f42aa",
                   fontWeight: 600,
                   background: "none",
                   border: "none",
                   cursor: "pointer",
                   padding: 0,
+                  fontFamily: FONT_STACK,
                 }}
               >
                 Clear selection
@@ -386,7 +386,7 @@ function ChordDiagram({
                   d={d ?? ""}
                   fill={color}
                   fillOpacity={anyActive ? (selected ? 1 : 0.25) : 0.9}
-                  stroke="#fff"
+                  stroke="#ffffff"
                   strokeWidth={1.5}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -416,10 +416,10 @@ function ChordDiagram({
                   fontSize={13}
                   fontWeight={selected ? 700 : 500}
                   textAnchor={anchor}
-                  fill={selected ? color : "#2C2A25"}
+                  fill={selected ? color : "#2c2c2c"}
                   transform={`rotate(${flipped ? labelRotation + 180 : labelRotation}, ${x}, ${y})`}
                   style={{
-                    fontFamily: "var(--font-dm-sans)",
+                    fontFamily: FONT_STACK,
                     pointerEvents: "none",
                     dominantBaseline: "middle",
                   }}
@@ -446,7 +446,7 @@ function ChordDiagram({
       <p
         style={{
           fontSize: 12,
-          color: "#A09A8E",
+          color: "#9a9a9a",
           textAlign: "center",
           marginTop: 8,
         }}
@@ -477,7 +477,7 @@ function SelectionHeading({
           {FRICTIONS[selection.friction].label}
         </span>{" "}
         &middot;{" "}
-        <span style={{ color: "#7A756B", fontWeight: 400, fontSize: 18 }}>
+        <span style={{ color: "#808080", fontWeight: 400, fontSize: 18 }}>
           {count} {count === 1 ? "story" : "stories"}
         </span>
       </>
@@ -493,7 +493,7 @@ function SelectionHeading({
         {FRICTIONS[selection.b].label}
       </span>{" "}
       &middot;{" "}
-      <span style={{ color: "#7A756B", fontWeight: 400, fontSize: 18 }}>
+      <span style={{ color: "#808080", fontWeight: 400, fontSize: 18 }}>
         {count} {count === 1 ? "story shares both" : "stories share both"}
       </span>
     </>
@@ -507,10 +507,8 @@ function StoryGrid({ stories }: { stories: PublicStory[] }) {
     return (
       <p
         style={{
-          fontFamily: "var(--font-source-serif)",
-          fontStyle: "italic",
           fontSize: 17,
-          color: "#7A756B",
+          color: "#808080",
           padding: "24px 0",
         }}
       >
@@ -540,13 +538,13 @@ function GroupedByFriction({ stories }: { stories: PublicStory[] }) {
         const bucket = stories.filter((s) => s.frictions?.includes(k));
         if (bucket.length === 0) return null;
         return (
-          <div key={k} style={{ marginBottom: 40 }}>
+          <div key={k} style={{ marginBottom: 48 }}>
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
                 gap: 10,
-                marginBottom: 14,
+                marginBottom: 16,
                 paddingBottom: 8,
                 borderBottom: `2px solid ${FRICTIONS[k].color}`,
               }}
@@ -562,15 +560,14 @@ function GroupedByFriction({ stories }: { stories: PublicStory[] }) {
               />
               <h3
                 style={{
-                  fontFamily: "var(--font-source-serif)",
                   fontSize: 20,
                   fontWeight: 600,
-                  color: "#2C2A25",
+                  color: "#2a2859",
                 }}
               >
                 {FRICTIONS[k].label}
               </h3>
-              <span style={{ fontSize: 13, color: "#A09A8E" }}>
+              <span style={{ fontSize: 13, color: "#9a9a9a" }}>
                 {bucket.length} {bucket.length === 1 ? "story" : "stories"}
               </span>
             </div>
@@ -599,26 +596,26 @@ function StoryCard({ story }: { story: PublicStory }) {
       href={`/story/${story.id}`}
       style={{
         display: "block",
-        padding: 20,
-        background: "#fff",
-        border: "1px solid #E8E4DB",
-        borderRadius: 10,
+        padding: 24,
+        background: "#ffffff",
+        border: "1px solid #e6e6e6",
+        borderRadius: 8,
         textDecoration: "none",
-        color: "#2C2A25",
+        color: "#2c2c2c",
       }}
     >
       <h4
         style={{
-          fontFamily: "var(--font-source-serif)",
           fontSize: 17,
           fontWeight: 600,
           lineHeight: 1.3,
           marginBottom: 8,
+          color: "#2a2859",
         }}
       >
         {story.title}
       </h4>
-      <p style={{ fontSize: 13, lineHeight: 1.55, color: "#7A756B", marginBottom: 10 }}>
+      <p style={{ fontSize: 13, lineHeight: 1.55, color: "#666666", marginBottom: 16 }}>
         {preview}
         {story.body.length > 140 ? "…" : ""}
       </p>
@@ -629,7 +626,7 @@ function StoryCard({ story }: { story: PublicStory }) {
             style={{
               fontSize: 10,
               padding: "2px 8px",
-              borderRadius: 99,
+              borderRadius: 4,
               background: FRICTIONS[f]?.color + "18",
               color: FRICTIONS[f]?.color,
               fontWeight: 500,

@@ -10,6 +10,8 @@ export const metadata: Metadata = {
     "A research platform mapping how aging immigrants in Norway navigate care, technology, and belonging — across the intimacy of a bedroom and the policies that shape a city.",
 };
 
+const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
+
 const FRICTION_COPY: Record<CareFriction, string> = {
   rotate: "Staff turnover breaks relational continuity",
   script: "Technologies embed assumptions that don't fit",
@@ -36,28 +38,24 @@ const FOUR_ENTRIES = [
     href: "/explore",
     title: "Explore the map",
     line: "Navigate from bedroom to city hall",
-    accent: "#3A8A7D",
     hint: "WHERE",
   },
   {
     href: "/frictions",
     title: "Care frictions",
     line: "How systemic mechanisms interrelate",
-    accent: "#9B59B6",
     hint: "HOW IT FAILS",
   },
   {
     href: "/qualities",
     title: "Care qualities",
     line: "How people actually live and cope",
-    accent: "#5B6AAF",
     hint: "HOW THEY LIVE",
   },
   {
     href: "/solutions",
     title: "Design solutions",
     line: "From observation to intervention",
-    accent: "#3A8A7D",
     hint: "RESPONSES",
   },
 ];
@@ -109,9 +107,9 @@ export default function HomePage() {
       <Nav />
       <main
         style={{
-          background: "#F7F5F0",
-          color: "#2C2A25",
-          fontFamily: "var(--font-dm-sans)",
+          background: "#f9f9f9",
+          color: "#2c2c2c",
+          fontFamily: FONT_STACK,
         }}
       >
         {/* ─── Hero ─── */}
@@ -128,7 +126,7 @@ export default function HomePage() {
               fontWeight: 600,
               textTransform: "uppercase",
               letterSpacing: "0.18em",
-              color: "#A09A8E",
+              color: "#808080",
               marginBottom: 24,
             }}
           >
@@ -136,24 +134,22 @@ export default function HomePage() {
           </p>
           <h1
             style={{
-              fontFamily: "var(--font-source-serif)",
               fontSize: "clamp(48px, 8vw, 96px)",
               fontWeight: 700,
               lineHeight: 1.02,
               letterSpacing: "-0.03em",
               marginBottom: 24,
-              color: "#2C2A25",
+              color: "#2a2859",
             }}
           >
             safe@home
           </h1>
           <p
             style={{
-              fontFamily: "var(--font-source-serif)",
-              fontStyle: "italic",
               fontSize: "clamp(22px, 3vw, 30px)",
+              fontWeight: 500,
               lineHeight: 1.3,
-              color: "#7A756B",
+              color: "#2a2859",
               marginBottom: 32,
               maxWidth: 680,
             }}
@@ -162,10 +158,9 @@ export default function HomePage() {
           </p>
           <p
             style={{
-              fontFamily: "var(--font-source-serif)",
               fontSize: 20,
               lineHeight: 1.7,
-              color: "#2C2A25",
+              color: "#2c2c2c",
               maxWidth: 680,
               marginBottom: 40,
             }}
@@ -181,15 +176,14 @@ export default function HomePage() {
             style={{
               display: "inline-flex",
               alignItems: "center",
-              gap: 10,
-              padding: "16px 28px",
-              background: "#C45D3E",
-              color: "#fff",
-              borderRadius: 10,
+              gap: 8,
+              padding: "16px 24px",
+              background: "#2a2859",
+              color: "#ffffff",
+              borderRadius: 8,
               fontSize: 16,
               fontWeight: 600,
               textDecoration: "none",
-              boxShadow: "0 4px 14px rgba(196,93,62,.25)",
             }}
           >
             Explore the map
@@ -200,361 +194,9 @@ export default function HomePage() {
         {/* ─── Four ways to explore ─── */}
         <section
           style={{
-            maxWidth: 1120,
-            margin: "0 auto",
-            padding: "32px 24px 96px",
-          }}
-        >
-          <p
-            style={{
-              fontSize: 12,
-              fontWeight: 600,
-              textTransform: "uppercase",
-              letterSpacing: "0.18em",
-              color: "#A09A8E",
-              marginBottom: 12,
-            }}
-          >
-            Four ways to explore
-          </p>
-          <h2
-            style={{
-              fontFamily: "var(--font-source-serif)",
-              fontSize: "clamp(28px, 4vw, 40px)",
-              fontWeight: 700,
-              lineHeight: 1.15,
-              letterSpacing: "-0.02em",
-              color: "#2C2A25",
-              marginBottom: 40,
-              maxWidth: 720,
-            }}
-          >
-            The same stories, seen through four different lenses.
-          </h2>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-              gap: 16,
-            }}
-          >
-            {FOUR_ENTRIES.map((entry) => (
-              <Link
-                key={entry.href}
-                href={entry.href}
-                style={{
-                  display: "block",
-                  background: "#fff",
-                  border: "1px solid #E8E4DB",
-                  borderRadius: 14,
-                  padding: 28,
-                  textDecoration: "none",
-                  color: "#2C2A25",
-                  position: "relative",
-                  overflow: "hidden",
-                  transition: "transform .18s, box-shadow .18s",
-                }}
-              >
-                <span
-                  aria-hidden
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    height: 4,
-                    width: "100%",
-                    background: entry.accent,
-                  }}
-                />
-                <p
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 600,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.14em",
-                    color: entry.accent,
-                    marginBottom: 14,
-                  }}
-                >
-                  {entry.hint}
-                </p>
-                <h3
-                  style={{
-                    fontFamily: "var(--font-source-serif)",
-                    fontSize: 24,
-                    fontWeight: 700,
-                    lineHeight: 1.2,
-                    marginBottom: 10,
-                    color: "#2C2A25",
-                  }}
-                >
-                  {entry.title}
-                </h3>
-                <p style={{ fontSize: 14, lineHeight: 1.5, color: "#7A756B" }}>
-                  {entry.line}
-                </p>
-                <span
-                  aria-hidden
-                  style={{
-                    display: "inline-block",
-                    marginTop: 20,
-                    fontSize: 14,
-                    fontWeight: 600,
-                    color: entry.accent,
-                  }}
-                >
-                  Open →
-                </span>
-              </Link>
-            ))}
-          </div>
-        </section>
-
-        {/* ─── About the project ─── */}
-        <section
-          style={{
-            background: "#EDE9E0",
-            borderTop: "1px solid #E8E4DB",
-            borderBottom: "1px solid #E8E4DB",
-          }}
-        >
-          <div
-            style={{
-              maxWidth: 960,
-              margin: "0 auto",
-              padding: "96px 24px",
-            }}
-          >
-            <p
-              style={{
-                fontSize: 12,
-                fontWeight: 600,
-                textTransform: "uppercase",
-                letterSpacing: "0.18em",
-                color: "#A09A8E",
-                marginBottom: 16,
-              }}
-            >
-              About the project
-            </p>
-            <h2
-              style={{
-                fontFamily: "var(--font-source-serif)",
-                fontSize: "clamp(30px, 4.5vw, 44px)",
-                fontWeight: 700,
-                lineHeight: 1.15,
-                letterSpacing: "-0.02em",
-                color: "#2C2A25",
-                marginBottom: 32,
-                maxWidth: 760,
-              }}
-            >
-              A research platform for the Bo Trygt Hjemme reform.
-            </h2>
-
-            <div style={{ maxWidth: 680 }}>
-              <p
-                style={{
-                  fontFamily: "var(--font-source-serif)",
-                  fontSize: 19,
-                  lineHeight: 1.75,
-                  color: "#2C2A25",
-                  marginBottom: 20,
-                }}
-              >
-                SAFE@HOME is a collaborative research project (2026 — 2029)
-                between OsloMet, the University of Oslo, Durham University,
-                Comte Bureau, and three municipalities: Alna and S&oslash;ndre
-                Nordstrand in Oslo, and Skien in Telemark.
-              </p>
-              <p
-                style={{
-                  fontFamily: "var(--font-source-serif)",
-                  fontSize: 19,
-                  lineHeight: 1.75,
-                  color: "#2C2A25",
-                  marginBottom: 20,
-                }}
-              >
-                The project investigates how homecare services can be adapted
-                for Norway&rsquo;s growing aging immigrant population &mdash; a
-                group whose needs, routines, and family structures often sit at
-                odds with standardized care technologies and bureaucratic
-                pathways.
-              </p>
-              <p
-                style={{
-                  fontFamily: "var(--font-source-serif)",
-                  fontSize: 19,
-                  lineHeight: 1.75,
-                  color: "#7A756B",
-                }}
-              >
-                Four work packages move from the home outward to the policy
-                frame, and back again.
-              </p>
-            </div>
-
-            <div
-              style={{
-                marginTop: 48,
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-                gap: 24,
-              }}
-            >
-              {WORK_PACKAGES.map((wp) => (
-                <div
-                  key={wp.code}
-                  style={{
-                    background: "#fff",
-                    border: "1px solid #E8E4DB",
-                    borderRadius: 10,
-                    padding: 24,
-                  }}
-                >
-                  <p
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 700,
-                      letterSpacing: "0.12em",
-                      color: "#C45D3E",
-                      marginBottom: 8,
-                    }}
-                  >
-                    {wp.code}
-                  </p>
-                  <h3
-                    style={{
-                      fontFamily: "var(--font-source-serif)",
-                      fontSize: 18,
-                      fontWeight: 600,
-                      color: "#2C2A25",
-                      marginBottom: 8,
-                    }}
-                  >
-                    {wp.title}
-                  </h3>
-                  <p style={{ fontSize: 14, lineHeight: 1.55, color: "#7A756B" }}>
-                    {wp.body}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* ─── Three scales ─── */}
-        <section
-          style={{
-            maxWidth: 1120,
-            margin: "0 auto",
-            padding: "96px 24px",
-          }}
-        >
-          <p
-            style={{
-              fontSize: 12,
-              fontWeight: 600,
-              textTransform: "uppercase",
-              letterSpacing: "0.18em",
-              color: "#A09A8E",
-              marginBottom: 16,
-            }}
-          >
-            Three scales
-          </p>
-          <h2
-            style={{
-              fontFamily: "var(--font-source-serif)",
-              fontSize: "clamp(30px, 4.5vw, 44px)",
-              fontWeight: 700,
-              lineHeight: 1.15,
-              letterSpacing: "-0.02em",
-              color: "#2C2A25",
-              marginBottom: 16,
-              maxWidth: 760,
-            }}
-          >
-            From bedroom to city hall.
-          </h2>
-          <p
-            style={{
-              fontFamily: "var(--font-source-serif)",
-              fontSize: 19,
-              lineHeight: 1.7,
-              color: "#7A756B",
-              maxWidth: 640,
-              marginBottom: 48,
-            }}
-          >
-            The same story plays out at three scales at once. Zoom in to see a
-            prayer rug beside a motion sensor. Zoom out to see the budget line
-            that quietly removed a bus route.
-          </p>
-
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-              gap: 24,
-            }}
-          >
-            {SCALES_COPY.map((s) => (
-              <div
-                key={s.label}
-                style={{
-                  background: "#fff",
-                  border: "1px solid #E8E4DB",
-                  borderRadius: 14,
-                  padding: 28,
-                }}
-              >
-                <p
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.14em",
-                    color: "#C45D3E",
-                    marginBottom: 10,
-                  }}
-                >
-                  {s.label}
-                </p>
-                <h3
-                  style={{
-                    fontFamily: "var(--font-source-serif)",
-                    fontSize: 22,
-                    fontWeight: 600,
-                    color: "#2C2A25",
-                    marginBottom: 12,
-                  }}
-                >
-                  {s.title}
-                </h3>
-                <p
-                  style={{
-                    fontFamily: "var(--font-source-serif)",
-                    fontSize: 16,
-                    lineHeight: 1.65,
-                    color: "#2C2A25",
-                  }}
-                >
-                  {s.body}
-                </p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* ─── Care frictions ─── */}
-        <section
-          style={{
-            background: "#EDE9E0",
-            borderTop: "1px solid #E8E4DB",
-            borderBottom: "1px solid #E8E4DB",
+            background: "#ffffff",
+            borderTop: "1px solid #e6e6e6",
+            borderBottom: "1px solid #e6e6e6",
           }}
         >
           <div
@@ -570,7 +212,360 @@ export default function HomePage() {
                 fontWeight: 600,
                 textTransform: "uppercase",
                 letterSpacing: "0.18em",
-                color: "#A09A8E",
+                color: "#808080",
+                marginBottom: 16,
+              }}
+            >
+              Four ways to explore
+            </p>
+            <h2
+              style={{
+                fontSize: "clamp(28px, 4vw, 40px)",
+                fontWeight: 700,
+                lineHeight: 1.15,
+                letterSpacing: "-0.02em",
+                color: "#2a2859",
+                marginBottom: 48,
+                maxWidth: 720,
+              }}
+            >
+              The same stories, seen through four different lenses.
+            </h2>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+                gap: 16,
+              }}
+            >
+              {FOUR_ENTRIES.map((entry) => (
+                <Link
+                  key={entry.href}
+                  href={entry.href}
+                  style={{
+                    display: "block",
+                    background: "#f9f9f9",
+                    border: "1px solid #e6e6e6",
+                    borderRadius: 8,
+                    padding: 32,
+                    textDecoration: "none",
+                    color: "#2c2c2c",
+                    position: "relative",
+                    overflow: "hidden",
+                  }}
+                >
+                  <span
+                    aria-hidden
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      height: 4,
+                      width: "100%",
+                      background: "#2a2859",
+                    }}
+                  />
+                  <p
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 600,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.14em",
+                      color: "#1f42aa",
+                      marginBottom: 16,
+                    }}
+                  >
+                    {entry.hint}
+                  </p>
+                  <h3
+                    style={{
+                      fontSize: 24,
+                      fontWeight: 700,
+                      lineHeight: 1.2,
+                      marginBottom: 8,
+                      color: "#2a2859",
+                    }}
+                  >
+                    {entry.title}
+                  </h3>
+                  <p style={{ fontSize: 14, lineHeight: 1.5, color: "#666666" }}>
+                    {entry.line}
+                  </p>
+                  <span
+                    aria-hidden
+                    style={{
+                      display: "inline-block",
+                      marginTop: 24,
+                      fontSize: 14,
+                      fontWeight: 600,
+                      color: "#1f42aa",
+                    }}
+                  >
+                    Open →
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ─── About the project ─── */}
+        <section
+          style={{
+            background: "#f9f9f9",
+            borderBottom: "1px solid #e6e6e6",
+          }}
+        >
+          <div
+            style={{
+              maxWidth: 960,
+              margin: "0 auto",
+              padding: "96px 24px",
+            }}
+          >
+            <p
+              style={{
+                fontSize: 12,
+                fontWeight: 600,
+                textTransform: "uppercase",
+                letterSpacing: "0.18em",
+                color: "#808080",
+                marginBottom: 16,
+              }}
+            >
+              About the project
+            </p>
+            <h2
+              style={{
+                fontSize: "clamp(30px, 4.5vw, 44px)",
+                fontWeight: 700,
+                lineHeight: 1.15,
+                letterSpacing: "-0.02em",
+                color: "#2a2859",
+                marginBottom: 32,
+                maxWidth: 760,
+              }}
+            >
+              A research platform for the Bo Trygt Hjemme reform.
+            </h2>
+
+            <div style={{ maxWidth: 680 }}>
+              <p
+                style={{
+                  fontSize: 19,
+                  lineHeight: 1.7,
+                  color: "#2c2c2c",
+                  marginBottom: 24,
+                }}
+              >
+                SAFE@HOME is a collaborative research project (2026 — 2029)
+                between OsloMet, the University of Oslo, Durham University,
+                Comte Bureau, and three municipalities: Alna and S&oslash;ndre
+                Nordstrand in Oslo, and Skien in Telemark.
+              </p>
+              <p
+                style={{
+                  fontSize: 19,
+                  lineHeight: 1.7,
+                  color: "#2c2c2c",
+                  marginBottom: 24,
+                }}
+              >
+                The project investigates how homecare services can be adapted
+                for Norway&rsquo;s growing aging immigrant population &mdash; a
+                group whose needs, routines, and family structures often sit at
+                odds with standardized care technologies and bureaucratic
+                pathways.
+              </p>
+              <p
+                style={{
+                  fontSize: 19,
+                  lineHeight: 1.7,
+                  color: "#666666",
+                }}
+              >
+                Four work packages move from the home outward to the policy
+                frame, and back again.
+              </p>
+            </div>
+
+            <div
+              style={{
+                marginTop: 48,
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+                gap: 16,
+              }}
+            >
+              {WORK_PACKAGES.map((wp) => (
+                <div
+                  key={wp.code}
+                  style={{
+                    background: "#ffffff",
+                    border: "1px solid #e6e6e6",
+                    borderRadius: 8,
+                    padding: 24,
+                  }}
+                >
+                  <p
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      letterSpacing: "0.12em",
+                      color: "#1f42aa",
+                      marginBottom: 8,
+                    }}
+                  >
+                    {wp.code}
+                  </p>
+                  <h3
+                    style={{
+                      fontSize: 18,
+                      fontWeight: 600,
+                      color: "#2a2859",
+                      marginBottom: 8,
+                    }}
+                  >
+                    {wp.title}
+                  </h3>
+                  <p style={{ fontSize: 14, lineHeight: 1.55, color: "#666666" }}>
+                    {wp.body}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ─── Three scales ─── */}
+        <section
+          style={{
+            background: "#ffffff",
+            borderBottom: "1px solid #e6e6e6",
+          }}
+        >
+          <div
+            style={{
+              maxWidth: 1120,
+              margin: "0 auto",
+              padding: "96px 24px",
+            }}
+          >
+            <p
+              style={{
+                fontSize: 12,
+                fontWeight: 600,
+                textTransform: "uppercase",
+                letterSpacing: "0.18em",
+                color: "#808080",
+                marginBottom: 16,
+              }}
+            >
+              Three scales
+            </p>
+            <h2
+              style={{
+                fontSize: "clamp(30px, 4.5vw, 44px)",
+                fontWeight: 700,
+                lineHeight: 1.15,
+                letterSpacing: "-0.02em",
+                color: "#2a2859",
+                marginBottom: 16,
+                maxWidth: 760,
+              }}
+            >
+              From bedroom to city hall.
+            </h2>
+            <p
+              style={{
+                fontSize: 19,
+                lineHeight: 1.7,
+                color: "#666666",
+                maxWidth: 640,
+                marginBottom: 48,
+              }}
+            >
+              The same story plays out at three scales at once. Zoom in to see a
+              prayer rug beside a motion sensor. Zoom out to see the budget line
+              that quietly removed a bus route.
+            </p>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+                gap: 24,
+              }}
+            >
+              {SCALES_COPY.map((s) => (
+                <div
+                  key={s.label}
+                  style={{
+                    background: "#f9f9f9",
+                    border: "1px solid #e6e6e6",
+                    borderRadius: 8,
+                    padding: 32,
+                  }}
+                >
+                  <p
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.14em",
+                      color: "#1f42aa",
+                      marginBottom: 8,
+                    }}
+                  >
+                    {s.label}
+                  </p>
+                  <h3
+                    style={{
+                      fontSize: 22,
+                      fontWeight: 600,
+                      color: "#2a2859",
+                      marginBottom: 16,
+                    }}
+                  >
+                    {s.title}
+                  </h3>
+                  <p
+                    style={{
+                      fontSize: 16,
+                      lineHeight: 1.65,
+                      color: "#2c2c2c",
+                    }}
+                  >
+                    {s.body}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ─── Care frictions ─── */}
+        <section
+          style={{
+            background: "#f9f9f9",
+            borderBottom: "1px solid #e6e6e6",
+          }}
+        >
+          <div
+            style={{
+              maxWidth: 1120,
+              margin: "0 auto",
+              padding: "96px 24px",
+            }}
+          >
+            <p
+              style={{
+                fontSize: 12,
+                fontWeight: 600,
+                textTransform: "uppercase",
+                letterSpacing: "0.18em",
+                color: "#808080",
                 marginBottom: 16,
               }}
             >
@@ -578,12 +573,11 @@ export default function HomePage() {
             </p>
             <h2
               style={{
-                fontFamily: "var(--font-source-serif)",
                 fontSize: "clamp(30px, 4.5vw, 44px)",
                 fontWeight: 700,
                 lineHeight: 1.15,
                 letterSpacing: "-0.02em",
-                color: "#2C2A25",
+                color: "#2a2859",
                 marginBottom: 16,
                 maxWidth: 760,
               }}
@@ -592,10 +586,9 @@ export default function HomePage() {
             </h2>
             <p
               style={{
-                fontFamily: "var(--font-source-serif)",
                 fontSize: 19,
                 lineHeight: 1.7,
-                color: "#7A756B",
+                color: "#666666",
                 maxWidth: 640,
                 marginBottom: 48,
               }}
@@ -608,7 +601,7 @@ export default function HomePage() {
               style={{
                 display: "grid",
                 gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-                gap: 12,
+                gap: 16,
               }}
             >
               {(Object.entries(FRICTIONS) as [CareFriction, (typeof FRICTIONS)[CareFriction]][]).map(
@@ -619,11 +612,11 @@ export default function HomePage() {
                     style={{
                       display: "flex",
                       alignItems: "flex-start",
-                      gap: 14,
-                      padding: 18,
-                      background: "#fff",
-                      border: "1px solid #E8E4DB",
-                      borderRadius: 10,
+                      gap: 16,
+                      padding: 24,
+                      background: "#ffffff",
+                      border: "1px solid #e6e6e6",
+                      borderRadius: 8,
                       textDecoration: "none",
                     }}
                   >
@@ -641,16 +634,15 @@ export default function HomePage() {
                     <div>
                       <p
                         style={{
-                          fontFamily: "var(--font-source-serif)",
                           fontSize: 18,
                           fontWeight: 600,
-                          color: "#2C2A25",
+                          color: "#2a2859",
                           marginBottom: 4,
                         }}
                       >
                         {val.label}
                       </p>
-                      <p style={{ fontSize: 14, lineHeight: 1.5, color: "#7A756B" }}>
+                      <p style={{ fontSize: 14, lineHeight: 1.5, color: "#666666" }}>
                         {FRICTION_COPY[key]}
                       </p>
                     </div>
@@ -664,96 +656,100 @@ export default function HomePage() {
         {/* ─── Care qualities ─── */}
         <section
           style={{
-            maxWidth: 1120,
-            margin: "0 auto",
-            padding: "96px 24px",
+            background: "#ffffff",
+            borderBottom: "1px solid #e6e6e6",
           }}
         >
-          <p
-            style={{
-              fontSize: 12,
-              fontWeight: 600,
-              textTransform: "uppercase",
-              letterSpacing: "0.18em",
-              color: "#A09A8E",
-              marginBottom: 16,
-            }}
-          >
-            Care qualities
-          </p>
-          <h2
-            style={{
-              fontFamily: "var(--font-source-serif)",
-              fontSize: "clamp(30px, 4.5vw, 44px)",
-              fontWeight: 700,
-              lineHeight: 1.15,
-              letterSpacing: "-0.02em",
-              color: "#2C2A25",
-              marginBottom: 16,
-              maxWidth: 760,
-            }}
-          >
-            How people actually live and cope.
-          </h2>
-          <p
-            style={{
-              fontFamily: "var(--font-source-serif)",
-              fontSize: 19,
-              lineHeight: 1.7,
-              color: "#7A756B",
-              maxWidth: 640,
-              marginBottom: 48,
-            }}
-          >
-            These describe the realities, strategies, and strengths of aging
-            immigrants and their families &mdash; the parts of care that rarely
-            make it into service logs.
-          </p>
-
           <div
             style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-              gap: 12,
+              maxWidth: 1120,
+              margin: "0 auto",
+              padding: "96px 24px",
             }}
           >
-            {(Object.entries(QUALITIES) as [CareQuality, (typeof QUALITIES)[CareQuality]][]).map(
-              ([key, val]) => (
-                <div
-                  key={key}
-                  style={{
-                    padding: 18,
-                    background: "#fff",
-                    border: "1px solid #E8E4DB",
-                    borderRadius: 10,
-                    borderLeft: `4px solid ${val.color}`,
-                  }}
-                >
-                  <p
+            <p
+              style={{
+                fontSize: 12,
+                fontWeight: 600,
+                textTransform: "uppercase",
+                letterSpacing: "0.18em",
+                color: "#808080",
+                marginBottom: 16,
+              }}
+            >
+              Care qualities
+            </p>
+            <h2
+              style={{
+                fontSize: "clamp(30px, 4.5vw, 44px)",
+                fontWeight: 700,
+                lineHeight: 1.15,
+                letterSpacing: "-0.02em",
+                color: "#2a2859",
+                marginBottom: 16,
+                maxWidth: 760,
+              }}
+            >
+              How people actually live and cope.
+            </h2>
+            <p
+              style={{
+                fontSize: 19,
+                lineHeight: 1.7,
+                color: "#666666",
+                maxWidth: 640,
+                marginBottom: 48,
+              }}
+            >
+              These describe the realities, strategies, and strengths of aging
+              immigrants and their families &mdash; the parts of care that rarely
+              make it into service logs.
+            </p>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+                gap: 16,
+              }}
+            >
+              {(Object.entries(QUALITIES) as [CareQuality, (typeof QUALITIES)[CareQuality]][]).map(
+                ([key, val]) => (
+                  <div
+                    key={key}
                     style={{
-                      fontFamily: "var(--font-source-serif)",
-                      fontSize: 17,
-                      fontWeight: 600,
-                      color: "#2C2A25",
-                      marginBottom: 4,
+                      padding: 24,
+                      background: "#f9f9f9",
+                      border: "1px solid #e6e6e6",
+                      borderRadius: 8,
+                      borderLeft: `4px solid ${val.color}`,
                     }}
                   >
-                    {val.label}
-                  </p>
-                  <p style={{ fontSize: 13, lineHeight: 1.5, color: "#7A756B" }}>
-                    {QUALITY_COPY[key]}
-                  </p>
-                </div>
-              ),
-            )}
+                    <p
+                      style={{
+                        fontSize: 17,
+                        fontWeight: 600,
+                        color: "#2a2859",
+                        marginBottom: 4,
+                      }}
+                    >
+                      {val.label}
+                    </p>
+                    <p style={{ fontSize: 13, lineHeight: 1.5, color: "#666666" }}>
+                      {QUALITY_COPY[key]}
+                    </p>
+                  </div>
+                ),
+              )}
+            </div>
           </div>
         </section>
 
         {/* ─── Final CTA ─── */}
         <section
           style={{
-            background: "#2C2A25",
-            color: "#F7F5F0",
+            background: "#2a2859",
+            color: "#ffffff",
           }}
         >
           <div
@@ -766,24 +762,23 @@ export default function HomePage() {
           >
             <h2
               style={{
-                fontFamily: "var(--font-source-serif)",
                 fontSize: "clamp(32px, 5vw, 52px)",
                 fontWeight: 700,
                 lineHeight: 1.1,
                 letterSpacing: "-0.02em",
                 marginBottom: 24,
+                color: "#ffffff",
               }}
             >
               Ready to explore?
             </h2>
             <p
               style={{
-                fontFamily: "var(--font-source-serif)",
                 fontSize: 19,
                 lineHeight: 1.65,
-                color: "#A09A8E",
+                color: "#b3f5ff",
                 maxWidth: 560,
-                margin: "0 auto 36px",
+                margin: "0 auto 40px",
               }}
             >
               Start at the city scale and zoom in until you&rsquo;re standing in
@@ -795,11 +790,11 @@ export default function HomePage() {
               style={{
                 display: "inline-flex",
                 alignItems: "center",
-                gap: 10,
-                padding: "16px 28px",
-                background: "#C45D3E",
-                color: "#fff",
-                borderRadius: 10,
+                gap: 8,
+                padding: "16px 24px",
+                background: "#ffffff",
+                color: "#2a2859",
+                borderRadius: 8,
                 fontSize: 16,
                 fontWeight: 600,
                 textDecoration: "none",
@@ -821,19 +816,19 @@ export default function HomePage() {
             >
               <Link
                 href="/about"
-                style={{ color: "#F7F5F0", textDecoration: "none", opacity: 0.75 }}
+                style={{ color: "#ffffff", textDecoration: "underline", opacity: 0.9 }}
               >
                 About
               </Link>
               <Link
                 href="/reading-room"
-                style={{ color: "#F7F5F0", textDecoration: "none", opacity: 0.75 }}
+                style={{ color: "#ffffff", textDecoration: "underline", opacity: 0.9 }}
               >
                 Reading Room
               </Link>
               <Link
                 href="/for-municipalities"
-                style={{ color: "#F7F5F0", textDecoration: "none", opacity: 0.75 }}
+                style={{ color: "#ffffff", textDecoration: "underline", opacity: 0.9 }}
               >
                 For Municipalities
               </Link>
@@ -844,8 +839,8 @@ export default function HomePage() {
         {/* ─── Footer ─── */}
         <footer
           style={{
-            background: "#F7F5F0",
-            borderTop: "1px solid #E8E4DB",
+            background: "#f2f2f2",
+            borderTop: "1px solid #e6e6e6",
             padding: "48px 24px",
           }}
         >
@@ -865,13 +860,13 @@ export default function HomePage() {
                   fontWeight: 700,
                   textTransform: "uppercase",
                   letterSpacing: "0.14em",
-                  color: "#A09A8E",
-                  marginBottom: 10,
+                  color: "#808080",
+                  marginBottom: 8,
                 }}
               >
                 Research partners
               </p>
-              <p style={{ fontSize: 14, lineHeight: 1.7, color: "#2C2A25" }}>
+              <p style={{ fontSize: 14, lineHeight: 1.7, color: "#2c2c2c" }}>
                 OsloMet
                 <br />
                 University of Oslo
@@ -888,13 +883,13 @@ export default function HomePage() {
                   fontWeight: 700,
                   textTransform: "uppercase",
                   letterSpacing: "0.14em",
-                  color: "#A09A8E",
-                  marginBottom: 10,
+                  color: "#808080",
+                  marginBottom: 8,
                 }}
               >
                 Municipalities
               </p>
-              <p style={{ fontSize: 14, lineHeight: 1.7, color: "#2C2A25" }}>
+              <p style={{ fontSize: 14, lineHeight: 1.7, color: "#2c2c2c" }}>
                 Alna District
                 <br />
                 S&oslash;ndre Nordstrand
@@ -909,13 +904,13 @@ export default function HomePage() {
                   fontWeight: 700,
                   textTransform: "uppercase",
                   letterSpacing: "0.14em",
-                  color: "#A09A8E",
-                  marginBottom: 10,
+                  color: "#808080",
+                  marginBottom: 8,
                 }}
               >
                 Project
               </p>
-              <p style={{ fontSize: 14, lineHeight: 1.7, color: "#7A756B" }}>
+              <p style={{ fontSize: 14, lineHeight: 1.7, color: "#666666" }}>
                 safe@home · 2026 — 2029
                 <br />
                 Part of the Bo Trygt Hjemme reform.

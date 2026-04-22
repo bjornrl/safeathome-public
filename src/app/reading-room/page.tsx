@@ -4,6 +4,8 @@ import ResourceList from "@/components/ResourceList";
 import { getResources } from "@/lib/queries";
 import { READING_ROOM_TYPES } from "@/lib/seed-resources";
 
+const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
+
 export const metadata: Metadata = {
   title: "Reading Room — safe@home",
   description:
@@ -23,7 +25,7 @@ export default async function ReadingRoomPage() {
           maxWidth: 1120,
           margin: "0 auto",
           padding: "72px 24px 96px",
-          fontFamily: "var(--font-dm-sans)",
+          fontFamily: FONT_STACK,
         }}
       >
         <p
@@ -32,31 +34,29 @@ export default async function ReadingRoomPage() {
             fontWeight: 600,
             textTransform: "uppercase",
             letterSpacing: "0.18em",
-            color: "#A09A8E",
-            marginBottom: 12,
+            color: "#808080",
+            marginBottom: 16,
           }}
         >
           Reading room
         </p>
         <h1
           style={{
-            fontFamily: "var(--font-source-serif)",
             fontSize: "clamp(38px, 6vw, 60px)",
             fontWeight: 700,
             lineHeight: 1.05,
             letterSpacing: "-0.02em",
-            color: "#2C2A25",
-            marginBottom: 18,
+            color: "#2a2859",
+            marginBottom: 24,
           }}
         >
           Publications &amp; teaching materials.
         </h1>
         <p
           style={{
-            fontFamily: "var(--font-source-serif)",
             fontSize: 19,
             lineHeight: 1.7,
-            color: "#7A756B",
+            color: "#666666",
             maxWidth: 680,
             marginBottom: 56,
           }}

@@ -1,19 +1,91 @@
 @import "tailwindcss";
 @import "maplibre-gl/dist/maplibre-gl.css";
 
+/* Oslo Sans — custom municipal typeface.
+   TODO: Obtain Oslo Sans font files (.woff2) from Oslo kommune's
+   design team or municipal partners (Alna, Søndre Nordstrand, Skien)
+   and drop them into /public/fonts/. Until then the stack falls back
+   to Helvetica Neue / Arial, which renders cleanly. */
+@font-face {
+  font-family: "Oslo Sans";
+  src: url("/fonts/OsloSans-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Oslo Sans";
+  src: url("/fonts/OsloSans-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Oslo Sans";
+  src: url("/fonts/OsloSans-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
-  --background: #F7F5F0;
-  --foreground: #2C2A25;
+  /* Oslo kommune — primary brand */
+  --oslo-blue: #2a2859;
+  --oslo-blue-light: #6fe9ff;
+  --oslo-blue-100: #f1fdff;
+  --oslo-blue-200: #e5fcff;
+  --oslo-blue-300: #d1f9ff;
+  --oslo-blue-500: #b3f5ff;
+  --oslo-warm-blue: #1f42aa;
+
+  --oslo-green: #034b45;
+  --oslo-green-light: #43f8b6;
+  --oslo-green-400: #c7fde9;
+
+  --oslo-yellow: #f9c66b;
+  --oslo-yellow-light: #ffe7bc;
+
+  --oslo-red: #ff8274;
+  --oslo-red-light: #ffdfdc;
+  --oslo-red-100: #fff2f1;
+
+  --oslo-beige-light: #f8f0dd;
+  --oslo-beige-dark: #d0bfae;
+
+  --oslo-white: #ffffff;
+  --oslo-gray-100: #f9f9f9;
+  --oslo-gray-200: #f2f2f2;
+  --oslo-gray-300: #e6e6e6;
+  --oslo-gray-400: #cccccc;
+  --oslo-gray-500: #b3b3b3;
+  --oslo-gray-600: #9a9a9a;
+  --oslo-gray-700: #808080;
+  --oslo-gray-800: #666666;
+  --oslo-gray-900: #2c2c2c;
+  --oslo-black: #000000;
+
+  --background: var(--oslo-gray-100);
+  --foreground: var(--oslo-gray-900);
+
+  --font-sans: "Oslo Sans", "Helvetica Neue", Arial, sans-serif;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-dm-sans);
-  --font-serif: var(--font-source-serif);
+  --font-sans: var(--font-sans);
+}
+
+html,
+body {
+  font-family: var(--font-sans);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
+}
+
+a {
+  color: var(--oslo-warm-blue);
 }

@@ -14,6 +14,8 @@ import type {
   ResourceType,
 } from "@/lib/types";
 
+const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
+
 type Tab = "stories" | "challenges" | "resources";
 
 const FRICTION_KEYS = Object.keys(FRICTIONS) as CareFriction[];
@@ -48,27 +50,26 @@ export default function AdminPage() {
         maxWidth: 1200,
         margin: "0 auto",
         padding: "40px 24px 96px",
-        fontFamily: "var(--font-dm-sans)",
+        fontFamily: FONT_STACK,
       }}
     >
       <h1
         style={{
-          fontFamily: "var(--font-source-serif)",
           fontSize: 40,
           fontWeight: 700,
           letterSpacing: "-0.02em",
-          color: "#2C2A25",
+          color: "#2a2859",
           marginBottom: 8,
         }}
       >
         Content editor
       </h1>
-      <p style={{ fontSize: 15, color: "#7A756B", marginBottom: 24 }}>
+      <p style={{ fontSize: 15, color: "#666666", marginBottom: 24, lineHeight: 1.6 }}>
         Post new insights, design challenges, or reading-room entries.
         Everything you create here lands in the matching Supabase table.
       </p>
 
-      <nav style={{ display: "flex", gap: 4, marginBottom: 24, flexWrap: "wrap" }}>
+      <nav style={{ display: "flex", gap: 8, marginBottom: 32, flexWrap: "wrap" }}>
         <TabButton active={tab === "stories"} onClick={() => setTab("stories")}>
           Insights
         </TabButton>
@@ -101,14 +102,15 @@ function TabButton({
       type="button"
       onClick={onClick}
       style={{
-        padding: "8px 14px",
+        padding: "8px 16px",
         fontSize: 14,
         fontWeight: 600,
         borderRadius: 8,
-        border: `1px solid ${active ? "#2C2A25" : "#E8E4DB"}`,
-        background: active ? "#2C2A25" : "#fff",
-        color: active ? "#fff" : "#2C2A25",
+        border: `1px solid ${active ? "#2a2859" : "#e6e6e6"}`,
+        background: active ? "#2a2859" : "#ffffff",
+        color: active ? "#ffffff" : "#2c2c2c",
         cursor: "pointer",
+        fontFamily: FONT_STACK,
       }}
     >
       {children}
@@ -267,7 +269,7 @@ function StoryForm({ onCreated }: { onCreated: () => void }) {
       </FormField>
       <FormField label="Body">
         <textarea
-          style={{ ...inputStyle, minHeight: 140, fontFamily: "var(--font-source-serif)" }}
+          style={{ ...inputStyle, minHeight: 140 }}
           value={body}
           onChange={(e) => setBody(e.target.value)}
           placeholder="Use blank lines to separate paragraphs."
@@ -509,7 +511,7 @@ function ChallengeForm({ onCreated }: { onCreated: () => void }) {
       </FormField>
       <FormField label="Description">
         <textarea
-          style={{ ...inputStyle, minHeight: 120, fontFamily: "var(--font-source-serif)" }}
+          style={{ ...inputStyle, minHeight: 120 }}
           value={body}
           onChange={(e) => setBody(e.target.value)}
           required
@@ -552,7 +554,7 @@ function ChallengeForm({ onCreated }: { onCreated: () => void }) {
       </FormField>
       <FormField label="Outcome (optional)">
         <textarea
-          style={{ ...inputStyle, minHeight: 80, fontFamily: "var(--font-source-serif)" }}
+          style={{ ...inputStyle, minHeight: 80 }}
           value={outcome}
           onChange={(e) => setOutcome(e.target.value)}
         />
@@ -682,7 +684,7 @@ function ResourceForm({ onCreated }: { onCreated: () => void }) {
       </FormField>
       <FormField label="Description">
         <textarea
-          style={{ ...inputStyle, minHeight: 110, fontFamily: "var(--font-source-serif)" }}
+          style={{ ...inputStyle, minHeight: 110 }}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
         />
@@ -727,8 +729,8 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
         fontWeight: 700,
         textTransform: "uppercase",
         letterSpacing: "0.14em",
-        color: "#A09A8E",
-        marginBottom: 14,
+        color: "#808080",
+        marginBottom: 16,
       }}
     >
       {children}
@@ -743,11 +745,11 @@ function Form({ children, onSubmit }: { children: React.ReactNode; onSubmit: (e:
       style={{
         display: "flex",
         flexDirection: "column",
-        gap: 14,
-        padding: 20,
-        background: "#fff",
-        border: "1px solid #E8E4DB",
-        borderRadius: 14,
+        gap: 16,
+        padding: 24,
+        background: "#ffffff",
+        border: "1px solid #e6e6e6",
+        borderRadius: 8,
       }}
     >
       {children}
@@ -757,8 +759,8 @@ function Form({ children, onSubmit }: { children: React.ReactNode; onSubmit: (e:
 
 function FormField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-      <span style={{ fontSize: 12, fontWeight: 600, color: "#7A756B" }}>{label}</span>
+    <label style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <span style={{ fontSize: 12, fontWeight: 600, color: "#2c2c2c" }}>{label}</span>
       {children}
     </label>
   );
@@ -770,7 +772,7 @@ function FormRow({ children }: { children: React.ReactNode }) {
       style={{
         display: "grid",
         gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
-        gap: 12,
+        gap: 16,
       }}
     >
       {children}
@@ -788,7 +790,7 @@ function CheckboxGroup<T extends string>({
   onChange: (next: T[]) => void;
 }) {
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
       {options.map((opt) => {
         const on = value.includes(opt.value);
         return (
@@ -800,13 +802,14 @@ function CheckboxGroup<T extends string>({
             }
             style={{
               padding: "5px 12px",
-              borderRadius: 99,
+              borderRadius: 4,
               fontSize: 12,
               fontWeight: 500,
               cursor: "pointer",
               border: `1px solid ${on ? opt.color : opt.color + "40"}`,
               background: on ? opt.color : opt.color + "15",
-              color: on ? "#fff" : opt.color,
+              color: on ? "#ffffff" : opt.color,
+              fontFamily: FONT_STACK,
             }}
           >
             {opt.label}
@@ -824,10 +827,10 @@ function PublishToggle({ value, onChange }: { value: boolean; onChange: (v: bool
         display: "flex",
         alignItems: "center",
         gap: 8,
-        padding: "8px 10px",
+        padding: "8px 16px",
         borderRadius: 8,
-        background: value ? "#3A8A7D10" : "#EDE9E0",
-        border: `1px solid ${value ? "#3A8A7D40" : "#E8E4DB"}`,
+        background: value ? "#c7fde9" : "#f2f2f2",
+        border: `1px solid ${value ? "#43f8b6" : "#e6e6e6"}`,
         cursor: "pointer",
       }}
     >
@@ -835,9 +838,9 @@ function PublishToggle({ value, onChange }: { value: boolean; onChange: (v: bool
         type="checkbox"
         checked={value}
         onChange={(e) => onChange(e.target.checked)}
-        style={{ accentColor: "#3A8A7D" }}
+        style={{ accentColor: "#034b45" }}
       />
-      <span style={{ fontSize: 13, color: "#2C2A25" }}>
+      <span style={{ fontSize: 13, color: "#2c2c2c" }}>
         Publish immediately{value ? "" : " (save as draft)"}
       </span>
     </label>
@@ -859,10 +862,11 @@ function SubmitBar({
         <p
           style={{
             fontSize: 13,
-            padding: "8px 12px",
-            borderRadius: 8,
-            background: status.kind === "ok" ? "#3A8A7D12" : "#D1434312",
-            color: status.kind === "ok" ? "#3A8A7D" : "#D14343",
+            padding: "8px 16px",
+            borderRadius: 4,
+            background: status.kind === "ok" ? "#c7fde9" : "#fff2f1",
+            border: `1px solid ${status.kind === "ok" ? "#43f8b6" : "#ffdfdc"}`,
+            color: status.kind === "ok" ? "#034b45" : "#a83f34",
           }}
         >
           {status.msg}
@@ -873,15 +877,16 @@ function SubmitBar({
         disabled={submitting}
         style={{
           padding: "12px 16px",
-          background: "#C45D3E",
-          color: "#fff",
-          borderRadius: 10,
-          border: "none",
+          background: "#2a2859",
+          color: "#ffffff",
+          borderRadius: 8,
+          border: "1px solid #2a2859",
           fontSize: 15,
           fontWeight: 600,
           cursor: submitting ? "wait" : "pointer",
           opacity: submitting ? 0.7 : 1,
           alignSelf: "flex-start",
+          fontFamily: FONT_STACK,
         }}
       >
         {submitting ? "Saving…" : label}
@@ -906,7 +911,7 @@ function ItemList({
   const sorted = useMemo(() => rows, [rows]);
 
   if (loading && rows.length === 0) {
-    return <p style={{ fontSize: 14, color: "#A09A8E" }}>Loading…</p>;
+    return <p style={{ fontSize: 14, color: "#9a9a9a" }}>Loading…</p>;
   }
 
   if (rows.length === 0) {
@@ -914,16 +919,17 @@ function ItemList({
       <p
         style={{
           fontSize: 14,
-          color: "#7A756B",
-          padding: 18,
-          background: "#fff",
-          border: "1px dashed #E8E4DB",
-          borderRadius: 10,
+          color: "#666666",
+          padding: 24,
+          background: "#ffffff",
+          border: "1px dashed #e6e6e6",
+          borderRadius: 8,
+          lineHeight: 1.6,
         }}
       >
         Nothing here yet. Use the form to create the first entry.
         <br />
-        <span style={{ fontSize: 12, color: "#A09A8E" }}>
+        <span style={{ fontSize: 12, color: "#9a9a9a" }}>
           If you expected existing rows, check that the Supabase table has row-level-security policies allowing SELECT for authenticated users.
         </span>
       </p>
@@ -931,7 +937,7 @@ function ItemList({
   }
 
   return (
-    <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: 10 }}>
+    <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "grid", gap: 8 }}>
       {sorted.map((r) => (
         <li
           key={r.id}
@@ -939,26 +945,25 @@ function ItemList({
             display: "flex",
             alignItems: "flex-start",
             justifyContent: "space-between",
-            gap: 12,
+            gap: 16,
             padding: 16,
-            background: "#fff",
-            border: "1px solid #E8E4DB",
-            borderRadius: 10,
+            background: "#ffffff",
+            border: "1px solid #e6e6e6",
+            borderRadius: 8,
           }}
         >
           <div style={{ minWidth: 0, flex: 1 }}>
             <p
               style={{
-                fontFamily: "var(--font-source-serif)",
                 fontSize: 16,
                 fontWeight: 600,
-                color: "#2C2A25",
+                color: "#2a2859",
                 marginBottom: 4,
               }}
             >
               {r.title}
             </p>
-            <p style={{ fontSize: 12, color: "#7A756B", marginBottom: 6 }}>{r.subtitle}</p>
+            <p style={{ fontSize: 12, color: "#666666", marginBottom: 8 }}>{r.subtitle}</p>
             {r.tags.length > 0 && (
               <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
                 {r.tags.slice(0, 4).map((t) => (
@@ -967,9 +972,9 @@ function ItemList({
                     style={{
                       fontSize: 10,
                       padding: "2px 8px",
-                      borderRadius: 99,
-                      background: "#EDE9E0",
-                      color: "#7A756B",
+                      borderRadius: 4,
+                      background: "#f2f2f2",
+                      color: "#666666",
                     }}
                   >
                     {t}
@@ -978,19 +983,20 @@ function ItemList({
               </div>
             )}
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-end" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8, alignItems: "flex-end" }}>
             <button
               type="button"
               onClick={() => onTogglePublish(r.id, !r.published)}
               style={{
                 fontSize: 11,
                 padding: "4px 10px",
-                borderRadius: 99,
-                border: `1px solid ${r.published ? "#3A8A7D" : "#E8E4DB"}`,
-                background: r.published ? "#3A8A7D" : "#fff",
-                color: r.published ? "#fff" : "#7A756B",
+                borderRadius: 4,
+                border: `1px solid ${r.published ? "#034b45" : "#e6e6e6"}`,
+                background: r.published ? "#034b45" : "#ffffff",
+                color: r.published ? "#ffffff" : "#666666",
                 cursor: "pointer",
                 fontWeight: 600,
+                fontFamily: FONT_STACK,
               }}
             >
               {r.published ? "Published" : "Draft"}
@@ -1000,11 +1006,12 @@ function ItemList({
               onClick={() => onDelete(r.id)}
               style={{
                 fontSize: 11,
-                color: "#D14343",
+                color: "#a83f34",
                 background: "transparent",
                 border: "none",
                 cursor: "pointer",
                 padding: 0,
+                fontFamily: FONT_STACK,
               }}
             >
               Delete
@@ -1017,12 +1024,12 @@ function ItemList({
 }
 
 const inputStyle: React.CSSProperties = {
-  padding: "10px 12px",
-  border: "1px solid #E8E4DB",
+  padding: "10px 16px",
+  border: "1px solid #e6e6e6",
   borderRadius: 8,
   fontSize: 14,
-  fontFamily: "var(--font-dm-sans)",
-  background: "#F7F5F0",
-  color: "#2C2A25",
+  fontFamily: FONT_STACK,
+  background: "#ffffff",
+  color: "#2c2c2c",
   width: "100%",
 };

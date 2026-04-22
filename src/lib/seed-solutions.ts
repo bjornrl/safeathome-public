@@ -7,12 +7,14 @@ export type SolutionStage =
   | "testing"
   | "implementing";
 
+// Stage colors use Oslo kommune tones. Pipeline reads left-to-right:
+// dark blue → warm blue → teal accent → yellow (attention) → green (shipped).
 export const STAGES: { key: SolutionStage; label: string; color: string }[] = [
-  { key: "mapping",      label: "Mapping",      color: "#8B6914" },
-  { key: "ideation",     label: "Ideation",     color: "#5B6AAF" },
-  { key: "prototyping",  label: "Prototyping",  color: "#9B59B6" },
-  { key: "testing",      label: "Testing",      color: "#C45D3E" },
-  { key: "implementing", label: "Implementing", color: "#3A8A7D" },
+  { key: "mapping",      label: "Mapping",      color: "#2a2859" },
+  { key: "ideation",     label: "Ideation",     color: "#1f42aa" },
+  { key: "prototyping",  label: "Prototyping",  color: "#4a8a83" },
+  { key: "testing",      label: "Testing",      color: "#f9c66b" },
+  { key: "implementing", label: "Implementing", color: "#034b45" },
 ];
 
 export interface SeedSolution extends Pick<PublicDesignResponse, "id" | "title" | "frictions" | "stage" | "outcome"> {

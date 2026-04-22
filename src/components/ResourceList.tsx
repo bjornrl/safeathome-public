@@ -1,13 +1,16 @@
 import type { PublicResource, ResourceType } from "@/lib/types";
 import { RESOURCE_TYPE_LABELS } from "@/lib/seed-resources";
 
+const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
+
+// Oslo tones used to distinguish resource types at a glance.
 const TYPE_ACCENT: Record<ResourceType, string> = {
-  publication:    "#5B6AAF",
-  policy_brief:   "#C45D3E",
-  teaching_guide: "#3A8A7D",
-  toolkit:        "#8B6914",
-  practice_guide: "#9B59B6",
-  experience:     "#D4A017",
+  publication:    "#2a2859",
+  policy_brief:   "#1f42aa",
+  teaching_guide: "#034b45",
+  toolkit:        "#4a8a83",
+  practice_guide: "#ce8d1a",
+  experience:     "#856b44",
 };
 
 export default function ResourceList({
@@ -23,10 +26,10 @@ export default function ResourceList({
     return (
       <p
         style={{
-          fontFamily: "var(--font-source-serif)",
-          fontStyle: "italic",
+          fontFamily: FONT_STACK,
           fontSize: 17,
-          color: "#7A756B",
+          color: "#808080",
+          lineHeight: 1.6,
         }}
       >
         {emptyMessage}
@@ -37,7 +40,7 @@ export default function ResourceList({
   if (groupByType) {
     const types = Array.from(new Set(resources.map((r) => r.type))) as ResourceType[];
     return (
-      <div style={{ display: "grid", gap: 48 }}>
+      <div style={{ display: "grid", gap: 48, fontFamily: FONT_STACK }}>
         {types.map((t) => {
           const bucket = resources.filter((r) => r.type === t);
           return (
@@ -47,8 +50,8 @@ export default function ResourceList({
                   display: "flex",
                   alignItems: "center",
                   gap: 10,
-                  marginBottom: 18,
-                  paddingBottom: 10,
+                  marginBottom: 24,
+                  paddingBottom: 8,
                   borderBottom: `2px solid ${TYPE_ACCENT[t]}`,
                 }}
               >
@@ -63,16 +66,15 @@ export default function ResourceList({
                 />
                 <h2
                   style={{
-                    fontFamily: "var(--font-source-serif)",
                     fontSize: 24,
                     fontWeight: 700,
-                    color: "#2C2A25",
+                    color: "#2a2859",
                     letterSpacing: "-0.01em",
                   }}
                 >
                   {RESOURCE_TYPE_LABELS[t]}s
                 </h2>
-                <span style={{ fontSize: 13, color: "#A09A8E" }}>
+                <span style={{ fontSize: 13, color: "#9a9a9a" }}>
                   {bucket.length} {bucket.length === 1 ? "entry" : "entries"}
                 </span>
               </header>
@@ -100,6 +102,7 @@ export default function ResourceList({
         display: "grid",
         gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
         gap: 16,
+        fontFamily: FONT_STACK,
       }}
     >
       {resources.map((r) => (
@@ -130,7 +133,7 @@ function ResourceCard({ resource }: { resource: PublicResource }) {
           alignItems: "center",
           justifyContent: "space-between",
           gap: 10,
-          marginBottom: 10,
+          marginBottom: 16,
         }}
       >
         <span
@@ -140,7 +143,7 @@ function ResourceCard({ resource }: { resource: PublicResource }) {
             textTransform: "uppercase",
             letterSpacing: "0.12em",
             padding: "2px 10px",
-            borderRadius: 99,
+            borderRadius: 4,
             background: accent + "15",
             color: accent,
           }}
@@ -148,18 +151,18 @@ function ResourceCard({ resource }: { resource: PublicResource }) {
           {RESOURCE_TYPE_LABELS[resource.type]}
         </span>
         {resource.year && (
-          <span style={{ fontSize: 12, color: "#A09A8E" }}>{resource.year}</span>
+          <span style={{ fontSize: 12, color: "#9a9a9a" }}>{resource.year}</span>
         )}
       </div>
 
       <h3
         style={{
-          fontFamily: "var(--font-source-serif)",
           fontSize: 19,
           fontWeight: 700,
           lineHeight: 1.25,
-          marginBottom: 10,
-          color: "#2C2A25",
+          marginBottom: 16,
+          color: "#2a2859",
+          letterSpacing: "-0.01em",
         }}
       >
         {resource.title}
@@ -167,18 +170,17 @@ function ResourceCard({ resource }: { resource: PublicResource }) {
 
       <p
         style={{
-          fontFamily: "var(--font-source-serif)",
           fontSize: 15,
-          lineHeight: 1.55,
-          color: "#2C2A25",
-          marginBottom: 14,
+          lineHeight: 1.6,
+          color: "#2c2c2c",
+          marginBottom: 16,
         }}
       >
         {resource.description}
       </p>
 
       <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
-        <span style={{ fontSize: 12, color: "#7A756B" }}>
+        <span style={{ fontSize: 12, color: "#666666" }}>
           {resource.authors}
           {resource.authors && resource.field_site && " · "}
           {resource.field_site}
@@ -200,11 +202,11 @@ function ResourceCard({ resource }: { resource: PublicResource }) {
           position: "relative",
           display: "block",
           padding: 24,
-          background: "#fff",
-          border: "1px solid #E8E4DB",
-          borderRadius: 14,
+          background: "#ffffff",
+          border: "1px solid #e6e6e6",
+          borderRadius: 8,
           textDecoration: "none",
-          color: "#2C2A25",
+          color: "#2c2c2c",
           overflow: "hidden",
         }}
       >
@@ -219,10 +221,10 @@ function ResourceCard({ resource }: { resource: PublicResource }) {
         position: "relative",
         display: "block",
         padding: 24,
-        background: "#fff",
-        border: "1px solid #E8E4DB",
-        borderRadius: 14,
-        color: "#2C2A25",
+        background: "#ffffff",
+        border: "1px solid #e6e6e6",
+        borderRadius: 8,
+        color: "#2c2c2c",
         overflow: "hidden",
       }}
     >

@@ -8,6 +8,8 @@ import { MAP_CONFIG, MAP_STYLE, FRICTIONS, QUALITIES, SCALES, DISTRICTS } from "
 import { getMapStories, getConnections } from "@/lib/queries";
 import Nav from "@/components/Nav";
 
+const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
+
 // ─── Helpers ───
 
 function getScale(zoom: number): MapScale {
@@ -18,7 +20,7 @@ function getScale(zoom: number): MapScale {
 
 function primaryFrictionColor(story: PublicStory): string {
   const first = story.frictions?.[0];
-  return first ? FRICTIONS[first]?.color ?? "#C45D3E" : "#C45D3E";
+  return first ? FRICTIONS[first]?.color ?? "#2a2859" : "#2a2859";
 }
 
 // ─── Main Component ───
@@ -177,13 +179,13 @@ export default function ExplorePage() {
 
       const circle = document.createElement("div");
       circle.style.cssText = `width:26px;height:26px;border-radius:50%;background:${
-        dimmed ? "#ccc" : color
-      };border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.25);opacity:${
+        dimmed ? "#cccccc" : color
+      };border:3px solid #ffffff;box-shadow:0 2px 8px rgba(0,0,0,.25);opacity:${
         dimmed ? 0.4 : 1
       };transition:transform .15s;display:flex;align-items:center;justify-content:center;`;
 
       const dot = document.createElement("div");
-      dot.style.cssText = "width:7px;height:7px;border-radius:50%;background:#fff;";
+      dot.style.cssText = "width:7px;height:7px;border-radius:50%;background:#ffffff;";
       circle.appendChild(dot);
       el.appendChild(circle);
 
@@ -274,7 +276,7 @@ export default function ExplorePage() {
       <div ref={containerRef} style={{ position: "absolute", inset: 0 }} />
 
       {/* ─── District selector (top-right, below nav control) ─── */}
-      <div style={{ position: "absolute", top: 60, right: 16, zIndex: 20 }}>
+      <div style={{ position: "absolute", top: 64, right: 16, zIndex: 20 }}>
         <select
           onChange={(e) => {
             const d = DISTRICTS[e.target.value];
@@ -282,14 +284,14 @@ export default function ExplorePage() {
           }}
           defaultValue=""
           style={{
-            padding: "6px 10px",
+            padding: "8px 16px",
             borderRadius: 8,
-            border: "1px solid #E8E4DB",
-            background: "#fff",
+            border: "1px solid #e6e6e6",
+            background: "#ffffff",
             fontSize: 13,
-            color: "#2C2A25",
+            color: "#2c2c2c",
             cursor: "pointer",
-            fontFamily: "var(--font-dm-sans)",
+            fontFamily: FONT_STACK,
           }}
         >
           <option value="" disabled>
@@ -322,11 +324,11 @@ export default function ExplorePage() {
           bottom: 32,
           left: 16,
           zIndex: 20,
-          background: "rgba(255,255,255,.92)",
-          padding: "8px 14px",
+          background: "#ffffff",
+          padding: "8px 16px",
           borderRadius: 8,
-          boxShadow: "0 2px 6px rgba(0,0,0,.1)",
-          fontFamily: "var(--font-dm-sans)",
+          border: "1px solid #e6e6e6",
+          fontFamily: FONT_STACK,
         }}
       >
         {(["macro", "meso", "micro"] as MapScale[]).map((s) => (
@@ -336,7 +338,7 @@ export default function ExplorePage() {
               display: "flex",
               alignItems: "center",
               gap: 8,
-              marginBottom: s !== "micro" ? 4 : 0,
+              marginBottom: s !== "micro" ? 8 : 0,
             }}
           >
             <div
@@ -344,14 +346,14 @@ export default function ExplorePage() {
                 width: 8,
                 height: 8,
                 borderRadius: "50%",
-                background: currentScale === s ? "#C45D3E" : "#E8E4DB",
+                background: currentScale === s ? "#2a2859" : "#e6e6e6",
               }}
             />
             <span
               style={{
                 fontSize: 12,
                 fontWeight: currentScale === s ? 600 : 400,
-                color: currentScale === s ? "#2C2A25" : "#A09A8E",
+                color: currentScale === s ? "#2a2859" : "#9a9a9a",
               }}
             >
               {SCALES[s].label}
@@ -398,11 +400,11 @@ function FilterPanel({
     <div
       style={{
         position: "absolute",
-        top: 60,
+        top: 64,
         left: 16,
         zIndex: 20,
         maxWidth: 320,
-        fontFamily: "var(--font-dm-sans)",
+        fontFamily: FONT_STACK,
       }}
     >
       <button
@@ -412,15 +414,14 @@ function FilterPanel({
           display: "flex",
           alignItems: "center",
           gap: 8,
-          padding: "8px 14px",
-          background: "rgba(255,255,255,.95)",
+          padding: "8px 16px",
+          background: "#ffffff",
           borderRadius: 8,
-          border: "1px solid #E8E4DB",
+          border: "1px solid #e6e6e6",
           fontSize: 13,
           fontWeight: 500,
-          color: "#2C2A25",
+          color: "#2c2c2c",
           cursor: "pointer",
-          boxShadow: "0 2px 6px rgba(0,0,0,.1)",
         }}
       >
         Filters
@@ -430,12 +431,13 @@ function FilterPanel({
               width: 20,
               height: 20,
               borderRadius: "50%",
-              background: "#C45D3E",
-              color: "#fff",
+              background: "#2a2859",
+              color: "#ffffff",
               fontSize: 11,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
+              fontWeight: 600,
             }}
           >
             {count}
@@ -448,10 +450,9 @@ function FilterPanel({
           style={{
             marginTop: 8,
             padding: 16,
-            background: "rgba(255,255,255,.97)",
-            borderRadius: 10,
-            border: "1px solid #E8E4DB",
-            boxShadow: "0 4px 16px rgba(0,0,0,.12)",
+            background: "#ffffff",
+            borderRadius: 8,
+            border: "1px solid #e6e6e6",
             maxHeight: "70vh",
             overflowY: "auto",
           }}
@@ -460,15 +461,15 @@ function FilterPanel({
             style={{
               fontSize: 11,
               fontWeight: 600,
-              color: "#7A756B",
+              color: "#808080",
               textTransform: "uppercase",
-              letterSpacing: 1,
+              letterSpacing: "0.12em",
               marginBottom: 8,
             }}
           >
             Care Frictions
           </p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 16 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
             {(Object.entries(FRICTIONS) as [CareFriction, (typeof FRICTIONS)[CareFriction]][]).map(
               ([k, v]) => {
                 const on = selectedFrictions.includes(k);
@@ -480,15 +481,15 @@ function FilterPanel({
                     style={{
                       display: "flex",
                       alignItems: "center",
-                      gap: 5,
+                      gap: 6,
                       padding: "4px 10px",
-                      borderRadius: 99,
+                      borderRadius: 4,
                       fontSize: 12,
                       fontWeight: 500,
                       cursor: "pointer",
                       border: `1px solid ${on ? v.color : v.color + "40"}`,
                       background: on ? v.color : v.color + "15",
-                      color: on ? "#fff" : v.color,
+                      color: on ? "#ffffff" : v.color,
                     }}
                   >
                     <span
@@ -496,7 +497,7 @@ function FilterPanel({
                         width: 7,
                         height: 7,
                         borderRadius: "50%",
-                        background: on ? "#fff" : v.color,
+                        background: on ? "#ffffff" : v.color,
                       }}
                     />
                     {v.label}
@@ -506,7 +507,7 @@ function FilterPanel({
             )}
           </div>
           {selectedFrictions.length === 1 && (
-            <p style={{ fontSize: 12, color: "#7A756B", marginBottom: 12 }}>
+            <p style={{ fontSize: 12, color: "#808080", marginBottom: 16, lineHeight: 1.5 }}>
               {FRICTIONS[selectedFrictions[0]].description}
             </p>
           )}
@@ -515,15 +516,15 @@ function FilterPanel({
             style={{
               fontSize: 11,
               fontWeight: 600,
-              color: "#7A756B",
+              color: "#808080",
               textTransform: "uppercase",
-              letterSpacing: 1,
+              letterSpacing: "0.12em",
               marginBottom: 8,
             }}
           >
             Care Qualities
           </p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
             {(Object.entries(QUALITIES) as [CareQuality, (typeof QUALITIES)[CareQuality]][]).map(
               ([k, v]) => {
                 const on = selectedQualities.includes(k);
@@ -534,13 +535,13 @@ function FilterPanel({
                     onClick={() => onToggleQuality(k)}
                     style={{
                       padding: "4px 10px",
-                      borderRadius: 99,
+                      borderRadius: 4,
                       fontSize: 12,
                       fontWeight: 500,
                       cursor: "pointer",
                       border: `1px solid ${on ? v.color : v.color + "40"}`,
                       background: on ? v.color : v.color + "15",
-                      color: on ? "#fff" : v.color,
+                      color: on ? "#ffffff" : v.color,
                     }}
                   >
                     {v.label}
@@ -556,8 +557,8 @@ function FilterPanel({
               onClick={onClear}
               style={{
                 fontSize: 12,
-                color: "#C45D3E",
-                fontWeight: 500,
+                color: "#1f42aa",
+                fontWeight: 600,
                 cursor: "pointer",
                 background: "none",
                 border: "none",
@@ -600,7 +601,7 @@ function StoryPanel({
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
-        style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.2)", zIndex: 30 }}
+        style={{ position: "fixed", inset: 0, background: "rgba(42,40,89,.2)", zIndex: 30 }}
       />
       <motion.div
         initial={{ x: "100%" }}
@@ -612,14 +613,14 @@ function StoryPanel({
           right: 0,
           top: 0,
           height: "100%",
-          width: 420,
+          width: 440,
           maxWidth: "90vw",
-          background: "#fff",
+          background: "#ffffff",
           zIndex: 40,
           display: "flex",
           flexDirection: "column",
-          boxShadow: "-4px 0 24px rgba(0,0,0,.1)",
-          fontFamily: "var(--font-dm-sans)",
+          borderLeft: "1px solid #e6e6e6",
+          fontFamily: FONT_STACK,
         }}
       >
         <div
@@ -627,18 +628,20 @@ function StoryPanel({
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            padding: "16px 20px",
-            borderBottom: "1px solid #E8E4DB",
+            padding: "16px 24px",
+            borderBottom: "1px solid #e6e6e6",
           }}
         >
           <span
             style={{
               fontSize: 12,
-              fontWeight: 500,
-              padding: "3px 10px",
-              borderRadius: 99,
-              background: "#EDE9E0",
-              color: "#7A756B",
+              fontWeight: 600,
+              padding: "4px 12px",
+              borderRadius: 4,
+              background: "#f2f2f2",
+              color: "#666666",
+              textTransform: "uppercase",
+              letterSpacing: "0.08em",
             }}
           >
             {SCALES[story.map_scale]?.label ?? story.map_scale}
@@ -651,7 +654,7 @@ function StoryPanel({
               border: "none",
               fontSize: 24,
               cursor: "pointer",
-              color: "#7A756B",
+              color: "#808080",
               lineHeight: 1,
             }}
           >
@@ -662,26 +665,26 @@ function StoryPanel({
         <div style={{ flex: 1, overflowY: "auto", padding: 24 }}>
           <h2
             style={{
-              fontSize: 24,
+              fontSize: 26,
               fontWeight: 700,
-              marginBottom: 14,
-              fontFamily: "var(--font-source-serif)",
-              lineHeight: 1.25,
-              color: "#2C2A25",
+              marginBottom: 16,
+              lineHeight: 1.2,
+              letterSpacing: "-0.01em",
+              color: "#2a2859",
             }}
           >
             {story.title}
           </h2>
 
           {story.frictions?.length > 0 && (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 8 }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
               {story.frictions.map((f) => (
                 <span
                   key={f}
                   style={{
                     fontSize: 11,
-                    padding: "2px 8px",
-                    borderRadius: 99,
+                    padding: "3px 10px",
+                    borderRadius: 4,
                     background: FRICTIONS[f]?.color + "20",
                     color: FRICTIONS[f]?.color,
                     fontWeight: 500,
@@ -693,14 +696,14 @@ function StoryPanel({
             </div>
           )}
           {story.qualities?.length > 0 && (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 18 }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 24 }}>
               {story.qualities.map((q) => (
                 <span
                   key={q}
                   style={{
                     fontSize: 11,
-                    padding: "2px 8px",
-                    borderRadius: 99,
+                    padding: "3px 10px",
+                    borderRadius: 4,
                     background: QUALITIES[q]?.color + "20",
                     color: QUALITIES[q]?.color,
                     fontWeight: 500,
@@ -717,10 +720,9 @@ function StoryPanel({
               key={i}
               style={{
                 fontSize: 16,
-                lineHeight: 1.75,
+                lineHeight: 1.7,
                 marginBottom: 16,
-                fontFamily: "var(--font-source-serif)",
-                color: "#2C2A25",
+                color: "#2c2c2c",
               }}
             >
               {p}
@@ -728,22 +730,22 @@ function StoryPanel({
           ))}
 
           {story.author_credit && (
-            <p style={{ fontSize: 12, color: "#A09A8E", marginTop: 24 }}>
+            <p style={{ fontSize: 12, color: "#9a9a9a", marginTop: 24 }}>
               {story.author_credit}
               {story.field_site && <> &middot; {story.field_site}</>}
             </p>
           )}
 
           {linked.length > 0 && (
-            <div style={{ marginTop: 28, paddingTop: 20, borderTop: "1px solid #E8E4DB" }}>
+            <div style={{ marginTop: 32, paddingTop: 24, borderTop: "1px solid #e6e6e6" }}>
               <p
                 style={{
                   fontSize: 11,
                   fontWeight: 600,
-                  color: "#7A756B",
+                  color: "#808080",
                   textTransform: "uppercase",
-                  letterSpacing: 1,
-                  marginBottom: 10,
+                  letterSpacing: "0.12em",
+                  marginBottom: 16,
                 }}
               >
                 Connected stories
@@ -757,23 +759,24 @@ function StoryPanel({
                     display: "block",
                     width: "100%",
                     textAlign: "left",
-                    padding: 12,
+                    padding: 16,
                     marginBottom: 8,
                     borderRadius: 8,
-                    border: "1px solid #E8E4DB",
-                    background: "none",
+                    border: "1px solid #e6e6e6",
+                    background: "#ffffff",
                     cursor: "pointer",
+                    fontFamily: FONT_STACK,
                   }}
                 >
-                  <span style={{ fontSize: 11, color: FRICTIONS[conn.friction]?.color }}>
+                  <span style={{ fontSize: 11, color: FRICTIONS[conn.friction]?.color, fontWeight: 600 }}>
                     {FRICTIONS[conn.friction]?.label} ({conn.connection_type})
                   </span>
                   <br />
-                  <span style={{ fontSize: 14, fontWeight: 500, color: "#2C2A25" }}>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: "#2a2859" }}>
                     {other!.title}
                   </span>
                   {conn.description && (
-                    <p style={{ fontSize: 12, color: "#A09A8E", marginTop: 4 }}>
+                    <p style={{ fontSize: 12, color: "#9a9a9a", marginTop: 4 }}>
                       {conn.description}
                     </p>
                   )}

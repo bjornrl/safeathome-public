@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Nav from "@/components/Nav";
 
+const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
+
 export const metadata: Metadata = {
   title: "About — safe@home",
   description: "About the safe@home research project.",
@@ -15,18 +17,17 @@ export default function AboutPage() {
           maxWidth: 760,
           margin: "0 auto",
           padding: "80px 24px 96px",
-          fontFamily: "var(--font-source-serif)",
+          fontFamily: FONT_STACK,
         }}
       >
         <p
           style={{
-            fontFamily: "var(--font-dm-sans)",
             fontSize: 12,
             fontWeight: 600,
             textTransform: "uppercase",
             letterSpacing: "0.14em",
-            color: "#A09A8E",
-            marginBottom: 12,
+            color: "#808080",
+            marginBottom: 16,
           }}
         >
           About
@@ -36,7 +37,7 @@ export default function AboutPage() {
             fontSize: 44,
             fontWeight: 700,
             lineHeight: 1.1,
-            color: "#2C2A25",
+            color: "#2a2859",
             marginBottom: 24,
             letterSpacing: "-0.02em",
           }}
@@ -47,8 +48,8 @@ export default function AboutPage() {
           style={{
             fontSize: 19,
             lineHeight: 1.7,
-            color: "#2C2A25",
-            marginBottom: 20,
+            color: "#2c2c2c",
+            marginBottom: 24,
           }}
         >
           SAFE@HOME is a collaborative research project (2026–2029) investigating
@@ -60,8 +61,8 @@ export default function AboutPage() {
           style={{
             fontSize: 19,
             lineHeight: 1.7,
-            color: "#7A756B",
-            marginBottom: 20,
+            color: "#666666",
+            marginBottom: 24,
           }}
         >
           This site is a living research platform — stories, connections, and

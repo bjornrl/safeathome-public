@@ -8,6 +8,8 @@ import { STAGES, type SolutionStage } from "@/lib/seed-solutions";
 import { getDesignResponses, getAllStories, type SolutionItem } from "@/lib/queries";
 import type { PublicStory } from "@/lib/types";
 
+const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
+
 export default function SolutionsPage() {
   const [solutions, setSolutions] = useState<SolutionItem[]>([]);
   const [stories, setStories] = useState<PublicStory[]>([]);
@@ -37,7 +39,7 @@ export default function SolutionsPage() {
           maxWidth: 1120,
           margin: "0 auto",
           padding: "72px 24px 96px",
-          fontFamily: "var(--font-dm-sans)",
+          fontFamily: FONT_STACK,
         }}
       >
         <p
@@ -46,31 +48,29 @@ export default function SolutionsPage() {
             fontWeight: 600,
             textTransform: "uppercase",
             letterSpacing: "0.18em",
-            color: "#A09A8E",
-            marginBottom: 12,
+            color: "#808080",
+            marginBottom: 16,
           }}
         >
           Design responses
         </p>
         <h1
           style={{
-            fontFamily: "var(--font-source-serif)",
             fontSize: "clamp(38px, 6vw, 60px)",
             fontWeight: 700,
             lineHeight: 1.05,
             letterSpacing: "-0.02em",
-            color: "#2C2A25",
-            marginBottom: 18,
+            color: "#2a2859",
+            marginBottom: 24,
           }}
         >
           From observation to intervention.
         </h1>
         <p
           style={{
-            fontFamily: "var(--font-source-serif)",
             fontSize: 19,
             lineHeight: 1.7,
-            color: "#7A756B",
+            color: "#666666",
             maxWidth: 680,
             marginBottom: 48,
           }}
@@ -83,10 +83,10 @@ export default function SolutionsPage() {
         {/* Pipeline */}
         <section
           style={{
-            background: "#fff",
-            border: "1px solid #E8E4DB",
-            borderRadius: 14,
-            padding: 20,
+            background: "#ffffff",
+            border: "1px solid #e6e6e6",
+            borderRadius: 8,
+            padding: 24,
             marginBottom: 48,
           }}
         >
@@ -96,7 +96,7 @@ export default function SolutionsPage() {
               fontWeight: 600,
               textTransform: "uppercase",
               letterSpacing: "0.14em",
-              color: "#A09A8E",
+              color: "#808080",
               marginBottom: 16,
             }}
           >
@@ -125,13 +125,13 @@ export default function SolutionsPage() {
                     flexDirection: "column",
                     alignItems: "flex-start",
                     gap: 8,
-                    padding: 14,
-                    background: active ? stage.color + "12" : "#F7F5F0",
-                    border: `1px solid ${active ? stage.color : "#E8E4DB"}`,
-                    borderRadius: 10,
+                    padding: 16,
+                    background: active ? stage.color + "12" : "#f9f9f9",
+                    border: `1px solid ${active ? stage.color : "#e6e6e6"}`,
+                    borderRadius: 8,
                     cursor: "pointer",
                     textAlign: "left",
-                    fontFamily: "var(--font-dm-sans)",
+                    fontFamily: FONT_STACK,
                     position: "relative",
                   }}
                 >
@@ -142,7 +142,8 @@ export default function SolutionsPage() {
                       gap: 8,
                       fontSize: 11,
                       fontWeight: 600,
-                      color: "#7A756B",
+                      color: "#808080",
+                      letterSpacing: "0.08em",
                     }}
                   >
                     <span
@@ -158,15 +159,14 @@ export default function SolutionsPage() {
                   </span>
                   <span
                     style={{
-                      fontFamily: "var(--font-source-serif)",
                       fontSize: 18,
                       fontWeight: 600,
-                      color: "#2C2A25",
+                      color: "#2a2859",
                     }}
                   >
                     {stage.label}
                   </span>
-                  <span style={{ fontSize: 13, color: "#7A756B" }}>
+                  <span style={{ fontSize: 13, color: "#666666" }}>
                     {count} {count === 1 ? "response" : "responses"}
                   </span>
                 </button>
@@ -178,14 +178,15 @@ export default function SolutionsPage() {
               type="button"
               onClick={() => setActiveStage(null)}
               style={{
-                marginTop: 14,
+                marginTop: 16,
                 fontSize: 12,
-                color: "#C45D3E",
+                color: "#1f42aa",
                 fontWeight: 600,
                 background: "none",
                 border: "none",
                 cursor: "pointer",
                 padding: 0,
+                fontFamily: FONT_STACK,
               }}
             >
               Clear stage filter
@@ -197,11 +198,11 @@ export default function SolutionsPage() {
         <section>
           <h2
             style={{
-              fontFamily: "var(--font-source-serif)",
               fontSize: 26,
               fontWeight: 700,
-              color: "#2C2A25",
-              marginBottom: 20,
+              color: "#2a2859",
+              marginBottom: 24,
+              letterSpacing: "-0.01em",
             }}
           >
             {activeStage
@@ -212,9 +213,7 @@ export default function SolutionsPage() {
           {filtered.length === 0 ? (
             <p
               style={{
-                fontFamily: "var(--font-source-serif)",
-                fontStyle: "italic",
-                color: "#7A756B",
+                color: "#808080",
               }}
             >
               No responses in this stage yet.
@@ -224,7 +223,7 @@ export default function SolutionsPage() {
               style={{
                 display: "grid",
                 gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
-                gap: 18,
+                gap: 16,
               }}
             >
               {filtered.map((sol) => (
@@ -255,13 +254,13 @@ function SolutionCard({
   return (
     <article
       style={{
-        background: "#fff",
-        border: "1px solid #E8E4DB",
-        borderRadius: 14,
+        background: "#ffffff",
+        border: "1px solid #e6e6e6",
+        borderRadius: 8,
         padding: 24,
         display: "flex",
         flexDirection: "column",
-        gap: 14,
+        gap: 16,
       }}
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
@@ -271,10 +270,10 @@ function SolutionCard({
             fontWeight: 600,
             textTransform: "uppercase",
             letterSpacing: "0.12em",
-            color: stage?.color ?? "#7A756B",
+            color: stage?.color ?? "#808080",
             padding: "3px 10px",
-            borderRadius: 99,
-            background: (stage?.color ?? "#7A756B") + "15",
+            borderRadius: 4,
+            background: (stage?.color ?? "#808080") + "15",
           }}
         >
           {stage?.label ?? solution.stage}
@@ -283,11 +282,11 @@ function SolutionCard({
 
       <h3
         style={{
-          fontFamily: "var(--font-source-serif)",
           fontSize: 22,
           fontWeight: 700,
           lineHeight: 1.25,
-          color: "#2C2A25",
+          color: "#2a2859",
+          letterSpacing: "-0.01em",
         }}
       >
         {solution.title}
@@ -295,10 +294,9 @@ function SolutionCard({
 
       <p
         style={{
-          fontFamily: "var(--font-source-serif)",
           fontSize: 15,
           lineHeight: 1.6,
-          color: "#2C2A25",
+          color: "#2c2c2c",
         }}
       >
         {solution.description}
@@ -312,8 +310,8 @@ function SolutionCard({
               fontWeight: 600,
               textTransform: "uppercase",
               letterSpacing: "0.12em",
-              color: "#A09A8E",
-              marginBottom: 6,
+              color: "#808080",
+              marginBottom: 8,
             }}
           >
             Addresses
@@ -325,7 +323,7 @@ function SolutionCard({
                 style={{
                   fontSize: 11,
                   padding: "2px 8px",
-                  borderRadius: 99,
+                  borderRadius: 4,
                   background: FRICTIONS[f]?.color + "18",
                   color: FRICTIONS[f]?.color,
                   fontWeight: 500,
@@ -341,12 +339,11 @@ function SolutionCard({
       {solution.outcome && (
         <p
           style={{
-            fontFamily: "var(--font-source-serif)",
-            fontStyle: "italic",
             fontSize: 14,
-            color: "#7A756B",
-            paddingLeft: 12,
-            borderLeft: "2px solid #E8E4DB",
+            color: "#666666",
+            lineHeight: 1.6,
+            paddingLeft: 16,
+            borderLeft: "2px solid #e6e6e6",
           }}
         >
           {solution.outcome}
@@ -354,15 +351,15 @@ function SolutionCard({
       )}
 
       {sourceStories.length > 0 && (
-        <div style={{ marginTop: "auto", paddingTop: 12, borderTop: "1px solid #E8E4DB" }}>
+        <div style={{ marginTop: "auto", paddingTop: 16, borderTop: "1px solid #e6e6e6" }}>
           <p
             style={{
               fontSize: 11,
               fontWeight: 600,
               textTransform: "uppercase",
               letterSpacing: "0.12em",
-              color: "#A09A8E",
-              marginBottom: 6,
+              color: "#808080",
+              marginBottom: 8,
             }}
           >
             Based on
@@ -374,9 +371,10 @@ function SolutionCard({
               style={{
                 display: "block",
                 fontSize: 14,
-                color: "#C45D3E",
+                color: "#1f42aa",
                 textDecoration: "none",
                 padding: "4px 0",
+                fontWeight: 500,
               }}
             >
               {s.title} →

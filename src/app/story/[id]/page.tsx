@@ -12,6 +12,8 @@ import {
 import { STAGES } from "@/lib/seed-solutions";
 import type { PublicStory } from "@/lib/types";
 
+const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
+
 interface PageProps {
   params: Promise<{ id: string }>;
 }
@@ -68,7 +70,7 @@ export default async function StoryPage({ params }: PageProps) {
           maxWidth: 760,
           margin: "0 auto",
           padding: "56px 24px 96px",
-          fontFamily: "var(--font-dm-sans)",
+          fontFamily: FONT_STACK,
         }}
       >
         <Link
@@ -78,9 +80,10 @@ export default async function StoryPage({ params }: PageProps) {
             alignItems: "center",
             gap: 6,
             fontSize: 13,
-            color: "#7A756B",
+            color: "#1f42aa",
             textDecoration: "none",
             marginBottom: 32,
+            fontWeight: 500,
           }}
         >
           ← Back to the map
@@ -92,8 +95,8 @@ export default async function StoryPage({ params }: PageProps) {
             fontWeight: 600,
             textTransform: "uppercase",
             letterSpacing: "0.14em",
-            color: "#A09A8E",
-            marginBottom: 12,
+            color: "#808080",
+            marginBottom: 16,
           }}
         >
           {SCALES[story.map_scale]?.label ?? story.map_scale}
@@ -102,19 +105,18 @@ export default async function StoryPage({ params }: PageProps) {
 
         <h1
           style={{
-            fontFamily: "var(--font-source-serif)",
             fontSize: "clamp(32px, 5vw, 48px)",
             fontWeight: 700,
             lineHeight: 1.1,
             letterSpacing: "-0.02em",
-            color: "#2C2A25",
+            color: "#2a2859",
             marginBottom: 24,
           }}
         >
           {story.title}
         </h1>
 
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 36 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 40 }}>
           {story.frictions?.map((f) => (
             <Link
               key={f}
@@ -122,7 +124,7 @@ export default async function StoryPage({ params }: PageProps) {
               style={{
                 fontSize: 11,
                 padding: "3px 10px",
-                borderRadius: 99,
+                borderRadius: 4,
                 background: FRICTIONS[f]?.color + "18",
                 color: FRICTIONS[f]?.color,
                 fontWeight: 500,
@@ -139,7 +141,7 @@ export default async function StoryPage({ params }: PageProps) {
               style={{
                 fontSize: 11,
                 padding: "3px 10px",
-                borderRadius: 99,
+                borderRadius: 4,
                 background: QUALITIES[q]?.color + "18",
                 color: QUALITIES[q]?.color,
                 fontWeight: 500,
@@ -156,11 +158,10 @@ export default async function StoryPage({ params }: PageProps) {
             <p
               key={i}
               style={{
-                fontFamily: "var(--font-source-serif)",
                 fontSize: 19,
-                lineHeight: 1.75,
-                color: "#2C2A25",
-                marginBottom: 20,
+                lineHeight: 1.7,
+                color: "#2c2c2c",
+                marginBottom: 24,
               }}
             >
               {p}
@@ -169,26 +170,26 @@ export default async function StoryPage({ params }: PageProps) {
         </article>
 
         {story.author_credit && (
-          <p style={{ fontSize: 12, color: "#A09A8E", marginTop: 40 }}>
+          <p style={{ fontSize: 12, color: "#9a9a9a", marginTop: 40 }}>
             {story.author_credit}
           </p>
         )}
 
         {related.length > 0 && (
-          <section style={{ marginTop: 56, paddingTop: 32, borderTop: "1px solid #E8E4DB" }}>
+          <section style={{ marginTop: 56, paddingTop: 32, borderTop: "1px solid #e6e6e6" }}>
             <p
               style={{
                 fontSize: 11,
                 fontWeight: 600,
                 textTransform: "uppercase",
                 letterSpacing: "0.14em",
-                color: "#A09A8E",
-                marginBottom: 14,
+                color: "#808080",
+                marginBottom: 16,
               }}
             >
               Connected stories
             </p>
-            <div style={{ display: "grid", gap: 10 }}>
+            <div style={{ display: "grid", gap: 8 }}>
               {related.map((conn) => {
                 const otherId =
                   conn.from_story_id === story.id ? conn.to_story_id : conn.from_story_id;
@@ -200,30 +201,29 @@ export default async function StoryPage({ params }: PageProps) {
                     href={`/story/${other.id}`}
                     style={{
                       display: "block",
-                      padding: 14,
-                      background: "#fff",
-                      border: "1px solid #E8E4DB",
-                      borderRadius: 10,
+                      padding: 16,
+                      background: "#ffffff",
+                      border: "1px solid #e6e6e6",
+                      borderRadius: 8,
                       textDecoration: "none",
-                      color: "#2C2A25",
+                      color: "#2c2c2c",
                     }}
                   >
-                    <span style={{ fontSize: 11, color: FRICTIONS[conn.friction]?.color }}>
+                    <span style={{ fontSize: 11, color: FRICTIONS[conn.friction]?.color, fontWeight: 600 }}>
                       {FRICTIONS[conn.friction]?.label} ({conn.connection_type})
                     </span>
                     <br />
                     <span
                       style={{
-                        fontFamily: "var(--font-source-serif)",
                         fontSize: 16,
                         fontWeight: 600,
-                        color: "#2C2A25",
+                        color: "#2a2859",
                       }}
                     >
                       {other.title}
                     </span>
                     {conn.description && (
-                      <p style={{ fontSize: 13, color: "#7A756B", marginTop: 4 }}>
+                      <p style={{ fontSize: 13, color: "#666666", marginTop: 4, lineHeight: 1.55 }}>
                         {conn.description}
                       </p>
                     )}
@@ -238,9 +238,10 @@ export default async function StoryPage({ params }: PageProps) {
           <section
             style={{
               marginTop: 56,
-              padding: 28,
-              background: "#EDE9E0",
-              borderRadius: 14,
+              padding: 32,
+              background: "#f2f2f2",
+              borderRadius: 8,
+              border: "1px solid #e6e6e6",
             }}
           >
             <p
@@ -249,24 +250,24 @@ export default async function StoryPage({ params }: PageProps) {
                 fontWeight: 600,
                 textTransform: "uppercase",
                 letterSpacing: "0.14em",
-                color: "#A09A8E",
-                marginBottom: 10,
+                color: "#808080",
+                marginBottom: 8,
               }}
             >
               Design response
             </p>
             <h2
               style={{
-                fontFamily: "var(--font-source-serif)",
-                fontSize: 22,
+                fontSize: 24,
                 fontWeight: 700,
-                color: "#2C2A25",
-                marginBottom: 18,
+                color: "#2a2859",
+                marginBottom: 24,
+                letterSpacing: "-0.01em",
               }}
             >
               How the design team is responding
             </h2>
-            <div style={{ display: "grid", gap: 12 }}>
+            <div style={{ display: "grid", gap: 8 }}>
               {linkedResponses.map((r) => {
                 const stage = STAGES.find((s) => s.key === r.stage);
                 return (
@@ -276,11 +277,11 @@ export default async function StoryPage({ params }: PageProps) {
                     style={{
                       display: "block",
                       padding: 16,
-                      background: "#fff",
-                      border: "1px solid #E8E4DB",
-                      borderRadius: 10,
+                      background: "#ffffff",
+                      border: "1px solid #e6e6e6",
+                      borderRadius: 8,
                       textDecoration: "none",
-                      color: "#2C2A25",
+                      color: "#2c2c2c",
                     }}
                   >
                     <span
@@ -289,24 +290,23 @@ export default async function StoryPage({ params }: PageProps) {
                         fontWeight: 600,
                         textTransform: "uppercase",
                         letterSpacing: "0.12em",
-                        color: stage?.color ?? "#7A756B",
+                        color: stage?.color ?? "#808080",
                       }}
                     >
                       {stage?.label ?? r.stage}
                     </span>
                     <h3
                       style={{
-                        fontFamily: "var(--font-source-serif)",
                         fontSize: 18,
                         fontWeight: 600,
-                        color: "#2C2A25",
+                        color: "#2a2859",
                         marginTop: 4,
-                        marginBottom: 6,
+                        marginBottom: 8,
                       }}
                     >
                       {r.title}
                     </h3>
-                    <p style={{ fontSize: 14, lineHeight: 1.55, color: "#7A756B" }}>
+                    <p style={{ fontSize: 14, lineHeight: 1.55, color: "#666666" }}>
                       {r.description}
                     </p>
                   </Link>
