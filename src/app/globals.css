@@ -1,73 +1,150 @@
 @import "tailwindcss";
 @import "maplibre-gl/dist/maplibre-gl.css";
 
-/* Oslo Sans — custom municipal typeface.
-   TODO: Obtain Oslo Sans font files (.woff2) from Oslo kommune's
-   design team or municipal partners (Alna, Søndre Nordstrand, Skien)
-   and drop them into /public/fonts/. Until then the stack falls back
-   to Helvetica Neue / Arial, which renders cleanly. */
+/* ───────────────────────────────────────────────────────────────────
+   Oslo Sans — loaded from Punkt's public CDN.
+   Licensing note: Punkt documents the font as served through their
+   stylesheet and publishes no download license. This is tracked as
+   an open question in .claude/design-reference.md.
+   ─────────────────────────────────────────────────────────────────── */
+
 @font-face {
   font-family: "Oslo Sans";
-  src: url("/fonts/OsloSans-Regular.woff2") format("woff2");
+  src: url("https://punkt-cdn.oslo.kommune.no/latest/fonts/OsloSans-Light.woff2") format("woff2"),
+       url("https://punkt-cdn.oslo.kommune.no/latest/fonts/OsloSans-Light.woff") format("woff");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Oslo Sans";
+  src: url("https://punkt-cdn.oslo.kommune.no/latest/fonts/OsloSans-Regular.woff2") format("woff2"),
+       url("https://punkt-cdn.oslo.kommune.no/latest/fonts/OsloSans-Regular.woff") format("woff");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: "Oslo Sans";
-  src: url("/fonts/OsloSans-Medium.woff2") format("woff2");
+  src: url("https://punkt-cdn.oslo.kommune.no/latest/fonts/OsloSans-Italic.woff2") format("woff2"),
+       url("https://punkt-cdn.oslo.kommune.no/latest/fonts/OsloSans-Italic.woff") format("woff");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Oslo Sans";
+  src: url("https://punkt-cdn.oslo.kommune.no/latest/fonts/OsloSans-Medium.woff2") format("woff2"),
+       url("https://punkt-cdn.oslo.kommune.no/latest/fonts/OsloSans-Medium.woff") format("woff");
   font-weight: 500;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
   font-family: "Oslo Sans";
-  src: url("/fonts/OsloSans-Bold.woff2") format("woff2");
+  src: url("https://punkt-cdn.oslo.kommune.no/latest/fonts/OsloSans-Bold.woff2") format("woff2"),
+       url("https://punkt-cdn.oslo.kommune.no/latest/fonts/OsloSans-Bold.woff") format("woff");
   font-weight: 700;
   font-style: normal;
   font-display: swap;
 }
 
 :root {
-  /* Oslo kommune — primary brand */
-  --oslo-blue: #2a2859;
-  --oslo-blue-light: #6fe9ff;
-  --oslo-blue-100: #f1fdff;
-  --oslo-blue-200: #e5fcff;
-  --oslo-blue-300: #d1f9ff;
-  --oslo-blue-500: #b3f5ff;
-  --oslo-warm-blue: #1f42aa;
+  /* ── Brand ── */
+  --pkt-color-brand-dark-blue-1000: #2a2859;
+  --pkt-color-brand-dark-blue-700:  #6a698b;
+  --pkt-color-brand-warm-blue-1000: #1f42aa;
+  --pkt-color-brand-blue-1000:      #6fe9ff;
+  --pkt-color-brand-blue-500:       #b3f5ff;
+  --pkt-color-brand-blue-300:       #d1f9ff;
+  --pkt-color-brand-blue-200:       #e5fcff;
+  --pkt-color-brand-blue-100:       #f1fdff;
+  --pkt-color-brand-green-1000:     #43f8b6;
+  --pkt-color-brand-green-400:      #c7fde9;
+  --pkt-color-brand-dark-green-1000:#034b45;
+  --pkt-color-brand-light-green-1000:#c7f6c9;
+  --pkt-color-brand-light-green-400:#e5ffe6;
+  --pkt-color-brand-yellow-1000:    #f9c66b;
+  --pkt-color-brand-yellow-500:     #ffe7bc;
+  --pkt-color-brand-red-1000:       #ff8274;
+  --pkt-color-brand-red-600:        #ffb4ac;
+  --pkt-color-brand-red-400:        #ffdfdc;
+  --pkt-color-brand-red-100:        #fff2f1;
+  --pkt-color-brand-light-beige-1000:#f8f0dd;
+  --pkt-color-brand-dark-beige-1000:#d0bfae;
+  --pkt-color-brand-purple-1000:    #e0adff;
 
-  --oslo-green: #034b45;
-  --oslo-green-light: #43f8b6;
-  --oslo-green-400: #c7fde9;
+  /* ── Neutrals ── */
+  --pkt-color-brand-neutrals-white: #ffffff;
+  --pkt-color-brand-neutrals-100:   #f9f9f9;
+  --pkt-color-brand-neutrals-200:   #f2f2f2;
+  --pkt-color-brand-neutrals-1000:  #2c2c2c;
+  --pkt-color-brand-neutrals-black: #000000;
 
-  --oslo-yellow: #f9c66b;
-  --oslo-yellow-light: #ffe7bc;
+  /* ── Grays ── */
+  --pkt-color-grays-gray-100:  #e6e6e6;
+  --pkt-color-grays-gray-200:  #cccccc;
+  --pkt-color-grays-gray-300:  #b3b3b3;
+  --pkt-color-grays-gray-400:  #9a9a9a;
+  --pkt-color-grays-gray-500:  #808080;
+  --pkt-color-grays-gray-600:  #666666;
+  --pkt-color-grays-gray-700:  #4d4d4d;
+  --pkt-color-grays-gray-800:  #333333;
+  --pkt-color-grays-gray-900:  #1a1a1a;
+  --pkt-color-grays-gray-1000: #2c2c2c;
 
-  --oslo-red: #ff8274;
-  --oslo-red-light: #ffdfdc;
-  --oslo-red-100: #fff2f1;
+  /* ── Semantic aliases ── */
+  --pkt-color-background-default:   var(--pkt-color-brand-neutrals-white);
+  --pkt-color-background-subtle:    var(--pkt-color-brand-neutrals-100);
+  --pkt-color-background-card:      var(--pkt-color-brand-neutrals-white);
 
-  --oslo-beige-light: #f8f0dd;
-  --oslo-beige-dark: #d0bfae;
+  --pkt-color-text-body-default:    var(--pkt-color-brand-dark-blue-1000);
+  --pkt-color-text-body-light:      var(--pkt-color-brand-neutrals-white);
+  --pkt-color-text-placeholder:     var(--pkt-color-grays-gray-600);
 
-  --oslo-white: #ffffff;
-  --oslo-gray-100: #f9f9f9;
-  --oslo-gray-200: #f2f2f2;
-  --oslo-gray-300: #e6e6e6;
-  --oslo-gray-400: #cccccc;
-  --oslo-gray-500: #b3b3b3;
-  --oslo-gray-600: #9a9a9a;
-  --oslo-gray-700: #808080;
-  --oslo-gray-800: #666666;
-  --oslo-gray-900: #2c2c2c;
-  --oslo-black: #000000;
+  --pkt-color-text-action-normal:   var(--pkt-color-brand-dark-blue-1000);
+  --pkt-color-text-action-hover:    var(--pkt-color-brand-warm-blue-1000);
+  --pkt-color-text-action-active:   var(--pkt-color-brand-warm-blue-1000);
+  --pkt-color-text-action-disabled: var(--pkt-color-grays-gray-600);
 
-  --background: var(--oslo-gray-100);
-  --foreground: var(--oslo-gray-900);
+  --pkt-color-border-default:       var(--pkt-color-brand-dark-blue-1000);
+  --pkt-color-border-subtle:        var(--pkt-color-brand-neutrals-200);
+  --pkt-color-border-gray:          var(--pkt-color-grays-gray-200);
+  --pkt-color-border-states-focus:  var(--pkt-color-brand-purple-1000);
+  --pkt-color-border-states-hover:  var(--pkt-color-brand-warm-blue-1000);
+  --pkt-color-border-states-active: var(--pkt-color-brand-warm-blue-1000);
 
-  --font-sans: "Oslo Sans", "Helvetica Neue", Arial, sans-serif;
+  /* ── Spacing (8 pt base) ── */
+  --pkt-size-0:   0;
+  --pkt-size-2:   0.125rem;  /*  2 */
+  --pkt-size-4:   0.25rem;   /*  4 */
+  --pkt-size-8:   0.5rem;    /*  8 */
+  --pkt-size-12:  0.75rem;   /* 12 */
+  --pkt-size-16:  1rem;      /* 16 */
+  --pkt-size-24:  1.5rem;    /* 24 */
+  --pkt-size-32:  2rem;      /* 32 */
+  --pkt-size-40:  2.5rem;    /* 40 */
+  --pkt-size-64:  4rem;      /* 64 */
+  --pkt-size-104: 6.5rem;    /*104 */
+
+  /* ── Radius ── */
+  --pkt-radius-none: 0;
+  --pkt-radius-sm:   4px;
+  --pkt-radius-md:   8px;
+
+  /* ── Shadow ── */
+  --pkt-shadow-sm: 0 1px 2px rgba(42, 40, 89, 0.06), 0 2px 4px rgba(42, 40, 89, 0.04);
+
+  /* ── Motion ── */
+  --pkt-motion-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* ── Type ── */
+  --pkt-font-family: "Oslo Sans", arial, sans-serif;
+
+  /* Convenience aliases used by Tailwind @theme inline below. */
+  --background: var(--pkt-color-background-default);
+  --foreground: var(--pkt-color-text-body-default);
+  --font-sans: var(--pkt-font-family);
 }
 
 @theme inline {
@@ -76,16 +153,104 @@
   --font-sans: var(--font-sans);
 }
 
-html,
-body {
-  font-family: var(--font-sans);
-}
+/* ───────────────────────────────────────────────────────────────────
+   Baseline element styles
+   ─────────────────────────────────────────────────────────────────── */
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body { height: 100%; }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  margin: 0;
+  font-family: var(--pkt-font-family);
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 300;
+  letter-spacing: -0.2px;
+  color: var(--pkt-color-text-body-default);
+  background: var(--pkt-color-background-default);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
+
+h1, h2, h3, h4, h5, h6 {
+  margin: 0;
+  font-weight: 500;
+  color: var(--pkt-color-text-body-default);
+  letter-spacing: -0.2px;
+}
+
+h1 { font-size: 36px; line-height: 54px; font-weight: 400; }
+@media (min-width: 768px) { h1 { font-size: 54px; line-height: 82px; letter-spacing: -0.4px; } }
+
+h2 { font-size: 26px; line-height: 40px; font-weight: 400; }
+@media (min-width: 768px) { h2 { font-size: 36px; line-height: 54px; } }
+
+h3 { font-size: 22px; line-height: 34px; font-weight: 500; }
+@media (min-width: 768px) { h3 { font-size: 30px; line-height: 44px; } }
+
+h4 { font-size: 18px; line-height: 28px; font-weight: 500; }
+@media (min-width: 768px) { h4 { font-size: 24px; line-height: 36px; } }
+
+p { margin: 0; }
 
 a {
-  color: var(--oslo-warm-blue);
+  color: var(--pkt-color-text-action-normal);
+  text-decoration-color: var(--pkt-color-text-action-normal);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  transition: color var(--pkt-motion-fast), text-decoration-color var(--pkt-motion-fast);
+}
+a:hover { color: var(--pkt-color-text-action-hover); text-decoration-color: var(--pkt-color-text-action-hover); }
+
+/* ───────────────────────────────────────────────────────────────────
+   Accessibility — focus ring, skip link
+   ─────────────────────────────────────────────────────────────────── */
+
+:focus { outline: none; }
+
+:focus-visible {
+  outline: 2px solid var(--pkt-color-border-states-focus);
+  outline-offset: 2px;
+  border-radius: var(--pkt-radius-sm);
+}
+
+.pkt-skip-to-content {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: translateY(-120%);
+  padding: 10px 16px;
+  background: var(--pkt-color-brand-dark-blue-1000);
+  color: var(--pkt-color-text-body-light);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  z-index: 9999;
+  transition: transform var(--pkt-motion-fast);
+}
+.pkt-skip-to-content:focus {
+  transform: translateY(0);
+  color: var(--pkt-color-text-body-light);
+}
+
+/* Eyebrow helper */
+.pkt-eyebrow {
+  display: inline-block;
+  font-size: 12px;
+  line-height: 20px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--pkt-color-text-placeholder);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }

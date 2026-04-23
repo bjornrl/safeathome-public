@@ -3,24 +3,23 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { colors, motion, space, typography } from "@/lib/design-tokens";
+import { Button } from "@/components/ui";
 
 export type NavVariant = "default" | "minimal";
 
 const NAV_LINKS: { href: string; label: string }[] = [
-  { href: "/explore", label: "Explore" },
-  { href: "/frictions", label: "Frictions" },
-  { href: "/qualities", label: "Qualities" },
-  { href: "/solutions", label: "Solutions" },
-  { href: "/reading-room", label: "Reading Room" },
-  { href: "/for-municipalities", label: "For Municipalities" },
-  { href: "/about", label: "About" },
+  { href: "/explore", label: "Utforsk" },
+  { href: "/frictions", label: "Friksjoner" },
+  { href: "/qualities", label: "Kvaliteter" },
+  { href: "/solutions", label: "Løsninger" },
+  { href: "/reading-room", label: "Lesesal" },
+  { href: "/for-municipalities", label: "For kommuner" },
+  { href: "/about", label: "Om" },
 ];
-
-const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
 
 function useAuthState() {
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
-
   useEffect(() => {
     let active = true;
     supabase.auth.getSession().then(({ data }) => {
@@ -34,14 +33,14 @@ function useAuthState() {
       sub.subscription.unsubscribe();
     };
   }, []);
-
   return signedIn;
 }
 
 export default function Nav({ variant = "default" }: { variant?: NavVariant }) {
   const signedIn = useAuthState();
   const authHref = signedIn ? "/admin" : "/auth";
-  const authLabel = signedIn ? "Admin" : "Log in";
+  const authLabel = signedIn ? "Admin" : "Logg inn";
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   if (variant === "minimal") {
     return (
@@ -52,13 +51,12 @@ export default function Nav({ variant = "default" }: { variant?: NavVariant }) {
           left: 0,
           right: 0,
           zIndex: 50,
-          padding: "16px 16px",
+          padding: space.s16,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           pointerEvents: "none",
-          fontFamily: FONT_STACK,
-          gap: 8,
+          gap: space.s8,
         }}
       >
         <Link
@@ -67,39 +65,29 @@ export default function Nav({ variant = "default" }: { variant?: NavVariant }) {
             pointerEvents: "auto",
             display: "inline-flex",
             alignItems: "center",
-            gap: 8,
-            padding: "8px 16px",
-            background: "#ffffff",
-            borderRadius: 8,
-            border: "1px solid #e6e6e6",
-            fontSize: 14,
+            gap: space.s8,
+            padding: `${space.s8} ${space.s16}`,
+            background: colors.bgCard,
+            border: `1px solid ${colors.borderSubtle}`,
+            fontSize: "14px",
             fontWeight: 600,
-            color: "#2a2859",
+            color: colors.textBody,
             textDecoration: "none",
           }}
         >
-          <span aria-hidden style={{ fontSize: 16 }}>←</span>
+          <span aria-hidden>←</span>
           <span style={{ fontWeight: 700 }}>safe@home</span>
         </Link>
 
-        <Link
-          href={authHref}
-          style={{
-            pointerEvents: "auto",
-            display: "inline-flex",
-            alignItems: "center",
-            padding: "8px 16px",
-            background: signedIn ? "#2a2859" : "#ffffff",
-            borderRadius: 8,
-            border: `1px solid ${signedIn ? "#2a2859" : "#e6e6e6"}`,
-            fontSize: 13,
-            fontWeight: 600,
-            color: signedIn ? "#ffffff" : "#2c2c2c",
-            textDecoration: "none",
-          }}
-        >
-          {authLabel}
-        </Link>
+        <div style={{ pointerEvents: "auto" }}>
+          <Button
+            variant={signedIn ? "primary" : "secondary"}
+            size="sm"
+            onClick={() => { window.location.href = authHref; }}
+          >
+            {authLabel}
+          </Button>
+        </div>
       </header>
     );
   }
@@ -107,83 +95,150 @@ export default function Nav({ variant = "default" }: { variant?: NavVariant }) {
   return (
     <header
       style={{
-        borderBottom: "1px solid #e6e6e6",
-        background: "#ffffff",
+        background: colors.bgCard,
+        borderBottom: `1px solid ${colors.borderSubtle}`,
         position: "sticky",
         top: 0,
         zIndex: 50,
-        fontFamily: FONT_STACK,
       }}
     >
+      {/* Utility row */}
       <div
         style={{
-          maxWidth: 1200,
+          borderBottom: `1px solid ${colors.borderSubtle}`,
+          background: colors.bgSubtle,
+        }}
+      >
+        <div
+          style={{
+            maxWidth: "1200px",
+            margin: "0 auto",
+            padding: `${space.s8} ${space.s24}`,
+            display: "flex",
+            justifyContent: "flex-end",
+            gap: space.s16,
+            ...typography.sizes.t12,
+            color: colors.textMuted,
+          }}
+        >
+          <span>Forskning · OsloMet, UiO, Durham, Comte</span>
+        </div>
+      </div>
+
+      {/* Main nav row */}
+      <div
+        style={{
+          maxWidth: "1200px",
           margin: "0 auto",
-          padding: "16px 24px",
+          padding: `${space.s16} ${space.s24}`,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          gap: 16,
-          flexWrap: "wrap",
+          gap: space.s24,
         }}
       >
         <Link
           href="/"
           style={{
-            fontSize: 20,
+            fontSize: "22px",
+            lineHeight: "34px",
             fontWeight: 700,
-            color: "#2a2859",
+            color: colors.textBody,
             textDecoration: "none",
-            letterSpacing: "-0.01em",
+            letterSpacing: "-0.2px",
           }}
         >
           safe@home
         </Link>
 
         <nav
+          aria-label="Hovedmeny"
           style={{
             display: "flex",
             alignItems: "center",
-            gap: 8,
+            gap: space.s24,
             flexWrap: "wrap",
-            justifyContent: "flex-end",
           }}
         >
-          {NAV_LINKS.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              style={{
-                padding: "8px 16px",
-                fontSize: 14,
-                fontWeight: 500,
-                color: "#2c2c2c",
-                textDecoration: "none",
-                borderRadius: 4,
-              }}
-            >
-              {link.label}
-            </Link>
-          ))}
-
-          <Link
-            href={authHref}
+          <ul
+            className="pkt-main-nav-links"
             style={{
-              marginLeft: 8,
-              padding: "8px 16px",
-              fontSize: 13,
-              fontWeight: 600,
-              color: signedIn ? "#ffffff" : "#2a2859",
-              background: signedIn ? "#2a2859" : "transparent",
-              border: `1px solid ${signedIn ? "#2a2859" : "#2a2859"}`,
-              textDecoration: "none",
-              borderRadius: 8,
+              listStyle: "none",
+              margin: 0,
+              padding: 0,
+              display: "flex",
+              alignItems: "center",
+              gap: space.s24,
+              flexWrap: "wrap",
             }}
           >
+            {NAV_LINKS.map((link) => (
+              <li key={link.href}>
+                <Link
+                  href={link.href}
+                  style={{
+                    fontSize: "16px",
+                    lineHeight: "24px",
+                    fontWeight: 500,
+                    color: colors.textBody,
+                    textDecoration: "none",
+                    transition: `color ${motion.fast}`,
+                  }}
+                >
+                  {link.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+
+          <Button
+            variant={signedIn ? "primary" : "secondary"}
+            size="sm"
+            onClick={() => { window.location.href = authHref; }}
+          >
             {authLabel}
-          </Link>
+          </Button>
+
+          <button
+            type="button"
+            aria-label="Meny"
+            aria-expanded={mobileOpen}
+            onClick={() => setMobileOpen(v => !v)}
+            className="pkt-mobile-toggle"
+            style={{
+              display: "none",
+              padding: space.s8,
+              background: "transparent",
+              border: `1px solid ${colors.borderGray}`,
+              cursor: "pointer",
+              fontSize: "14px",
+            }}
+          >
+            {mobileOpen ? "Lukk" : "Meny"}
+          </button>
         </nav>
       </div>
+
+      {mobileOpen && (
+        <div
+          className="pkt-mobile-menu"
+          style={{
+            display: "none",
+            borderTop: `1px solid ${colors.borderSubtle}`,
+            padding: `${space.s16} ${space.s24}`,
+          }}
+        >
+          <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: space.s12 }}>
+            {NAV_LINKS.map((link) => (
+              <li key={link.href}>
+                <Link href={link.href} style={{ color: colors.textBody, textDecoration: "none", fontSize: "16px", fontWeight: 500 }}>
+                  {link.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </header>
   );
 }

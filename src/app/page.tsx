@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Nav from "@/components/Nav";
+import { Button, Card, Footer, SkipToContent } from "@/components/ui";
+import { colors, radius, space, typography } from "@/lib/design-tokens";
 import { FRICTIONS, QUALITIES } from "@/lib/constants";
 import type { CareFriction, CareQuality } from "@/lib/types";
 
@@ -9,8 +11,6 @@ export const metadata: Metadata = {
   description:
     "A research platform mapping how aging immigrants in Norway navigate care, technology, and belonging — across the intimacy of a bedroom and the policies that shape a city.",
 };
-
-const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
 
 const FRICTION_COPY: Record<CareFriction, string> = {
   rotate: "Staff turnover breaks relational continuity",
@@ -34,890 +34,276 @@ const QUALITY_COPY: Record<CareQuality, string> = {
 };
 
 const FOUR_ENTRIES = [
-  {
-    href: "/explore",
-    title: "Explore the map",
-    line: "Navigate from bedroom to city hall",
-    hint: "WHERE",
-  },
-  {
-    href: "/frictions",
-    title: "Care frictions",
-    line: "How systemic mechanisms interrelate",
-    hint: "HOW IT FAILS",
-  },
-  {
-    href: "/qualities",
-    title: "Care qualities",
-    line: "How people actually live and cope",
-    hint: "HOW THEY LIVE",
-  },
-  {
-    href: "/solutions",
-    title: "Design solutions",
-    line: "From observation to intervention",
-    hint: "RESPONSES",
-  },
+  { href: "/explore",   title: "Utforsk kartet",     line: "Fra soverommet til rådhuset",       hint: "HVOR" },
+  { href: "/frictions", title: "Omsorgsfriksjoner",  line: "Hvordan systemer kolliderer med folk", hint: "HVORDAN DET SVIKTER" },
+  { href: "/qualities", title: "Omsorgskvaliteter",  line: "Hvordan folk faktisk lever og mestrer",  hint: "HVORDAN DE LEVER" },
+  { href: "/solutions", title: "Designløsninger",    line: "Fra observasjon til inngripen",           hint: "SVAR" },
 ];
 
 const SCALES_COPY = [
-  {
-    label: "Micro",
-    title: "Inside the home",
-    body: "Where care technologies meet daily life — a prayer rug beside an alarm sensor, a phone on the coffee table, a locked bathroom door.",
-  },
-  {
-    label: "Meso",
-    title: "The neighborhood",
-    body: "Where services interact with people — the pharmacy that became a classroom, the mosque that doubles as a waiting room, twelve faces in three months.",
-  },
-  {
-    label: "Macro",
-    title: "The city",
-    body: "Where policies ripple into households — a cancelled bus route, a digital-first application portal, a standardized assessment algorithm.",
-  },
+  { label: "Mikro", title: "I hjemmet",
+    body: "Der omsorgsteknologi møter hverdagen — en bønneteppe ved siden av en bevegelsessensor, en telefon på stuebordet, en baderomsdør med lås på utsiden." },
+  { label: "Meso", title: "Nabolaget",
+    body: "Der tjenester møter mennesker — apoteket som ble et klasserom, moskeen som er venterom, tolv ansikter på tre måneder." },
+  { label: "Makro", title: "Byen",
+    body: "Der politikk treffer husstandene — en nedlagt bussrute, en digital søknadsportal, en standardisert tildelingsalgoritme." },
 ];
 
 const WORK_PACKAGES = [
-  {
-    code: "WP1",
-    title: "Homes & Communities",
-    body: "How material spaces and social dynamics shape homecare in practice.",
-  },
-  {
-    code: "WP2",
-    title: "Health & Care Institutions",
-    body: "What barriers and enablers shape service access for aging immigrants.",
-  },
-  {
-    code: "WP3",
-    title: "Transnational Contexts",
-    body: "How cross-border ties affect aging in place and care coordination.",
-  },
-  {
-    code: "WP4",
-    title: "Innovation & Design",
-    body: "Co-creating practical solutions with users and municipalities.",
-  },
+  { code: "WP1", title: "Hjem og fellesskap",
+    body: "Hvordan materielle rom og sosial dynamikk former hjemmebasert omsorg." },
+  { code: "WP2", title: "Helse- og omsorgsinstitusjoner",
+    body: "Hvilke barrierer og muligheter påvirker tilgang til tjenester." },
+  { code: "WP3", title: "Transnasjonale kontekster",
+    body: "Hvordan familiebånd på tvers av landegrenser påvirker det å eldes hjemme." },
+  { code: "WP4", title: "Innovasjon og design",
+    body: "Å ko-skape praktiske løsninger sammen med brukere og kommuner." },
 ];
+
+const container: React.CSSProperties = { maxWidth: "1200px", margin: "0 auto", padding: `0 ${space.s24}` };
+const narrow: React.CSSProperties = { maxWidth: "960px", margin: "0 auto", padding: `0 ${space.s24}` };
+const sectionDivider: React.CSSProperties = { borderBottom: `1px solid ${colors.borderSubtle}` };
 
 export default function HomePage() {
   return (
     <>
+      <SkipToContent />
       <Nav />
-      <main
-        style={{
-          background: "#f9f9f9",
-          color: "#2c2c2c",
-          fontFamily: FONT_STACK,
-        }}
-      >
-        {/* ─── Hero ─── */}
-        <section
-          style={{
-            maxWidth: 960,
-            margin: "0 auto",
-            padding: "120px 24px 96px",
-          }}
-        >
-          <p
-            style={{
-              fontSize: 12,
-              fontWeight: 600,
-              textTransform: "uppercase",
-              letterSpacing: "0.18em",
-              color: "#808080",
-              marginBottom: 24,
-            }}
-          >
-            A research platform · 2026 — 2029
-          </p>
-          <h1
-            style={{
-              fontSize: "clamp(48px, 8vw, 96px)",
-              fontWeight: 700,
-              lineHeight: 1.02,
-              letterSpacing: "-0.03em",
-              marginBottom: 24,
-              color: "#2a2859",
-            }}
-          >
-            safe@home
-          </h1>
-          <p
-            style={{
-              fontSize: "clamp(22px, 3vw, 30px)",
-              fontWeight: 500,
-              lineHeight: 1.3,
-              color: "#2a2859",
-              marginBottom: 32,
-              maxWidth: 680,
-            }}
-          >
-            Technologies of care for aging migrants.
-          </p>
-          <p
-            style={{
-              fontSize: 20,
-              lineHeight: 1.7,
-              color: "#2c2c2c",
-              maxWidth: 680,
-              marginBottom: 40,
-            }}
-          >
-            What happens when Norway&rsquo;s homecare reform meets the reality of
-            transnational households? This platform maps the experiences of
-            aging immigrants navigating care, technology, and belonging across
-            three scales &mdash; from the intimacy of a bedroom to the policies
-            that shape a city.
-          </p>
-          <Link
-            href="/explore"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 8,
-              padding: "16px 24px",
-              background: "#2a2859",
-              color: "#ffffff",
-              borderRadius: 8,
-              fontSize: 16,
-              fontWeight: 600,
-              textDecoration: "none",
-            }}
-          >
-            Explore the map
-            <span aria-hidden>→</span>
-          </Link>
+      <main id="main-content" style={{ background: colors.bg, color: colors.textBody }}>
+        {/* Hero */}
+        <section style={sectionDivider}>
+          <div style={{ ...narrow, padding: `${space.s104} ${space.s24} ${space.s64}` }}>
+            <p className="pkt-eyebrow" style={{ marginBottom: space.s16 }}>
+              Forskningsplattform · 2026–2029
+            </p>
+            <h1 style={{ marginBottom: space.s24, maxWidth: "12ch" }}>safe@home</h1>
+            <p style={{
+              ...typography.sizes.t24,
+              fontWeight: typography.weights.regular,
+              color: colors.textBody,
+              maxWidth: "680px",
+              marginBottom: space.s24,
+            }}>
+              Teknologier for omsorg til eldre med innvandrerbakgrunn.
+            </p>
+            <p style={{
+              ...typography.sizes.t18,
+              fontWeight: typography.weights.light,
+              color: colors.textMuted,
+              maxWidth: "680px",
+              marginBottom: space.s32,
+            }}>
+              Hva skjer når reformen Bo trygt hjemme møter hverdagen i transnasjonale husholdninger?
+              Plattformen kartlegger erfaringer til eldre innvandrere som navigerer omsorg, teknologi
+              og tilhørighet i tre skalaer — fra et soverom til byens beslutninger.
+            </p>
+            <div style={{ display: "flex", gap: space.s12, flexWrap: "wrap" }}>
+              <Link href="/explore" style={{ textDecoration: "none" }}>
+                <Button variant="primary" size="lg">Utforsk kartet</Button>
+              </Link>
+              <Link href="/about" style={{ textDecoration: "none" }}>
+                <Button variant="secondary" size="lg">Om prosjektet</Button>
+              </Link>
+            </div>
+          </div>
         </section>
 
-        {/* ─── Four ways to explore ─── */}
-        <section
-          style={{
-            background: "#ffffff",
-            borderTop: "1px solid #e6e6e6",
-            borderBottom: "1px solid #e6e6e6",
-          }}
-        >
-          <div
-            style={{
-              maxWidth: 1120,
-              margin: "0 auto",
-              padding: "96px 24px",
-            }}
-          >
-            <p
-              style={{
-                fontSize: 12,
-                fontWeight: 600,
-                textTransform: "uppercase",
-                letterSpacing: "0.18em",
-                color: "#808080",
-                marginBottom: 16,
-              }}
-            >
-              Four ways to explore
-            </p>
-            <h2
-              style={{
-                fontSize: "clamp(28px, 4vw, 40px)",
-                fontWeight: 700,
-                lineHeight: 1.15,
-                letterSpacing: "-0.02em",
-                color: "#2a2859",
-                marginBottom: 48,
-                maxWidth: 720,
-              }}
-            >
-              The same stories, seen through four different lenses.
+        {/* Four entries */}
+        <section style={{ ...sectionDivider, background: colors.bgSubtle }}>
+          <div style={{ ...container, padding: `${space.s64} ${space.s24}` }}>
+            <p className="pkt-eyebrow" style={{ marginBottom: space.s12 }}>Fire innganger</p>
+            <h2 style={{ marginBottom: space.s40, maxWidth: "20ch" }}>
+              Samme historier, sett gjennom fire ulike linser.
             </h2>
-
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-                gap: 16,
-              }}
-            >
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+              gap: space.s16,
+            }}>
               {FOUR_ENTRIES.map((entry) => (
-                <Link
-                  key={entry.href}
-                  href={entry.href}
-                  style={{
-                    display: "block",
-                    background: "#f9f9f9",
-                    border: "1px solid #e6e6e6",
-                    borderRadius: 8,
-                    padding: 32,
-                    textDecoration: "none",
-                    color: "#2c2c2c",
-                    position: "relative",
-                    overflow: "hidden",
-                  }}
-                >
-                  <span
-                    aria-hidden
-                    style={{
-                      position: "absolute",
-                      top: 0,
-                      left: 0,
-                      height: 4,
-                      width: "100%",
-                      background: "#2a2859",
-                    }}
-                  />
-                  <p
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 600,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.14em",
-                      color: "#1f42aa",
-                      marginBottom: 16,
-                    }}
-                  >
+                <Card key={entry.href} variant="interactive" href={entry.href} padding="md" style={{ borderTop: `3px solid ${colors.brandDarkBlue}` }}>
+                  <p className="pkt-eyebrow" style={{ color: colors.brandWarmBlue, marginBottom: space.s16 }}>
                     {entry.hint}
                   </p>
-                  <h3
-                    style={{
-                      fontSize: 24,
-                      fontWeight: 700,
-                      lineHeight: 1.2,
-                      marginBottom: 8,
-                      color: "#2a2859",
-                    }}
-                  >
-                    {entry.title}
-                  </h3>
-                  <p style={{ fontSize: 14, lineHeight: 1.5, color: "#666666" }}>
+                  <h3 style={{ marginBottom: space.s8, color: colors.textBody }}>{entry.title}</h3>
+                  <p style={{ ...typography.sizes.t14, color: colors.textMuted, marginBottom: space.s24 }}>
                     {entry.line}
                   </p>
-                  <span
-                    aria-hidden
-                    style={{
-                      display: "inline-block",
-                      marginTop: 24,
-                      fontSize: 14,
-                      fontWeight: 600,
-                      color: "#1f42aa",
-                    }}
-                  >
-                    Open →
+                  <span style={{ ...typography.sizes.t14, fontWeight: typography.weights.medium, color: colors.brandWarmBlue }}>
+                    Åpne →
                   </span>
-                </Link>
+                </Card>
               ))}
             </div>
           </div>
         </section>
 
-        {/* ─── About the project ─── */}
-        <section
-          style={{
-            background: "#f9f9f9",
-            borderBottom: "1px solid #e6e6e6",
-          }}
-        >
-          <div
-            style={{
-              maxWidth: 960,
-              margin: "0 auto",
-              padding: "96px 24px",
-            }}
-          >
-            <p
-              style={{
-                fontSize: 12,
-                fontWeight: 600,
-                textTransform: "uppercase",
-                letterSpacing: "0.18em",
-                color: "#808080",
-                marginBottom: 16,
-              }}
-            >
-              About the project
-            </p>
-            <h2
-              style={{
-                fontSize: "clamp(30px, 4.5vw, 44px)",
-                fontWeight: 700,
-                lineHeight: 1.15,
-                letterSpacing: "-0.02em",
-                color: "#2a2859",
-                marginBottom: 32,
-                maxWidth: 760,
-              }}
-            >
-              A research platform for the Bo Trygt Hjemme reform.
+        {/* About */}
+        <section style={sectionDivider}>
+          <div style={{ ...narrow, padding: `${space.s64} ${space.s24}` }}>
+            <p className="pkt-eyebrow" style={{ marginBottom: space.s12 }}>Om prosjektet</p>
+            <h2 style={{ marginBottom: space.s32, maxWidth: "22ch" }}>
+              Et forskningsprosjekt om Bo trygt hjemme-reformen.
             </h2>
-
-            <div style={{ maxWidth: 680 }}>
-              <p
-                style={{
-                  fontSize: 19,
-                  lineHeight: 1.7,
-                  color: "#2c2c2c",
-                  marginBottom: 24,
-                }}
-              >
-                SAFE@HOME is a collaborative research project (2026 — 2029)
-                between OsloMet, the University of Oslo, Durham University,
-                Comte Bureau, and three municipalities: Alna and S&oslash;ndre
-                Nordstrand in Oslo, and Skien in Telemark.
+            <div style={{ display: "flex", flexDirection: "column", gap: space.s16, maxWidth: "680px" }}>
+              <p style={{ ...typography.sizes.t18, color: colors.textBody }}>
+                SAFE@HOME er et samarbeidsprosjekt (2026–2029) mellom OsloMet, Universitetet i Oslo,
+                Durham University, Comte Bureau og tre kommuner: bydelene Alna og Søndre Nordstrand i Oslo,
+                og Skien i Telemark.
               </p>
-              <p
-                style={{
-                  fontSize: 19,
-                  lineHeight: 1.7,
-                  color: "#2c2c2c",
-                  marginBottom: 24,
-                }}
-              >
-                The project investigates how homecare services can be adapted
-                for Norway&rsquo;s growing aging immigrant population &mdash; a
-                group whose needs, routines, and family structures often sit at
-                odds with standardized care technologies and bureaucratic
-                pathways.
+              <p style={{ ...typography.sizes.t18, color: colors.textBody }}>
+                Prosjektet undersøker hvordan hjemmebasert omsorg kan tilpasses en voksende gruppe
+                eldre innvandrere — en gruppe hvis behov, rutiner og familieformer ofte ikke passer
+                inn i standardiserte omsorgsteknologier og byråkratiske løp.
               </p>
-              <p
-                style={{
-                  fontSize: 19,
-                  lineHeight: 1.7,
-                  color: "#666666",
-                }}
-              >
-                Four work packages move from the home outward to the policy
-                frame, and back again.
+              <p style={{ ...typography.sizes.t18, color: colors.textMuted }}>
+                Fire arbeidspakker beveger seg fra hjemmet utover til politikkens rammer, og tilbake igjen.
               </p>
             </div>
-
-            <div
-              style={{
-                marginTop: 48,
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-                gap: 16,
-              }}
-            >
+            <div style={{
+              marginTop: space.s40,
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+              gap: space.s16,
+            }}>
               {WORK_PACKAGES.map((wp) => (
-                <div
-                  key={wp.code}
-                  style={{
-                    background: "#ffffff",
-                    border: "1px solid #e6e6e6",
-                    borderRadius: 8,
-                    padding: 24,
-                  }}
-                >
-                  <p
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 700,
-                      letterSpacing: "0.12em",
-                      color: "#1f42aa",
-                      marginBottom: 8,
-                    }}
-                  >
+                <Card key={wp.code} padding="md">
+                  <p style={{
+                    ...typography.sizes.t12,
+                    fontWeight: typography.weights.bold,
+                    letterSpacing: "0.12em",
+                    color: colors.brandWarmBlue,
+                    marginBottom: space.s8,
+                  }}>
                     {wp.code}
                   </p>
-                  <h3
-                    style={{
-                      fontSize: 18,
-                      fontWeight: 600,
-                      color: "#2a2859",
-                      marginBottom: 8,
-                    }}
-                  >
-                    {wp.title}
-                  </h3>
-                  <p style={{ fontSize: 14, lineHeight: 1.55, color: "#666666" }}>
-                    {wp.body}
-                  </p>
-                </div>
+                  <h4 style={{ marginBottom: space.s8 }}>{wp.title}</h4>
+                  <p style={{ ...typography.sizes.t14, color: colors.textMuted }}>{wp.body}</p>
+                </Card>
               ))}
             </div>
           </div>
         </section>
 
-        {/* ─── Three scales ─── */}
-        <section
-          style={{
-            background: "#ffffff",
-            borderBottom: "1px solid #e6e6e6",
-          }}
-        >
-          <div
-            style={{
-              maxWidth: 1120,
-              margin: "0 auto",
-              padding: "96px 24px",
-            }}
-          >
-            <p
-              style={{
-                fontSize: 12,
-                fontWeight: 600,
-                textTransform: "uppercase",
-                letterSpacing: "0.18em",
-                color: "#808080",
-                marginBottom: 16,
-              }}
-            >
-              Three scales
+        {/* Three scales */}
+        <section style={sectionDivider}>
+          <div style={{ ...container, padding: `${space.s64} ${space.s24}` }}>
+            <p className="pkt-eyebrow" style={{ marginBottom: space.s12 }}>Tre skalaer</p>
+            <h2 style={{ marginBottom: space.s16, maxWidth: "22ch" }}>Fra soverom til rådhus.</h2>
+            <p style={{ ...typography.sizes.t18, color: colors.textMuted, maxWidth: "640px", marginBottom: space.s40 }}>
+              Den samme historien utspiller seg på tre skalaer samtidig. Zoom inn og se en bønneteppe
+              ved siden av en bevegelsessensor. Zoom ut og se budsjettlinjen som stille fjernet en bussrute.
             </p>
-            <h2
-              style={{
-                fontSize: "clamp(30px, 4.5vw, 44px)",
-                fontWeight: 700,
-                lineHeight: 1.15,
-                letterSpacing: "-0.02em",
-                color: "#2a2859",
-                marginBottom: 16,
-                maxWidth: 760,
-              }}
-            >
-              From bedroom to city hall.
-            </h2>
-            <p
-              style={{
-                fontSize: 19,
-                lineHeight: 1.7,
-                color: "#666666",
-                maxWidth: 640,
-                marginBottom: 48,
-              }}
-            >
-              The same story plays out at three scales at once. Zoom in to see a
-              prayer rug beside a motion sensor. Zoom out to see the budget line
-              that quietly removed a bus route.
-            </p>
-
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-                gap: 24,
-              }}
-            >
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+              gap: space.s24,
+            }}>
               {SCALES_COPY.map((s) => (
-                <div
-                  key={s.label}
-                  style={{
-                    background: "#f9f9f9",
-                    border: "1px solid #e6e6e6",
-                    borderRadius: 8,
-                    padding: 32,
-                  }}
-                >
-                  <p
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 700,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.14em",
-                      color: "#1f42aa",
-                      marginBottom: 8,
-                    }}
-                  >
+                <Card key={s.label} padding="md">
+                  <p className="pkt-eyebrow" style={{ color: colors.brandWarmBlue, marginBottom: space.s8 }}>
                     {s.label}
                   </p>
-                  <h3
-                    style={{
-                      fontSize: 22,
-                      fontWeight: 600,
-                      color: "#2a2859",
-                      marginBottom: 16,
-                    }}
-                  >
-                    {s.title}
-                  </h3>
-                  <p
-                    style={{
-                      fontSize: 16,
-                      lineHeight: 1.65,
-                      color: "#2c2c2c",
-                    }}
-                  >
-                    {s.body}
-                  </p>
-                </div>
+                  <h3 style={{ marginBottom: space.s12 }}>{s.title}</h3>
+                  <p style={{ ...typography.sizes.t16, color: colors.textBody }}>{s.body}</p>
+                </Card>
               ))}
             </div>
           </div>
         </section>
 
-        {/* ─── Care frictions ─── */}
-        <section
-          style={{
-            background: "#f9f9f9",
-            borderBottom: "1px solid #e6e6e6",
-          }}
-        >
-          <div
-            style={{
-              maxWidth: 1120,
-              margin: "0 auto",
-              padding: "96px 24px",
-            }}
-          >
-            <p
-              style={{
-                fontSize: 12,
-                fontWeight: 600,
-                textTransform: "uppercase",
-                letterSpacing: "0.18em",
-                color: "#808080",
-                marginBottom: 16,
-              }}
-            >
-              Care frictions
-            </p>
-            <h2
-              style={{
-                fontSize: "clamp(30px, 4.5vw, 44px)",
-                fontWeight: 700,
-                lineHeight: 1.15,
-                letterSpacing: "-0.02em",
-                color: "#2a2859",
-                marginBottom: 16,
-                maxWidth: 760,
-              }}
-            >
-              Seven ways the system collides with reality.
+        {/* Care frictions */}
+        <section style={{ ...sectionDivider, background: colors.bgSubtle }}>
+          <div style={{ ...container, padding: `${space.s64} ${space.s24}` }}>
+            <p className="pkt-eyebrow" style={{ marginBottom: space.s12 }}>Omsorgsfriksjoner</p>
+            <h2 style={{ marginBottom: space.s16, maxWidth: "22ch" }}>
+              Sju måter systemet kolliderer med virkeligheten.
             </h2>
-            <p
-              style={{
-                fontSize: 19,
-                lineHeight: 1.7,
-                color: "#666666",
-                maxWidth: 640,
-                marginBottom: 48,
-              }}
-            >
-              Recurring patterns where well-intentioned care produces friction
-              for the people it&rsquo;s meant to serve.
+            <p style={{ ...typography.sizes.t18, color: colors.textMuted, maxWidth: "640px", marginBottom: space.s40 }}>
+              Gjentagende mønstre der velmenende omsorg skaper motstand for menneskene den skal betjene.
             </p>
-
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-                gap: 16,
-              }}
-            >
-              {(Object.entries(FRICTIONS) as [CareFriction, (typeof FRICTIONS)[CareFriction]][]).map(
-                ([key, val]) => (
-                  <Link
-                    key={key}
-                    href={`/frictions?friction=${key}`}
-                    style={{
-                      display: "flex",
-                      alignItems: "flex-start",
-                      gap: 16,
-                      padding: 24,
-                      background: "#ffffff",
-                      border: "1px solid #e6e6e6",
-                      borderRadius: 8,
-                      textDecoration: "none",
-                    }}
-                  >
-                    <span
-                      aria-hidden
-                      style={{
-                        marginTop: 6,
-                        width: 14,
-                        height: 14,
-                        borderRadius: "50%",
-                        background: val.color,
-                        flexShrink: 0,
-                      }}
-                    />
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+              gap: space.s16,
+            }}>
+              {(Object.entries(FRICTIONS) as [CareFriction, (typeof FRICTIONS)[CareFriction]][]).map(([key, val]) => (
+                <Card key={key} variant="interactive" href={`/frictions?friction=${key}`} padding="md">
+                  <div style={{ display: "flex", alignItems: "flex-start", gap: space.s12 }}>
+                    <span aria-hidden style={{
+                      display: "inline-block",
+                      width: 12, height: 12,
+                      marginTop: 6,
+                      background: val.color,
+                      flexShrink: 0,
+                    }} />
                     <div>
-                      <p
-                        style={{
-                          fontSize: 18,
-                          fontWeight: 600,
-                          color: "#2a2859",
-                          marginBottom: 4,
-                        }}
-                      >
+                      <p style={{ ...typography.sizes.t18, fontWeight: typography.weights.medium, color: colors.textBody, marginBottom: space.s4 }}>
                         {val.label}
                       </p>
-                      <p style={{ fontSize: 14, lineHeight: 1.5, color: "#666666" }}>
-                        {FRICTION_COPY[key]}
-                      </p>
+                      <p style={{ ...typography.sizes.t14, color: colors.textMuted }}>{FRICTION_COPY[key]}</p>
                     </div>
-                  </Link>
-                ),
-              )}
-            </div>
-          </div>
-        </section>
-
-        {/* ─── Care qualities ─── */}
-        <section
-          style={{
-            background: "#ffffff",
-            borderBottom: "1px solid #e6e6e6",
-          }}
-        >
-          <div
-            style={{
-              maxWidth: 1120,
-              margin: "0 auto",
-              padding: "96px 24px",
-            }}
-          >
-            <p
-              style={{
-                fontSize: 12,
-                fontWeight: 600,
-                textTransform: "uppercase",
-                letterSpacing: "0.18em",
-                color: "#808080",
-                marginBottom: 16,
-              }}
-            >
-              Care qualities
-            </p>
-            <h2
-              style={{
-                fontSize: "clamp(30px, 4.5vw, 44px)",
-                fontWeight: 700,
-                lineHeight: 1.15,
-                letterSpacing: "-0.02em",
-                color: "#2a2859",
-                marginBottom: 16,
-                maxWidth: 760,
-              }}
-            >
-              How people actually live and cope.
-            </h2>
-            <p
-              style={{
-                fontSize: 19,
-                lineHeight: 1.7,
-                color: "#666666",
-                maxWidth: 640,
-                marginBottom: 48,
-              }}
-            >
-              These describe the realities, strategies, and strengths of aging
-              immigrants and their families &mdash; the parts of care that rarely
-              make it into service logs.
-            </p>
-
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-                gap: 16,
-              }}
-            >
-              {(Object.entries(QUALITIES) as [CareQuality, (typeof QUALITIES)[CareQuality]][]).map(
-                ([key, val]) => (
-                  <div
-                    key={key}
-                    style={{
-                      padding: 24,
-                      background: "#f9f9f9",
-                      border: "1px solid #e6e6e6",
-                      borderRadius: 8,
-                      borderLeft: `4px solid ${val.color}`,
-                    }}
-                  >
-                    <p
-                      style={{
-                        fontSize: 17,
-                        fontWeight: 600,
-                        color: "#2a2859",
-                        marginBottom: 4,
-                      }}
-                    >
-                      {val.label}
-                    </p>
-                    <p style={{ fontSize: 13, lineHeight: 1.5, color: "#666666" }}>
-                      {QUALITY_COPY[key]}
-                    </p>
                   </div>
-                ),
-              )}
+                </Card>
+              ))}
             </div>
           </div>
         </section>
 
-        {/* ─── Final CTA ─── */}
-        <section
-          style={{
-            background: "#2a2859",
-            color: "#ffffff",
-          }}
-        >
-          <div
-            style={{
-              maxWidth: 960,
-              margin: "0 auto",
-              padding: "96px 24px",
-              textAlign: "center",
-            }}
-          >
-            <h2
-              style={{
-                fontSize: "clamp(32px, 5vw, 52px)",
-                fontWeight: 700,
-                lineHeight: 1.1,
-                letterSpacing: "-0.02em",
-                marginBottom: 24,
-                color: "#ffffff",
-              }}
-            >
-              Ready to explore?
+        {/* Care qualities */}
+        <section style={sectionDivider}>
+          <div style={{ ...container, padding: `${space.s64} ${space.s24}` }}>
+            <p className="pkt-eyebrow" style={{ marginBottom: space.s12 }}>Omsorgskvaliteter</p>
+            <h2 style={{ marginBottom: space.s16, maxWidth: "22ch" }}>
+              Hvordan folk faktisk lever og mestrer.
             </h2>
-            <p
-              style={{
-                fontSize: 19,
-                lineHeight: 1.65,
-                color: "#b3f5ff",
-                maxWidth: 560,
-                margin: "0 auto 40px",
-              }}
-            >
-              Start at the city scale and zoom in until you&rsquo;re standing in
-              a living room. Or follow a friction across all seven stories it
-              touches.
+            <p style={{ ...typography.sizes.t18, color: colors.textMuted, maxWidth: "640px", marginBottom: space.s40 }}>
+              Kvalitetene beskriver hverdagen, strategiene og styrkene til eldre innvandrere og
+              familiene deres — delene av omsorg som sjelden finner veien inn i tjenesteloggen.
             </p>
-            <Link
-              href="/explore"
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 8,
-                padding: "16px 24px",
-                background: "#ffffff",
-                color: "#2a2859",
-                borderRadius: 8,
-                fontSize: 16,
-                fontWeight: 600,
-                textDecoration: "none",
-              }}
-            >
-              Open the map
-              <span aria-hidden>→</span>
-            </Link>
-
-            <div
-              style={{
-                marginTop: 48,
-                display: "flex",
-                gap: 24,
-                flexWrap: "wrap",
-                justifyContent: "center",
-                fontSize: 14,
-              }}
-            >
-              <Link
-                href="/about"
-                style={{ color: "#ffffff", textDecoration: "underline", opacity: 0.9 }}
-              >
-                About
-              </Link>
-              <Link
-                href="/reading-room"
-                style={{ color: "#ffffff", textDecoration: "underline", opacity: 0.9 }}
-              >
-                Reading Room
-              </Link>
-              <Link
-                href="/for-municipalities"
-                style={{ color: "#ffffff", textDecoration: "underline", opacity: 0.9 }}
-              >
-                For Municipalities
-              </Link>
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+              gap: space.s16,
+            }}>
+              {(Object.entries(QUALITIES) as [CareQuality, (typeof QUALITIES)[CareQuality]][]).map(([key, val]) => (
+                <Card key={key} padding="md" style={{ borderLeft: `3px solid ${val.color}` }}>
+                  <p style={{ ...typography.sizes.t18, fontWeight: typography.weights.medium, color: colors.textBody, marginBottom: space.s4 }}>
+                    {val.label}
+                  </p>
+                  <p style={{ ...typography.sizes.t14, color: colors.textMuted }}>{QUALITY_COPY[key]}</p>
+                </Card>
+              ))}
             </div>
           </div>
         </section>
 
-        {/* ─── Footer ─── */}
-        <footer
-          style={{
-            background: "#f2f2f2",
-            borderTop: "1px solid #e6e6e6",
-            padding: "48px 24px",
-          }}
-        >
-          <div
-            style={{
-              maxWidth: 960,
-              margin: "0 auto",
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-              gap: 32,
-            }}
-          >
-            <div>
-              <p
-                style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.14em",
-                  color: "#808080",
-                  marginBottom: 8,
-                }}
+        {/* Final CTA */}
+        <section style={{ background: colors.brandDarkBlue, color: colors.textLight }}>
+          <div style={{ ...narrow, padding: `${space.s104} ${space.s24}`, textAlign: "center" }}>
+            <h2 style={{ marginBottom: space.s16, color: colors.textLight }}>Klar til å utforske?</h2>
+            <p style={{
+              ...typography.sizes.t18,
+              color: "rgba(255, 255, 255, 0.85)",
+              maxWidth: "560px",
+              margin: `0 auto ${space.s32}`,
+              fontWeight: typography.weights.light,
+            }}>
+              Start på byskalaen og zoom inn til du står i en stue. Eller følg én friksjon gjennom
+              alle sju historiene den berører.
+            </p>
+            <Link href="/explore" style={{ textDecoration: "none" }}>
+              <Button
+                size="lg"
+                style={{ background: colors.white, color: colors.brandDarkBlue, borderColor: colors.white, borderRadius: radius.none }}
               >
-                Research partners
-              </p>
-              <p style={{ fontSize: 14, lineHeight: 1.7, color: "#2c2c2c" }}>
-                OsloMet
-                <br />
-                University of Oslo
-                <br />
-                Durham University
-                <br />
-                Comte Bureau
-              </p>
-            </div>
-            <div>
-              <p
-                style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.14em",
-                  color: "#808080",
-                  marginBottom: 8,
-                }}
-              >
-                Municipalities
-              </p>
-              <p style={{ fontSize: 14, lineHeight: 1.7, color: "#2c2c2c" }}>
-                Alna District
-                <br />
-                S&oslash;ndre Nordstrand
-                <br />
-                Skien Municipality
-              </p>
-            </div>
-            <div>
-              <p
-                style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.14em",
-                  color: "#808080",
-                  marginBottom: 8,
-                }}
-              >
-                Project
-              </p>
-              <p style={{ fontSize: 14, lineHeight: 1.7, color: "#666666" }}>
-                safe@home · 2026 — 2029
-                <br />
-                Part of the Bo Trygt Hjemme reform.
-              </p>
-            </div>
+                Åpne kartet
+              </Button>
+            </Link>
           </div>
-        </footer>
+        </section>
+
+        <Footer />
       </main>
     </>
   );
