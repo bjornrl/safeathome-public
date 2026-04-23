@@ -6,10 +6,8 @@ import Nav from "@/components/Nav";
 import { QUALITIES, FRICTIONS } from "@/lib/constants";
 import type { CareQuality, PublicStory } from "@/lib/types";
 import { getMapStories } from "@/lib/queries";
-
 const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
 const QUALITY_KEYS = Object.keys(QUALITIES) as CareQuality[];
-
 const QUALITY_COPY: Record<CareQuality, string> = {
   transnational_flow: "Care circulating across borders",
   household_choreography: "Daily orchestration of multi-use spaces",
@@ -18,66 +16,27 @@ const QUALITY_COPY: Record<CareQuality, string> = {
   adaptive_resistance: "Quietly working around services",
   intergenerational_exchange: "Bidirectional care between old and young",
   digital_bridging: "Technology maintaining connections",
-  belonging_negotiation: "Tension between here and there",
+  belonging_negotiation: "Tension between here and there"
 };
-
 export default function QualitiesPage() {
   const [stories, setStories] = useState<PublicStory[]>([]);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
-
   useEffect(() => {
     getMapStories().then(setStories);
   }, []);
-
-  return (
-    <>
+  return <>
       <Nav />
-      <main
-        style={{
-          fontFamily: FONT_STACK,
-          paddingTop: 72,
-          paddingBottom: 96,
-        }}
-      >
-        <header
-          style={{
-            maxWidth: 1120,
-            margin: "0 auto",
-            padding: "0 24px 48px",
-          }}
-        >
-          <p
-            style={{
-              fontSize: 12,
-              fontWeight: 600,
-              textTransform: "uppercase",
-              letterSpacing: "0.18em",
-              color: "#808080",
-              marginBottom: 16,
-            }}
-          >
+      <main style={{
+      fontFamily: FONT_STACK
+    }} className="[padding-top:72px] [padding-bottom:96px]">
+        <header className="[max-width:1120px] [margin:0_auto] [padding:0_24px_48px]">
+          <p className="[font-size:12px] [font-weight:600] [text-transform:uppercase] [letter-spacing:0.18em] [color:#808080] [margin-bottom:16px]">
             Care qualities
           </p>
-          <h1
-            style={{
-              fontSize: "clamp(38px, 6vw, 60px)",
-              fontWeight: 700,
-              lineHeight: 1.05,
-              letterSpacing: "-0.02em",
-              color: "#2a2859",
-              marginBottom: 24,
-            }}
-          >
+          <h1 className="[font-size:clamp(38px,_6vw,_60px)] [font-weight:700] [line-height:1.05] [letter-spacing:-0.02em] [color:#2a2859] [margin-bottom:24px]">
             How people actually live and cope.
           </h1>
-          <p
-            style={{
-              fontSize: 19,
-              lineHeight: 1.7,
-              color: "#666666",
-              maxWidth: 680,
-            }}
-          >
+          <p className="[font-size:19px] [line-height:1.7] [color:#666666] [max-width:680px]">
             These describe the realities, strategies, and strengths of aging
             immigrants and their families. Stories appear in every column where
             a quality is present &mdash; the repetition reveals how tightly
@@ -85,104 +44,35 @@ export default function QualitiesPage() {
           </p>
         </header>
 
-        <div
-          style={{
-            paddingLeft: "max(24px, env(safe-area-inset-left))",
-          }}
-        >
-          <div
-            className="qualities-scroll"
-            style={{
-              display: "flex",
-              gap: 16,
-              overflowX: "auto",
-              scrollSnapType: "x mandatory",
-              paddingBottom: 32,
-              paddingRight: 24,
-            }}
-          >
-            {QUALITY_KEYS.map((k) => {
-              const q = QUALITIES[k];
-              const bucket = stories.filter((s) => s.qualities?.includes(k));
-              return (
-                <section
-                  key={k}
-                  style={{
-                    flex: "0 0 320px",
-                    scrollSnapAlign: "start",
-                    background: "#ffffff",
-                    border: "1px solid #e6e6e6",
-                    borderTop: `4px solid ${q.color}`,
-                    borderRadius: 8,
-                    padding: 24,
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 16,
-                  }}
-                >
+        <div className="[padding-left:max(24px,_env(safe-area-inset-left))]">
+          <div className="qualities-scroll [display:flex] [gap:16px] [overflow-x:auto] [scroll-snap-type:x_mandatory] [padding-bottom:32px] [padding-right:24px]">
+            {QUALITY_KEYS.map(k => {
+            const q = QUALITIES[k];
+            const bucket = stories.filter(s => s.qualities?.includes(k));
+            return <section key={k} style={{
+              borderTop: `4px solid ${q.color}`
+            }} className="[flex:0_0_320px] [scroll-snap-align:start] [background:#ffffff] [border:1px_solid_#e6e6e6] [border-radius:8px] [padding:24px] [display:flex] [flex-direction:column] [gap:16px]">
                   <div>
-                    <span
-                      style={{
-                        display: "inline-block",
-                        fontSize: 11,
-                        fontWeight: 600,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.12em",
-                        color: q.color,
-                        marginBottom: 8,
-                      }}
-                    >
+                    <span style={{
+                  color: q.color
+                }} className="[display:inline-block] [font-size:11px] [font-weight:600] [text-transform:uppercase] [letter-spacing:0.12em] [margin-bottom:8px]">
                       {bucket.length} {bucket.length === 1 ? "story" : "stories"}
                     </span>
-                    <h2
-                      style={{
-                        fontSize: 22,
-                        fontWeight: 700,
-                        lineHeight: 1.2,
-                        color: "#2a2859",
-                        marginBottom: 8,
-                      }}
-                    >
+                    <h2 className="[font-size:22px] [font-weight:700] [line-height:1.2] [color:#2a2859] [margin-bottom:8px]">
                       {q.label}
                     </h2>
-                    <p style={{ fontSize: 14, lineHeight: 1.55, color: "#666666" }}>
+                    <p className="[font-size:14px] [line-height:1.55] [color:#666666]">
                       {QUALITY_COPY[k]}
                     </p>
                   </div>
 
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      gap: 8,
-                    }}
-                  >
-                    {bucket.length === 0 ? (
-                      <p
-                        style={{
-                          fontSize: 14,
-                          color: "#9a9a9a",
-                        }}
-                      >
+                  <div className="[display:flex] [flex-direction:column] [gap:8px]">
+                    {bucket.length === 0 ? <p className="[font-size:14px] [color:#9a9a9a]">
                         No stories yet.
-                      </p>
-                    ) : (
-                      bucket.map((s) => (
-                        <QualityStoryCard
-                          key={s.id}
-                          story={s}
-                          accent={q.color}
-                          dimmed={hoveredId !== null && hoveredId !== s.id}
-                          highlighted={hoveredId === s.id}
-                          onEnter={() => setHoveredId(s.id)}
-                          onLeave={() => setHoveredId(null)}
-                        />
-                      ))
-                    )}
+                      </p> : bucket.map(s => <QualityStoryCard key={s.id} story={s} accent={q.color} dimmed={hoveredId !== null && hoveredId !== s.id} highlighted={hoveredId === s.id} onEnter={() => setHoveredId(s.id)} onLeave={() => setHoveredId(null)} />)}
                   </div>
-                </section>
-              );
-            })}
+                </section>;
+          })}
           </div>
         </div>
       </main>
@@ -205,17 +95,15 @@ export default function QualitiesPage() {
           }
         }
       `}</style>
-    </>
-  );
+    </>;
 }
-
 function QualityStoryCard({
   story,
   accent,
   dimmed,
   highlighted,
   onEnter,
-  onLeave,
+  onLeave
 }: {
   story: PublicStory;
   accent: string;
@@ -225,69 +113,28 @@ function QualityStoryCard({
   onLeave: () => void;
 }) {
   const preview = story.body.split("\n\n")[0].slice(0, 120);
-  return (
-    <Link
-      href={`/story/${story.id}`}
-      onMouseEnter={onEnter}
-      onMouseLeave={onLeave}
-      style={{
-        display: "block",
-        padding: 16,
-        background: highlighted ? accent + "10" : "#f9f9f9",
-        border: `1px solid ${highlighted ? accent + "88" : "#e6e6e6"}`,
-        borderRadius: 8,
-        textDecoration: "none",
-        color: "#2c2c2c",
-        opacity: dimmed ? 0.45 : 1,
-        transition: "opacity .15s, background .15s, border-color .15s",
-      }}
-    >
-      <h3
-        style={{
-          fontSize: 16,
-          fontWeight: 600,
-          lineHeight: 1.3,
-          marginBottom: 8,
-          color: "#2a2859",
-        }}
-      >
+  return <Link href={`/story/${story.id}`} onMouseEnter={onEnter} onMouseLeave={onLeave} style={{
+    background: highlighted ? accent + "10" : "#f9f9f9",
+    border: `1px solid ${highlighted ? accent + "88" : "#e6e6e6"}`,
+    opacity: dimmed ? 0.45 : 1
+  }} className="[display:block] [padding:16px] [border-radius:8px] [text-decoration:none] [color:#2c2c2c] [transition:opacity_.15s,_background_.15s,_border-color_.15s]">
+      <h3 className="[font-size:16px] [font-weight:600] [line-height:1.3] [margin-bottom:8px] [color:#2a2859]">
         {story.title}
       </h3>
-      <p style={{ fontSize: 13, lineHeight: 1.5, color: "#666666", marginBottom: 8 }}>
+      <p className="[font-size:13px] [line-height:1.5] [color:#666666] [margin-bottom:8px]">
         {preview}
         {story.body.length > 120 ? "…" : ""}
       </p>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-        {story.field_site && (
-          <span
-            style={{
-              fontSize: 10,
-              padding: "2px 8px",
-              borderRadius: 4,
-              background: "#f2f2f2",
-              color: "#666666",
-              fontWeight: 500,
-            }}
-          >
+      <div className="[display:flex] [flex-wrap:wrap] [gap:4px]">
+        {story.field_site && <span className="[font-size:10px] [padding:2px_8px] [border-radius:4px] [background:#f2f2f2] [color:#666666] [font-weight:500]">
             {story.field_site}
-          </span>
-        )}
-        {story.frictions?.slice(0, 2).map((f) => (
-          <span
-            key={f}
-            style={{
-              fontSize: 10,
-              padding: "2px 8px",
-              borderRadius: 4,
-              background: FRICTIONS[f]?.color + "18",
-              color: FRICTIONS[f]?.color,
-              fontWeight: 500,
-            }}
-          >
+          </span>}
+        {story.frictions?.slice(0, 2).map(f => <span key={f} style={{
+        background: FRICTIONS[f]?.color + "18",
+        color: FRICTIONS[f]?.color
+      }} className="[font-size:10px] [padding:2px_8px] [border-radius:4px] [font-weight:500]">
             {FRICTIONS[f]?.label}
-          </span>
-        ))}
+          </span>)}
       </div>
-    </Link>
-  );
+    </Link>;
 }

@@ -3,319 +3,147 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import Nav from "@/components/Nav";
 import { FRICTIONS, QUALITIES, SCALES } from "@/lib/constants";
-import {
-  getAllStories,
-  getConnections,
-  getDesignResponses,
-  type SolutionItem,
-} from "@/lib/queries";
+import { getAllStories, getConnections, getDesignResponses, type SolutionItem } from "@/lib/queries";
 import { STAGES } from "@/lib/seed-solutions";
 import type { PublicStory } from "@/lib/types";
-
 const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
-
 interface PageProps {
-  params: Promise<{ id: string }>;
+  params: Promise<{
+    id: string;
+  }>;
 }
-
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { id } = await params;
+export async function generateMetadata({
+  params
+}: PageProps): Promise<Metadata> {
+  const {
+    id
+  } = await params;
   const stories = await getAllStories();
-  const story = stories.find((s) => s.id === id);
+  const story = stories.find(s => s.id === id);
   if (!story) {
-    return { title: "Story not found — safe@home" };
+    return {
+      title: "Story not found — safe@home"
+    };
   }
   return {
     title: `${story.title} — safe@home`,
-    description: story.body.split("\n\n")[0].slice(0, 160),
+    description: story.body.split("\n\n")[0].slice(0, 160)
   };
 }
-
-function findLinkedResponses(
-  story: PublicStory,
-  responses: SolutionItem[],
-): SolutionItem[] {
-  const explicit = responses.filter((r) => r.source_stories.includes(story.id));
-  const explicitIds = new Set(explicit.map((r) => r.id));
+function findLinkedResponses(story: PublicStory, responses: SolutionItem[]): SolutionItem[] {
+  const explicit = responses.filter(r => r.source_stories.includes(story.id));
+  const explicitIds = new Set(explicit.map(r => r.id));
   const storyFrictions = new Set(story.frictions ?? []);
-  const byFriction = responses.filter(
-    (r) =>
-      !explicitIds.has(r.id) &&
-      r.frictions.some((f) => storyFrictions.has(f)),
-  );
+  const byFriction = responses.filter(r => !explicitIds.has(r.id) && r.frictions.some(f => storyFrictions.has(f)));
   return [...explicit, ...byFriction];
 }
-
-export default async function StoryPage({ params }: PageProps) {
-  const { id } = await params;
-  const [stories, connections, responses] = await Promise.all([
-    getAllStories(),
-    getConnections(),
-    getDesignResponses(),
-  ]);
-
-  const story = stories.find((s) => s.id === id);
+export default async function StoryPage({
+  params
+}: PageProps) {
+  const {
+    id
+  } = await params;
+  const [stories, connections, responses] = await Promise.all([getAllStories(), getConnections(), getDesignResponses()]);
+  const story = stories.find(s => s.id === id);
   if (!story) notFound();
-
-  const related = connections.filter(
-    (c) => c.from_story_id === story.id || c.to_story_id === story.id,
-  );
+  const related = connections.filter(c => c.from_story_id === story.id || c.to_story_id === story.id);
   const linkedResponses = findLinkedResponses(story, responses);
-
-  return (
-    <>
+  return <>
       <Nav />
-      <main
-        style={{
-          maxWidth: 760,
-          margin: "0 auto",
-          padding: "56px 24px 96px",
-          fontFamily: FONT_STACK,
-        }}
-      >
-        <Link
-          href="/explore"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 6,
-            fontSize: 13,
-            color: "#1f42aa",
-            textDecoration: "none",
-            marginBottom: 32,
-            fontWeight: 500,
-          }}
-        >
+      <main style={{
+      fontFamily: FONT_STACK
+    }} className="[max-width:760px] [margin:0_auto] [padding:56px_24px_96px]">
+        <Link href="/explore" className="[display:inline-flex] [align-items:center] [gap:6px] [font-size:13px] [color:#1f42aa] [text-decoration:none] [margin-bottom:32px] [font-weight:500]">
           ← Back to the map
         </Link>
 
-        <p
-          style={{
-            fontSize: 12,
-            fontWeight: 600,
-            textTransform: "uppercase",
-            letterSpacing: "0.14em",
-            color: "#808080",
-            marginBottom: 16,
-          }}
-        >
+        <p className="[font-size:12px] [font-weight:600] [text-transform:uppercase] [letter-spacing:0.14em] [color:#808080] [margin-bottom:16px]">
           {SCALES[story.map_scale]?.label ?? story.map_scale}
           {story.field_site && <> · {story.field_site}</>}
         </p>
 
-        <h1
-          style={{
-            fontSize: "clamp(32px, 5vw, 48px)",
-            fontWeight: 700,
-            lineHeight: 1.1,
-            letterSpacing: "-0.02em",
-            color: "#2a2859",
-            marginBottom: 24,
-          }}
-        >
+        <h1 className="[font-size:clamp(32px,_5vw,_48px)] [font-weight:700] [line-height:1.1] [letter-spacing:-0.02em] [color:#2a2859] [margin-bottom:24px]">
           {story.title}
         </h1>
 
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 40 }}>
-          {story.frictions?.map((f) => (
-            <Link
-              key={f}
-              href={`/frictions?friction=${f}`}
-              style={{
-                fontSize: 11,
-                padding: "3px 10px",
-                borderRadius: 4,
-                background: FRICTIONS[f]?.color + "18",
-                color: FRICTIONS[f]?.color,
-                fontWeight: 500,
-                textDecoration: "none",
-              }}
-            >
+        <div className="[display:flex] [flex-wrap:wrap] [gap:6px] [margin-bottom:40px]">
+          {story.frictions?.map(f => <Link key={f} href={`/frictions?friction=${f}`} style={{
+          background: FRICTIONS[f]?.color + "18",
+          color: FRICTIONS[f]?.color
+        }} className="[font-size:11px] [padding:3px_10px] [border-radius:4px] [font-weight:500] [text-decoration:none]">
               {FRICTIONS[f]?.label}
-            </Link>
-          ))}
-          {story.qualities?.map((q) => (
-            <Link
-              key={q}
-              href="/qualities"
-              style={{
-                fontSize: 11,
-                padding: "3px 10px",
-                borderRadius: 4,
-                background: QUALITIES[q]?.color + "18",
-                color: QUALITIES[q]?.color,
-                fontWeight: 500,
-                textDecoration: "none",
-              }}
-            >
+            </Link>)}
+          {story.qualities?.map(q => <Link key={q} href="/qualities" style={{
+          background: QUALITIES[q]?.color + "18",
+          color: QUALITIES[q]?.color
+        }} className="[font-size:11px] [padding:3px_10px] [border-radius:4px] [font-weight:500] [text-decoration:none]">
               {QUALITIES[q]?.label}
-            </Link>
-          ))}
+            </Link>)}
         </div>
 
         <article>
-          {story.body.split("\n\n").map((p, i) => (
-            <p
-              key={i}
-              style={{
-                fontSize: 19,
-                lineHeight: 1.7,
-                color: "#2c2c2c",
-                marginBottom: 24,
-              }}
-            >
+          {story.body.split("\n\n").map((p, i) => <p key={i} className="[font-size:19px] [line-height:1.7] [color:#2c2c2c] [margin-bottom:24px]">
               {p}
-            </p>
-          ))}
+            </p>)}
         </article>
 
-        {story.author_credit && (
-          <p style={{ fontSize: 12, color: "#9a9a9a", marginTop: 40 }}>
+        {story.author_credit && <p className="[font-size:12px] [color:#9a9a9a] [margin-top:40px]">
             {story.author_credit}
-          </p>
-        )}
+          </p>}
 
-        {related.length > 0 && (
-          <section style={{ marginTop: 56, paddingTop: 32, borderTop: "1px solid #e6e6e6" }}>
-            <p
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                textTransform: "uppercase",
-                letterSpacing: "0.14em",
-                color: "#808080",
-                marginBottom: 16,
-              }}
-            >
+        {related.length > 0 && <section className="[margin-top:56px] [padding-top:32px] [border-top:1px_solid_#e6e6e6]">
+            <p className="[font-size:11px] [font-weight:600] [text-transform:uppercase] [letter-spacing:0.14em] [color:#808080] [margin-bottom:16px]">
               Connected stories
             </p>
-            <div style={{ display: "grid", gap: 8 }}>
-              {related.map((conn) => {
-                const otherId =
-                  conn.from_story_id === story.id ? conn.to_story_id : conn.from_story_id;
-                const other = stories.find((s) => s.id === otherId);
-                if (!other) return null;
-                return (
-                  <Link
-                    key={conn.id}
-                    href={`/story/${other.id}`}
-                    style={{
-                      display: "block",
-                      padding: 16,
-                      background: "#ffffff",
-                      border: "1px solid #e6e6e6",
-                      borderRadius: 8,
-                      textDecoration: "none",
-                      color: "#2c2c2c",
-                    }}
-                  >
-                    <span style={{ fontSize: 11, color: FRICTIONS[conn.friction]?.color, fontWeight: 600 }}>
+            <div className="[display:grid] [gap:8px]">
+              {related.map(conn => {
+            const otherId = conn.from_story_id === story.id ? conn.to_story_id : conn.from_story_id;
+            const other = stories.find(s => s.id === otherId);
+            if (!other) return null;
+            return <Link key={conn.id} href={`/story/${other.id}`} className="[display:block] [padding:16px] [background:#ffffff] [border:1px_solid_#e6e6e6] [border-radius:8px] [text-decoration:none] [color:#2c2c2c]">
+                    <span style={{
+                color: FRICTIONS[conn.friction]?.color
+              }} className="[font-size:11px] [font-weight:600]">
                       {FRICTIONS[conn.friction]?.label} ({conn.connection_type})
                     </span>
                     <br />
-                    <span
-                      style={{
-                        fontSize: 16,
-                        fontWeight: 600,
-                        color: "#2a2859",
-                      }}
-                    >
+                    <span className="[font-size:16px] [font-weight:600] [color:#2a2859]">
                       {other.title}
                     </span>
-                    {conn.description && (
-                      <p style={{ fontSize: 13, color: "#666666", marginTop: 4, lineHeight: 1.55 }}>
+                    {conn.description && <p className="[font-size:13px] [color:#666666] [margin-top:4px] [line-height:1.55]">
                         {conn.description}
-                      </p>
-                    )}
-                  </Link>
-                );
-              })}
+                      </p>}
+                  </Link>;
+          })}
             </div>
-          </section>
-        )}
+          </section>}
 
-        {linkedResponses.length > 0 && (
-          <section
-            style={{
-              marginTop: 56,
-              padding: 32,
-              background: "#f2f2f2",
-              borderRadius: 8,
-              border: "1px solid #e6e6e6",
-            }}
-          >
-            <p
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                textTransform: "uppercase",
-                letterSpacing: "0.14em",
-                color: "#808080",
-                marginBottom: 8,
-              }}
-            >
+        {linkedResponses.length > 0 && <section className="[margin-top:56px] [padding:32px] [background:#f2f2f2] [border-radius:8px] [border:1px_solid_#e6e6e6]">
+            <p className="[font-size:11px] [font-weight:600] [text-transform:uppercase] [letter-spacing:0.14em] [color:#808080] [margin-bottom:8px]">
               Design response
             </p>
-            <h2
-              style={{
-                fontSize: 24,
-                fontWeight: 700,
-                color: "#2a2859",
-                marginBottom: 24,
-                letterSpacing: "-0.01em",
-              }}
-            >
+            <h2 className="[font-size:24px] [font-weight:700] [color:#2a2859] [margin-bottom:24px] [letter-spacing:-0.01em]">
               How the design team is responding
             </h2>
-            <div style={{ display: "grid", gap: 8 }}>
-              {linkedResponses.map((r) => {
-                const stage = STAGES.find((s) => s.key === r.stage);
-                return (
-                  <Link
-                    key={r.id}
-                    href="/solutions"
-                    style={{
-                      display: "block",
-                      padding: 16,
-                      background: "#ffffff",
-                      border: "1px solid #e6e6e6",
-                      borderRadius: 8,
-                      textDecoration: "none",
-                      color: "#2c2c2c",
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 600,
-                        textTransform: "uppercase",
-                        letterSpacing: "0.12em",
-                        color: stage?.color ?? "#808080",
-                      }}
-                    >
+            <div className="[display:grid] [gap:8px]">
+              {linkedResponses.map(r => {
+            const stage = STAGES.find(s => s.key === r.stage);
+            return <Link key={r.id} href="/solutions" className="[display:block] [padding:16px] [background:#ffffff] [border:1px_solid_#e6e6e6] [border-radius:8px] [text-decoration:none] [color:#2c2c2c]">
+                    <span style={{
+                color: stage?.color ?? "#808080"
+              }} className="[font-size:11px] [font-weight:600] [text-transform:uppercase] [letter-spacing:0.12em]">
                       {stage?.label ?? r.stage}
                     </span>
-                    <h3
-                      style={{
-                        fontSize: 18,
-                        fontWeight: 600,
-                        color: "#2a2859",
-                        marginTop: 4,
-                        marginBottom: 8,
-                      }}
-                    >
+                    <h3 className="[font-size:18px] [font-weight:600] [color:#2a2859] [margin-top:4px] [margin-bottom:8px]">
                       {r.title}
                     </h3>
-                    <p style={{ fontSize: 14, lineHeight: 1.55, color: "#666666" }}>
+                    <p className="[font-size:14px] [line-height:1.55] [color:#666666]">
                       {r.description}
                     </p>
-                  </Link>
-                );
-              })}
+                  </Link>;
+          })}
             </div>
-          </section>
-        )}
+          </section>}
       </main>
-    </>
-  );
+    </>;
 }
