@@ -164,3 +164,26 @@ export async function getResourceLinks(resourceId: string): Promise<{
     qualities: (qualityRes.data ?? []).map((r) => r.quality_key as CareQuality),
   };
 }
+
+export type ResourceLinksByResource = Record<
+  string,
+  { stories: string[]; frictions: CareFriction[]; qualities: CareQuality[] }
+>;
+
+export async function getAllResourceLinks(): Promise<ResourceLinksByResource> {
+  const [storyRes, frictionRes, qualityRes] = await Promise.all([
+    supabase.from("public_resource_stories").select("resource_id, story_id"),
+    supabase.from("public_resource_frictions").select("resource_id, friction_key"),
+    supabase.from("public_resource_qualities").select("resource_id, quality_key"),
+  ]);
+
+  const out: ResourceLinksByResource = {};
+  const ensure = (id: string) => {
+    if (!out[id]) out[id] = { stories: [], frictions: [], qualities: [] };
+    return out[id];
+  };
+  for (const r of storyRes.data ?? []) ensure(r.resource_id as string).stories.push(r.story_id as string);
+  for (const r of frictionRes.data ?? []) ensure(r.resource_id as string).frictions.push(r.friction_key as CareFriction);
+  for (const r of qualityRes.data ?? []) ensure(r.resource_id as string).qualities.push(r.quality_key as CareQuality);
+  return out;
+}
