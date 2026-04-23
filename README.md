@@ -2,35 +2,26 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-First, run the development server:
+Copy `.env.local.example` to `.env.local` and fill in the Supabase keys, then run the dev server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment flags
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` — Supabase project credentials.
+- `NEXT_PUBLIC_SITE_URL` — canonical site URL (used for OAuth redirect fallbacks).
+- `NEXT_PUBLIC_DEV_LOCK` — set to `1` to enable the dev-mode public lock. While enabled, only `/`, `/auth`, `/auth/reset` are reachable by anonymous visitors; `/admin*` requires a signed-in Supabase session. Every other route redirects to `/`. Set to `0` or leave unset to disable.
 
-## Learn More
+The lock is implemented as a Next.js `proxy.ts` (the renamed `middleware.ts` convention in Next 16). It uses `@supabase/ssr` to read the session cookie.
 
-To learn more about Next.js, take a look at the following resources:
+## Supabase migrations
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+SQL migrations live in `supabase/migrations/`. Apply them via the Supabase SQL editor or CLI.
 
 ## Deploy on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+See the [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying).
