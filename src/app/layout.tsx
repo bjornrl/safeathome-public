@@ -14,7 +14,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="nb-NO" className="h-full antialiased">
-      <body>{children}</body>
+      {/* suppressHydrationWarning: browser extensions (e.g. ColorZilla) add
+          attributes to <body> before React mounts, causing a harmless
+          hydration warning in dev. Only silences attribute-level diffs. */}
+      <body suppressHydrationWarning>{children}</body>
     </html>
   );
 }
