@@ -99,19 +99,32 @@ export default function SolutionsPage() {
 // ─── Progress section ───
 
 function ProgressSection({ reports }: { reports: WpReport[] }) {
+  const [monthFilter, setMonthFilter] = useState<string>("all");
+
+  // Unique month keys ("YYYY-MM-01") present in the published reports, sorted
+  // newest first. Used to populate the filter dropdown.
+  const monthOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const r of reports) set.add(r.month);
+    return Array.from(set).sort((a, b) => b.localeCompare(a));
+  }, [reports]);
+
   // Group by wp_id, only recognising the four known work packages.
+  // When a specific month is selected, narrow the set first.
   const byWp = useMemo(() => {
     const groups: Record<WpId, WpReport[]> = { wp1: [], wp2: [], wp3: [], wp4: [] };
     for (const r of reports) {
+      if (monthFilter !== "all" && r.month !== monthFilter) continue;
       if ((WP_ORDER as string[]).includes(r.wp_id)) {
         groups[r.wp_id as WpId].push(r);
       }
     }
     // Reports are already month desc + wp_id asc from the query.
     return groups;
-  }, [reports]);
+  }, [reports, monthFilter]);
 
-  const hasAny = WP_ORDER.some((k) => byWp[k].length > 0);
+  const visibleWps = WP_ORDER.filter((k) => byWp[k].length > 0);
+  const hasAnyPublished = reports.length > 0;
 
   return (
     <section className="[margin-top:96px] [padding-top:48px] [border-top:1px_solid_#e6e6e6]">
@@ -121,18 +134,54 @@ function ProgressSection({ reports }: { reports: WpReport[] }) {
       <h2 className="[font-size:clamp(28px,_4vw,_40px)] [font-weight:700] [color:#2a2859] [margin-bottom:16px] [letter-spacing:-0.02em]">
         Månedlige rapporter fra arbeidspakkene.
       </h2>
-      <p className="[font-size:17px] [line-height:1.7] [color:#666666] [max-width:680px] [margin-bottom:40px]">
+      <p className="[font-size:17px] [line-height:1.7] [color:#666666] [max-width:680px] [margin-bottom:24px]">
         Månedlige intervjuer med hver arbeidspakke, gjennomført av Comte, som
         oppsummerer hvor forskningen står.
       </p>
 
-      {!hasAny ? (
+      {monthOptions.length > 0 && (
+        <div className="[display:flex] [align-items:center] [gap:12px] [flex-wrap:wrap] [margin-bottom:32px]">
+          <label className="[font-size:11px] [font-weight:700] [text-transform:uppercase] [letter-spacing:0.12em] [color:#808080]" htmlFor="wp-month-filter">
+            Måned
+          </label>
+          <select
+            id="wp-month-filter"
+            value={monthFilter}
+            onChange={(e) => setMonthFilter(e.target.value)}
+            style={{ fontFamily: FONT_STACK }}
+            className="[padding:8px_16px] [border:1px_solid_#e6e6e6] [background:#ffffff] [font-size:14px] [color:#2a2859] [cursor:pointer]"
+          >
+            <option value="all">Alle måneder</option>
+            {monthOptions.map((m) => (
+              <option key={m} value={m}>
+                {formatMonthLong(m)}
+              </option>
+            ))}
+          </select>
+          {monthFilter !== "all" && (
+            <button
+              type="button"
+              onClick={() => setMonthFilter("all")}
+              style={{ fontFamily: FONT_STACK }}
+              className="[font-size:12px] [color:#1f42aa] [font-weight:600] [background:transparent] [border:none] [cursor:pointer] [padding:0px]"
+            >
+              Vis alle måneder
+            </button>
+          )}
+        </div>
+      )}
+
+      {!hasAnyPublished ? (
         <p className="[font-size:15px] [line-height:1.7] [color:#808080] [font-style:italic]">
           De første månedsrapportene skrives nå. Kom tilbake snart.
         </p>
+      ) : visibleWps.length === 0 ? (
+        <p className="[font-size:15px] [line-height:1.7] [color:#808080] [font-style:italic]">
+          Ingen rapporter for {formatMonthLong(monthFilter)}.
+        </p>
       ) : (
         <div className="[display:grid] [grid-template-columns:repeat(auto-fit,_minmax(320px,_1fr))] [gap:24px]">
-          {WP_ORDER.map((wp) => (
+          {visibleWps.map((wp) => (
             <WpColumn key={wp} wp={wp} reports={byWp[wp]} />
           ))}
         </div>
