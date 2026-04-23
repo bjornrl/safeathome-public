@@ -147,6 +147,11 @@ export async function getWpReports(): Promise<WpReport[]> {
   return data as WpReport[];
 }
 
+// Phase 5 alias — matches the prompt's naming. Same behavior as
+// getWpReports: published only, month desc + wp_id asc, [] on
+// error/empty.
+export const getPublishedWpReports = getWpReports;
+
 export async function getResourceLinks(resourceId: string): Promise<{
   stories: string[];
   frictions: CareFriction[];

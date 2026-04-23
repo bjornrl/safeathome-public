@@ -1,21 +1,25 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Nav from "@/components/Nav";
-import { FRICTIONS } from "@/lib/constants";
+import { FRICTIONS, WP_LABELS, type WpId } from "@/lib/constants";
 import { STAGES, type SolutionStage } from "@/lib/seed-solutions";
-import { getDesignResponses, getAllStories, type SolutionItem } from "@/lib/queries";
-import type { PublicStory } from "@/lib/types";
+import { getDesignResponses, getAllStories, getPublishedWpReports, type SolutionItem } from "@/lib/queries";
+import type { PublicStory, WpReport } from "@/lib/types";
+
+const WP_ORDER: WpId[] = ["wp1", "wp2", "wp3", "wp4"];
 const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
 export default function SolutionsPage() {
   const [solutions, setSolutions] = useState<SolutionItem[]>([]);
   const [stories, setStories] = useState<PublicStory[]>([]);
+  const [wpReports, setWpReports] = useState<WpReport[]>([]);
   const [activeStage, setActiveStage] = useState<SolutionStage | null>(null);
   useEffect(() => {
-    Promise.all([getDesignResponses(), getAllStories()]).then(([sol, st]) => {
+    Promise.all([getDesignResponses(), getAllStories(), getPublishedWpReports()]).then(([sol, st, wp]) => {
       setSolutions(sol);
       setStories(st);
+      setWpReports(wp);
     });
   }, []);
   const byStage = (stage: SolutionStage) => solutions.filter(s => s.stage === stage).length;
@@ -86,8 +90,162 @@ export default function SolutionsPage() {
               {filtered.map(sol => <SolutionCard key={sol.id} solution={sol} sourceStories={sol.source_stories.map(id => storyById(id)).filter((s): s is PublicStory => Boolean(s))} />)}
             </div>}
         </section>
+
+        <ProgressSection reports={wpReports} />
       </main>
     </>;
+}
+
+// ─── Progress section ───
+
+function ProgressSection({ reports }: { reports: WpReport[] }) {
+  // Group by wp_id, only recognising the four known work packages.
+  const byWp = useMemo(() => {
+    const groups: Record<WpId, WpReport[]> = { wp1: [], wp2: [], wp3: [], wp4: [] };
+    for (const r of reports) {
+      if ((WP_ORDER as string[]).includes(r.wp_id)) {
+        groups[r.wp_id as WpId].push(r);
+      }
+    }
+    // Reports are already month desc + wp_id asc from the query.
+    return groups;
+  }, [reports]);
+
+  const hasAny = WP_ORDER.some((k) => byWp[k].length > 0);
+
+  return (
+    <section className="[margin-top:96px] [padding-top:48px] [border-top:1px_solid_#e6e6e6]">
+      <p className="[font-size:12px] [font-weight:600] [text-transform:uppercase] [letter-spacing:0.18em] [color:#808080] [margin-bottom:16px]">
+        Progress
+      </p>
+      <h2 className="[font-size:clamp(28px,_4vw,_40px)] [font-weight:700] [color:#2a2859] [margin-bottom:16px] [letter-spacing:-0.02em]">
+        Månedlige rapporter fra arbeidspakkene.
+      </h2>
+      <p className="[font-size:17px] [line-height:1.7] [color:#666666] [max-width:680px] [margin-bottom:40px]">
+        Månedlige intervjuer med hver arbeidspakke, gjennomført av Comte, som
+        oppsummerer hvor forskningen står.
+      </p>
+
+      {!hasAny ? (
+        <p className="[font-size:15px] [line-height:1.7] [color:#808080] [font-style:italic]">
+          De første månedsrapportene skrives nå. Kom tilbake snart.
+        </p>
+      ) : (
+        <div className="[display:grid] [grid-template-columns:repeat(auto-fit,_minmax(320px,_1fr))] [gap:24px]">
+          {WP_ORDER.map((wp) => (
+            <WpColumn key={wp} wp={wp} reports={byWp[wp]} />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function WpColumn({ wp, reports }: { wp: WpId; reports: WpReport[] }) {
+  const [archiveOpen, setArchiveOpen] = useState(false);
+  const label = WP_LABELS[wp];
+  const [latest, ...earlier] = reports;
+
+  return (
+    <article className="[background:#ffffff] [border:1px_solid_#e6e6e6] [border-radius:8px] [padding:24px] [display:flex] [flex-direction:column] [gap:16px]">
+      <header>
+        <p className="[font-size:11px] [font-weight:700] [text-transform:uppercase] [letter-spacing:0.12em] [color:#1f42aa] [margin-bottom:4px]">
+          {label.label}
+        </p>
+        <p className="[font-size:13px] [color:#808080] [line-height:1.5]">{label.subtitle}</p>
+      </header>
+
+      {!latest ? (
+        <p className="[font-size:13px] [color:#9a9a9a] [font-style:italic]">
+          Ingen publiserte rapporter ennå.
+        </p>
+      ) : (
+        <>
+          <FeaturedReport report={latest} />
+          {earlier.length > 0 && (
+            <div className="[margin-top:8px] [border-top:1px_solid_#f2f2f2] [padding-top:16px]">
+              <button
+                type="button"
+                onClick={() => setArchiveOpen((v) => !v)}
+                aria-expanded={archiveOpen}
+                style={{ fontFamily: FONT_STACK }}
+                className="[font-size:12px] [font-weight:600] [color:#1f42aa] [background:transparent] [border:none] [cursor:pointer] [padding:0px]"
+              >
+                {archiveOpen ? "Skjul tidligere måneder" : `Tidligere måneder · ${earlier.length}`}
+              </button>
+              {archiveOpen && (
+                <ul className="[list-style:none] [padding:0px] [margin:12px_0_0] [display:flex] [flex-direction:column] [gap:12px]">
+                  {earlier.map((r) => (
+                    <li key={r.id}>
+                      <ArchiveReport report={r} />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </>
+      )}
+    </article>
+  );
+}
+
+function FeaturedReport({ report }: { report: WpReport }) {
+  return (
+    <div className="[display:flex] [flex-direction:column] [gap:12px]">
+      <p className="[font-size:15px] [font-weight:600] [color:#2a2859]">{formatMonthLong(report.month)}</p>
+      {report.summary && (
+        <p className="[font-size:14px] [line-height:1.65] [color:#2c2c2c]">{report.summary}</p>
+      )}
+      {(report.highlights ?? []).length > 0 && (
+        <ul className="[list-style:disc] [padding-left:20px] [margin:0]">
+          {report.highlights.map((h, i) => (
+            <li key={i} className="[font-size:13px] [line-height:1.55] [color:#2c2c2c] [margin-bottom:4px]">
+              {h}
+            </li>
+          ))}
+        </ul>
+      )}
+      {report.next_steps && (
+        <p className="[font-size:12px] [color:#666666] [line-height:1.6] [padding-left:12px] [border-left:2px_solid_#e6e6e6]">
+          <span className="[font-weight:600] [color:#2a2859]">Neste steg:</span> {report.next_steps}
+        </p>
+      )}
+      <p className="[font-size:11px] [color:#9a9a9a]">
+        {report.interviewer}
+        {report.interviewee && <> · med {report.interviewee}</>}
+      </p>
+    </div>
+  );
+}
+
+function ArchiveReport({ report }: { report: WpReport }) {
+  return (
+    <div className="[padding:12px] [background:#f9f9f9] [border:1px_solid_#f2f2f2] [border-radius:6px] [display:flex] [flex-direction:column] [gap:6px]">
+      <p className="[font-size:12px] [font-weight:600] [color:#2a2859]">{formatMonthShort(report.month)}</p>
+      {report.summary && (
+        <p className="[font-size:12px] [line-height:1.55] [color:#666666]">
+          {report.summary.length > 140 ? `${report.summary.slice(0, 140)}…` : report.summary}
+        </p>
+      )}
+      <p className="[font-size:10px] [color:#9a9a9a]">
+        {report.interviewer}
+        {report.interviewee && <> · med {report.interviewee}</>}
+      </p>
+    </div>
+  );
+}
+
+function formatMonthLong(isoDate: string): string {
+  const d = new Date(isoDate);
+  const formatted = d.toLocaleDateString("nb-NO", { month: "long", year: "numeric" });
+  return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+}
+
+function formatMonthShort(isoDate: string): string {
+  const d = new Date(isoDate);
+  const formatted = d.toLocaleDateString("nb-NO", { month: "short", year: "numeric" });
+  return formatted.charAt(0).toUpperCase() + formatted.slice(1);
 }
 function SolutionCard({
   solution,
