@@ -63,6 +63,18 @@ export const QUALITIES: Record<CareQuality, { label: string; color: string }> = 
   belonging_negotiation:      { label: "Belonging negotiation",      color: "#8B6914" },
 };
 
+// ─── One-liner copy for qualities (shared across /qualities and /about) ───
+export const QUALITY_COPY: Record<CareQuality, string> = {
+  transnational_flow:         "Care circulating across borders",
+  household_choreography:     "Daily orchestration of multi-use spaces",
+  invisible_labor:            "Unpaid care by relatives and community",
+  cultural_anchoring:         "Practices sustaining identity",
+  adaptive_resistance:        "Quietly working around services",
+  intergenerational_exchange: "Bidirectional care between old and young",
+  digital_bridging:           "Technology maintaining connections",
+  belonging_negotiation:      "Tension between here and there",
+};
+
 // ─── Map Scale Labels ───
 export const SCALES: Record<MapScale, { label: string }> = {
   micro: { label: "Inside the home" },

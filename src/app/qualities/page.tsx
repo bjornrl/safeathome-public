@@ -3,21 +3,11 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Nav from "@/components/Nav";
-import { QUALITIES, FRICTIONS } from "@/lib/constants";
+import { QUALITIES, FRICTIONS, QUALITY_COPY } from "@/lib/constants";
 import type { CareQuality, PublicStory } from "@/lib/types";
 import { getMapStories } from "@/lib/queries";
 const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
 const QUALITY_KEYS = Object.keys(QUALITIES) as CareQuality[];
-const QUALITY_COPY: Record<CareQuality, string> = {
-  transnational_flow: "Care circulating across borders",
-  household_choreography: "Daily orchestration of multi-use spaces",
-  invisible_labor: "Unpaid care by relatives and community",
-  cultural_anchoring: "Practices sustaining identity",
-  adaptive_resistance: "Quietly working around services",
-  intergenerational_exchange: "Bidirectional care between old and young",
-  digital_bridging: "Technology maintaining connections",
-  belonging_negotiation: "Tension between here and there"
-};
 export default function QualitiesPage() {
   const [stories, setStories] = useState<PublicStory[]>([]);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
