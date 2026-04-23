@@ -1,19 +1,62 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Nav from "@/components/Nav";
 import { QUALITIES, FRICTIONS, QUALITY_COPY } from "@/lib/constants";
-import type { CareQuality, PublicStory } from "@/lib/types";
+import type { CareFriction, CareQuality, PublicStory } from "@/lib/types";
 import { getMapStories } from "@/lib/queries";
 const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
 const QUALITY_KEYS = Object.keys(QUALITIES) as CareQuality[];
+
+/**
+ * Returns the first shared category (friction or quality) between two stories
+ * plus its color, or null if they share nothing. Frictions are checked first
+ * so friction ribbons dominate the hover signal — match the chord diagram on
+ * /frictions rather than the quality column that contains the hovered card.
+ */
+function firstSharedCategory(a: PublicStory, b: PublicStory): { key: string; color: string } | null {
+  const bFrictions = new Set<CareFriction>(b.frictions ?? []);
+  for (const f of a.frictions ?? []) {
+    if (bFrictions.has(f)) {
+      const c = FRICTIONS[f]?.color;
+      if (c) return { key: f, color: c };
+    }
+  }
+  const bQualities = new Set<CareQuality>(b.qualities ?? []);
+  for (const q of a.qualities ?? []) {
+    if (bQualities.has(q)) {
+      const c = QUALITIES[q]?.color;
+      if (c) return { key: q, color: c };
+    }
+  }
+  return null;
+}
+
 export default function QualitiesPage() {
   const [stories, setStories] = useState<PublicStory[]>([]);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const [hoverCapable, setHoverCapable] = useState(false);
+
   useEffect(() => {
     getMapStories().then(setStories);
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(hover: hover)");
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setHoverCapable(mq.matches);
+    const onChange = (e: MediaQueryListEvent) => setHoverCapable(e.matches);
+    mq.addEventListener?.("change", onChange);
+    return () => mq.removeEventListener?.("change", onChange);
+  }, []);
+
+  const hoveredStory = useMemo(
+    () => (hoveredId ? stories.find((s) => s.id === hoveredId) ?? null : null),
+    [hoveredId, stories],
+  );
+
   return <>
       <Nav />
       <main style={{
@@ -59,7 +102,23 @@ export default function QualitiesPage() {
                   <div className="[display:flex] [flex-direction:column] [gap:8px]">
                     {bucket.length === 0 ? <p className="[font-size:14px] [color:#9a9a9a]">
                         No stories yet.
-                      </p> : bucket.map(s => <QualityStoryCard key={s.id} story={s} accent={q.color} dimmed={hoveredId !== null && hoveredId !== s.id} highlighted={hoveredId === s.id} onEnter={() => setHoveredId(s.id)} onLeave={() => setHoveredId(null)} />)}
+                      </p> : bucket.map(s => {
+                        const isHovered = hoveredStory?.id === s.id;
+                        const shared = hoveredStory && !isHovered ? firstSharedCategory(hoveredStory, s) : null;
+                        const highlighted = isHovered || Boolean(shared);
+                        const dimmed = hoveredStory !== null && !highlighted;
+                        const highlightColor = shared?.color ?? q.color;
+                        return <QualityStoryCard
+                          key={s.id}
+                          story={s}
+                          highlightColor={highlightColor}
+                          dimmed={dimmed}
+                          highlighted={highlighted}
+                          isOrigin={isHovered}
+                          onEnter={hoverCapable ? () => setHoveredId(s.id) : undefined}
+                          onLeave={hoverCapable ? () => setHoveredId(null) : undefined}
+                        />;
+                      })}
                   </div>
                 </section>;
           })}
@@ -89,25 +148,28 @@ export default function QualitiesPage() {
 }
 function QualityStoryCard({
   story,
-  accent,
+  highlightColor,
   dimmed,
   highlighted,
+  isOrigin,
   onEnter,
   onLeave
 }: {
   story: PublicStory;
-  accent: string;
+  highlightColor: string;
   dimmed: boolean;
   highlighted: boolean;
-  onEnter: () => void;
-  onLeave: () => void;
+  isOrigin: boolean;
+  onEnter?: () => void;
+  onLeave?: () => void;
 }) {
   const preview = story.body.split("\n\n")[0].slice(0, 120);
   return <Link href={`/story/${story.id}`} onMouseEnter={onEnter} onMouseLeave={onLeave} style={{
-    background: highlighted ? accent + "10" : "#f9f9f9",
-    border: `1px solid ${highlighted ? accent + "88" : "#e6e6e6"}`,
-    opacity: dimmed ? 0.45 : 1
-  }} className="[display:block] [padding:16px] [border-radius:8px] [text-decoration:none] [color:#2c2c2c] [transition:opacity_.15s,_background_.15s,_border-color_.15s]">
+    background: highlighted ? highlightColor + "10" : "#f9f9f9",
+    border: `1px solid ${isOrigin ? highlightColor : highlighted ? highlightColor + "88" : "#e6e6e6"}`,
+    boxShadow: isOrigin ? `0 0 0 1px ${highlightColor}` : undefined,
+    opacity: dimmed ? 0.35 : 1
+  }} className="[display:block] [padding:16px] [border-radius:8px] [text-decoration:none] [color:#2c2c2c] [transition:opacity_.15s,_background_.15s,_border-color_.15s,_box-shadow_.15s]">
       <h3 className="[font-size:16px] [font-weight:600] [line-height:1.3] [margin-bottom:8px] [color:#2a2859]">
         {story.title}
       </h3>
