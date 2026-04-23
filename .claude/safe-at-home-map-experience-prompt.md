@@ -366,9 +366,9 @@ Include hardcoded seed data in a `lib/seed-data.ts` file with 10-12 sample story
 - "Bo Trygt Hjemme reform deploys new tech" — frictions: [script], qualities: [], lat: 59.9139, lng: 10.7522 (Oslo city hall)
 
 **Connections (seed):**
-- "Bus route cancelled" → "GP appointment unreachable" → "Missed medication" via friction `isolate` (direct)
-- "Reform deploys tech" → "Alarm conflict in bedroom" via friction `script` (indirect)
-- "Staff rotation hub" → "Twelve faces" via friction `rotate` (direct)
+- "Bus route cancelled" → "GP appointment unreachable" → "Missed medication" via friction `isolate`
+- "Reform deploys tech" → "Alarm conflict in bedroom" via friction `script`
+- "Staff rotation hub" → "Twelve faces" via friction `rotate`
 
 ---
 
