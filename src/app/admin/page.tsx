@@ -648,18 +648,20 @@ interface ResourceRow {
 }
 function ResourcesPanel() {
   const [rows, setRows] = useState<ResourceRow[]>([]);
+  const [stories, setStories] = useState<{ id: string; title: string }[]>([]);
   const [loading, setLoading] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
   const load = useCallback(async () => {
     setLoading(true);
-    const {
-      data,
-      error
-    } = await supabase.from("public_resources").select("*").order("created_at", {
-      ascending: false
-    }).limit(50);
+    const [resRes, storyRes] = await Promise.all([
+      supabase.from("public_resources").select("*").order("created_at", { ascending: false }).limit(50),
+      supabase.from("public_stories").select("id,title").order("title", { ascending: true })
+    ]);
     setLoading(false);
-    if (error) console.warn("Load resources:", error.message);
-    setRows(data as ResourceRow[] ?? []);
+    if (resRes.error) console.warn("Load resources:", resRes.error.message);
+    if (storyRes.error) console.warn("Load stories for picker:", storyRes.error.message);
+    setRows((resRes.data as ResourceRow[]) ?? []);
+    setStories((storyRes.data as { id: string; title: string }[]) ?? []);
   }, []);
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -667,8 +669,8 @@ function ResourcesPanel() {
   }, [load]);
   return <div className="[display:grid] [grid-template-columns:minmax(320px,_1fr)_minmax(320px,_1.2fr)] [gap:32px]">
       <section>
-        <SectionHeading>New resource</SectionHeading>
-        <ResourceForm onCreated={load} />
+        <SectionHeading>{editId ? "Edit resource" : "New resource"}</SectionHeading>
+        <ResourceForm key={editId ?? "new"} editId={editId} stories={stories} onSaved={() => { setEditId(null); load(); }} onCancel={() => setEditId(null)} />
       </section>
 
       <section>
@@ -692,32 +694,71 @@ function ResourcesPanel() {
           error
         } = await supabase.from("public_resources").delete().eq("id", id);
         if (error) alert(error.message);else load();
-      }} />
+      }} onEdit={id => setEditId(id)} />
       </section>
     </div>;
 }
 function ResourceForm({
-  onCreated
+  editId,
+  stories,
+  onSaved,
+  onCancel
 }: {
-  onCreated: () => void;
+  editId: string | null;
+  stories: { id: string; title: string }[];
+  onSaved: () => void;
+  onCancel: () => void;
 }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [type, setType] = useState<ResourceType>("publication");
   const [url, setUrl] = useState("");
+  const [frictions, setFrictions] = useState<CareFriction[]>([]);
+  const [qualities, setQualities] = useState<CareQuality[]>([]);
+  const [linkedStories, setLinkedStories] = useState<string[]>([]);
   const [published, setPublished] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [status, setStatus] = useState<{
     kind: "ok" | "err";
     msg: string;
   } | null>(null);
+
+  useEffect(() => {
+    if (!editId) return;
+    let cancelled = false;
+    (async () => {
+      const [rRes, fRes, qRes, sRes] = await Promise.all([
+        supabase.from("public_resources").select("*").eq("id", editId).single(),
+        supabase.from("public_resource_frictions").select("friction_key").eq("resource_id", editId),
+        supabase.from("public_resource_qualities").select("quality_key").eq("resource_id", editId),
+        supabase.from("public_resource_stories").select("story_id").eq("resource_id", editId)
+      ]);
+      if (cancelled) return;
+      if (rRes.error || !rRes.data) {
+        setStatus({ kind: "err", msg: rRes.error?.message ?? "Resource not found." });
+        return;
+      }
+      const r = rRes.data as ResourceRow;
+      setTitle(r.title);
+      setDescription(r.description ?? "");
+      setType(r.type);
+      setUrl(r.url ?? "");
+      setPublished(r.published);
+      setFrictions(((fRes.data ?? []) as { friction_key: CareFriction }[]).map(x => x.friction_key));
+      setQualities(((qRes.data ?? []) as { quality_key: CareQuality }[]).map(x => x.quality_key));
+      setLinkedStories(((sRes.data ?? []) as { story_id: string }[]).map(x => x.story_id));
+    })();
+    return () => { cancelled = true; };
+  }, [editId]);
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim()) return;
     setSubmitting(true);
     setStatus(null);
+    const id = editId ?? crypto.randomUUID();
     const row = {
-      id: crypto.randomUUID(),
+      id,
       title: title.trim(),
       description: description.trim() || null,
       type,
@@ -725,25 +766,40 @@ function ResourceForm({
       theme: null,
       published
     };
-    const {
-      error
-    } = await supabase.from("public_resources").insert(row);
-    setSubmitting(false);
-    if (error) {
-      setStatus({
-        kind: "err",
-        msg: error.message
-      });
+    const { error: upsertErr } = await supabase.from("public_resources").upsert(row, { onConflict: "id" });
+    if (upsertErr) {
+      setSubmitting(false);
+      setStatus({ kind: "err", msg: upsertErr.message });
       return;
     }
-    setStatus({
-      kind: "ok",
-      msg: "Resource saved."
-    });
-    setTitle("");
-    setDescription("");
-    setUrl("");
-    onCreated();
+    // Reconcile join tables by replacing existing rows with the new set.
+    const reconcile = async (table: string, col: string, keys: string[]) => {
+      const { error: delErr } = await supabase.from(table).delete().eq("resource_id", id);
+      if (delErr) return delErr;
+      if (keys.length === 0) return null;
+      const { error: insErr } = await supabase.from(table).insert(keys.map(k => ({ resource_id: id, [col]: k })));
+      return insErr;
+    };
+    const errors = [
+      await reconcile("public_resource_frictions", "friction_key", frictions),
+      await reconcile("public_resource_qualities", "quality_key", qualities),
+      await reconcile("public_resource_stories", "story_id", linkedStories)
+    ].filter(Boolean);
+    setSubmitting(false);
+    if (errors.length > 0) {
+      setStatus({ kind: "err", msg: errors.map(e => e!.message).join(" · ") });
+      return;
+    }
+    setStatus({ kind: "ok", msg: editId ? "Resource updated." : "Resource saved." });
+    if (!editId) {
+      setTitle("");
+      setDescription("");
+      setUrl("");
+      setFrictions([]);
+      setQualities([]);
+      setLinkedStories([]);
+    }
+    onSaved();
   }
   return <Form onSubmit={submit}>
       <FormField label="Title">
@@ -766,8 +822,26 @@ function ResourceForm({
       <FormField label="Link (URL)">
         <input style={inputStyle} type="url" value={url} onChange={e => setUrl(e.target.value)} placeholder="https://…" />
       </FormField>
+      <FormField label="Related frictions">
+        <CheckboxGroup options={FRICTION_KEYS.map(k => ({
+        value: k,
+        label: FRICTIONS[k].label,
+        color: FRICTIONS[k].color
+      }))} value={frictions} onChange={next => setFrictions(next as CareFriction[])} />
+      </FormField>
+      <FormField label="Related qualities">
+        <CheckboxGroup options={QUALITY_KEYS.map(k => ({
+        value: k,
+        label: QUALITIES[k].label,
+        color: QUALITIES[k].color
+      }))} value={qualities} onChange={next => setQualities(next as CareQuality[])} />
+      </FormField>
+      <FormField label="Related insights (optional — leave empty to skip)">
+        <StoryMultiSelect stories={stories} value={linkedStories} onChange={setLinkedStories} />
+      </FormField>
       <PublishToggle value={published} onChange={setPublished} />
-      <SubmitBar status={status} submitting={submitting} label="Save resource" />
+      <SubmitBar status={status} submitting={submitting} label={editId ? "Update resource" : "Save resource"} />
+      {editId && <button type="button" onClick={onCancel} className="[font-size:12px] [color:#666666] [background:transparent] [border:none] [cursor:pointer] [padding:0px] [align-self:flex-start]">Cancel edit</button>}
     </Form>;
 }
 
@@ -894,7 +968,8 @@ function ItemList({
   loading,
   rows,
   onTogglePublish,
-  onDelete
+  onDelete,
+  onEdit
 }: {
   loading: boolean;
   rows: {
@@ -906,6 +981,7 @@ function ItemList({
   }[];
   onTogglePublish: (id: string, next: boolean) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
+  onEdit?: (id: string) => void;
 }) {
   const sorted = useMemo(() => rows, [rows]);
   if (loading && rows.length === 0) {
@@ -942,6 +1018,11 @@ function ItemList({
         }} className="[font-size:11px] [padding:4px_10px] [border-radius:4px] [cursor:pointer] [font-weight:600]">
               {r.published ? "Published" : "Draft"}
             </button>
+            {onEdit && <button type="button" onClick={() => onEdit(r.id)} style={{
+          fontFamily: FONT_STACK
+        }} className="[font-size:11px] [color:#1f42aa] [background:transparent] [border:none] [cursor:pointer] [padding:0px] [font-weight:500]">
+              Edit
+            </button>}
             <button type="button" onClick={() => onDelete(r.id)} style={{
           fontFamily: FONT_STACK
         }} className="[font-size:11px] [color:#a83f34] [background:transparent] [border:none] [cursor:pointer] [padding:0px]">
