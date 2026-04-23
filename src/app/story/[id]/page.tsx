@@ -6,6 +6,7 @@ import { FRICTIONS, QUALITIES, SCALES } from "@/lib/constants";
 import { getAllStories, getConnections, getDesignResponses, type SolutionItem } from "@/lib/queries";
 import { STAGES } from "@/lib/seed-solutions";
 import type { PublicStory } from "@/lib/types";
+import ConnectedStories from "./ConnectedStories";
 const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
 interface PageProps {
   params: Promise<{
@@ -46,7 +47,6 @@ export default async function StoryPage({
   const [stories, connections, responses] = await Promise.all([getAllStories(), getConnections(), getDesignResponses()]);
   const story = stories.find(s => s.id === id);
   if (!story) notFound();
-  const related = connections.filter(c => c.from_story_id === story.id || c.to_story_id === story.id);
   const linkedResponses = findLinkedResponses(story, responses);
   return <>
       <Nav />
@@ -91,32 +91,7 @@ export default async function StoryPage({
             {story.author_credit}
           </p>}
 
-        {related.length > 0 && <section className="[margin-top:56px] [padding-top:32px] [border-top:1px_solid_#e6e6e6]">
-            <p className="[font-size:11px] [font-weight:600] [text-transform:uppercase] [letter-spacing:0.14em] [color:#808080] [margin-bottom:16px]">
-              Connected stories
-            </p>
-            <div className="[display:grid] [gap:8px]">
-              {related.map(conn => {
-            const otherId = conn.from_story_id === story.id ? conn.to_story_id : conn.from_story_id;
-            const other = stories.find(s => s.id === otherId);
-            if (!other) return null;
-            return <Link key={conn.id} href={`/story/${other.id}`} className="[display:block] [padding:16px] [background:#ffffff] [border:1px_solid_#e6e6e6] [border-radius:8px] [text-decoration:none] [color:#2c2c2c]">
-                    <span style={{
-                color: FRICTIONS[conn.friction]?.color
-              }} className="[font-size:11px] [font-weight:600]">
-                      {FRICTIONS[conn.friction]?.label} ({conn.connection_type})
-                    </span>
-                    <br />
-                    <span className="[font-size:16px] [font-weight:600] [color:#2a2859]">
-                      {other.title}
-                    </span>
-                    {conn.description && <p className="[font-size:13px] [color:#666666] [margin-top:4px] [line-height:1.55]">
-                        {conn.description}
-                      </p>}
-                  </Link>;
-          })}
-            </div>
-          </section>}
+        <ConnectedStories story={story} allStories={stories} connections={connections} />
 
         {linkedResponses.length > 0 && <section className="[margin-top:56px] [padding:32px] [background:#f2f2f2] [border-radius:8px] [border:1px_solid_#e6e6e6]">
             <p className="[font-size:11px] [font-weight:600] [text-transform:uppercase] [letter-spacing:0.14em] [color:#808080] [margin-bottom:8px]">
