@@ -70,6 +70,16 @@ export const SCALES: Record<MapScale, { label: string }> = {
   macro: { label: "City" },
 };
 
+// ─── Work packages (WP1–WP4) ───
+export type WpId = "wp1" | "wp2" | "wp3" | "wp4";
+
+export const WP_LABELS: Record<WpId, { label: string; subtitle: string }> = {
+  wp1: { label: "WP1: Homes & Communities",         subtitle: "how material spaces and social dynamics shape homecare" },
+  wp2: { label: "WP2: Health & Care Institutions",  subtitle: "what barriers and enablers shape service access" },
+  wp3: { label: "WP3: Transnational Contexts",      subtitle: "how cross-border ties affect aging in place" },
+  wp4: { label: "WP4: Innovation & Design",         subtitle: "co-creating practical solutions with users and municipalities" },
+};
+
 // ─── House Room Positions (% coords within house overlay) ───
 export const HOUSE_HOTSPOTS: { theme: HouseTheme; x: number; y: number; label: string }[] = [
   { theme: "childrens_room", x: 28, y: 17, label: "Children's room" },

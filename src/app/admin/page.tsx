@@ -2,12 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { FRICTIONS, QUALITIES, SCALES } from "@/lib/constants";
+import { FRICTIONS, QUALITIES, SCALES, WP_LABELS, type WpId } from "@/lib/constants";
 import { RESOURCE_TYPE_LABELS } from "@/lib/seed-resources";
 import { STAGES } from "@/lib/seed-solutions";
 import type { CareFriction, CareQuality, FieldSite, HouseTheme, MapScale, ResourceType } from "@/lib/types";
 const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
-type Tab = "stories" | "challenges" | "resources" | "descriptions";
+type Tab = "stories" | "challenges" | "resources" | "descriptions" | "wp";
+const WP_IDS = Object.keys(WP_LABELS) as WpId[];
 const FRICTION_KEYS = Object.keys(FRICTIONS) as CareFriction[];
 const QUALITY_KEYS = Object.keys(QUALITIES) as CareQuality[];
 const THEMES: HouseTheme[] = ["front_door", "living_room", "kitchen", "bedroom", "study", "childrens_room", "garden", "phone", "prayer_space", "bathroom", "hallway"];
@@ -43,12 +44,16 @@ export default function AdminPage() {
         <TabButton active={tab === "descriptions"} onClick={() => setTab("descriptions")}>
           Descriptions
         </TabButton>
+        <TabButton active={tab === "wp"} onClick={() => setTab("wp")}>
+          WP progress
+        </TabButton>
       </nav>
 
       {tab === "stories" && <StoriesPanel />}
       {tab === "challenges" && <ChallengesPanel />}
       {tab === "resources" && <ResourcesPanel />}
       {tab === "descriptions" && <DescriptionsPanel />}
+      {tab === "wp" && <WpPanel />}
     </main>;
 }
 function TabButton({
@@ -964,6 +969,219 @@ function DescriptionRow({
         </p>}
       </div>
     </div>;
+}
+
+// ─── WP monthly reports ───
+
+interface WpReportRow {
+  id: string;
+  wp_id: string;
+  month: string; // ISO date like "2026-04-01"
+  summary: string;
+  highlights: string[];
+  next_steps: string;
+  interviewer: string;
+  interviewee: string | null;
+  published: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+function WpPanel() {
+  const [rows, setRows] = useState<WpReportRow[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const load = useCallback(async () => {
+    setLoading(true);
+    const { data, error } = await supabase.from("public_wp_reports").select("*").order("month", { ascending: false });
+    setLoading(false);
+    if (error) console.warn("Load wp_reports:", error.message);
+    setRows((data as WpReportRow[]) ?? []);
+  }, []);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    load();
+  }, [load]);
+  const byWp = useMemo(() => {
+    const groups: Record<WpId, WpReportRow[]> = { wp1: [], wp2: [], wp3: [], wp4: [] };
+    rows.forEach(r => {
+      if (WP_IDS.includes(r.wp_id as WpId)) groups[r.wp_id as WpId].push(r);
+    });
+    return groups;
+  }, [rows]);
+  return <div className="[display:grid] [grid-template-columns:minmax(320px,_1fr)_minmax(320px,_1.4fr)] [gap:32px]">
+      <section>
+        <SectionHeading>{editId ? "Edit report" : "New report"}</SectionHeading>
+        <WpReportForm key={editId ?? "new"} editId={editId} onSaved={() => { setEditId(null); load(); }} onCancel={() => setEditId(null)} />
+      </section>
+      <section>
+        <SectionHeading>Existing reports</SectionHeading>
+        {loading && rows.length === 0 && <p className="[font-size:14px] [color:#9a9a9a]">Loading…</p>}
+        <div className="[display:flex] [flex-direction:column] [gap:24px]">
+          {WP_IDS.map(wp => <div key={wp}>
+              <p className="[font-size:13px] [font-weight:700] [color:#2a2859] [margin-bottom:4px]">{WP_LABELS[wp].label}</p>
+              <p className="[font-size:12px] [color:#9a9a9a] [margin-bottom:10px]">{WP_LABELS[wp].subtitle}</p>
+              {byWp[wp].length === 0 ? <p className="[font-size:12px] [color:#9a9a9a] [font-style:italic]">No reports yet.</p> : <ul className="[list-style:none] [padding:0px] [margin:0px] [display:grid] [gap:8px]">
+                  {byWp[wp].map(r => <li key={r.id} className="[display:flex] [align-items:flex-start] [justify-content:space-between] [gap:16px] [padding:12px_16px] [background:#ffffff] [border:1px_solid_#e6e6e6] [border-radius:8px]">
+                      <div>
+                        <p className="[font-size:14px] [font-weight:600] [color:#2a2859]">{formatMonth(r.month)}</p>
+                        <p className="[font-size:12px] [color:#666666] [margin-top:2px]">{r.interviewee ? `w/ ${r.interviewee}` : "—"} · {r.interviewer}</p>
+                        {r.summary && <p className="[font-size:12px] [color:#2c2c2c] [margin-top:6px] [line-height:1.5]">{r.summary.slice(0, 140)}{r.summary.length > 140 ? "…" : ""}</p>}
+                      </div>
+                      <div className="[display:flex] [flex-direction:column] [gap:6px] [align-items:flex-end]">
+                        <button type="button" onClick={async () => {
+                          const { error } = await supabase.from("public_wp_reports").update({ published: !r.published, updated_at: new Date().toISOString() }).eq("id", r.id);
+                          if (error) alert(error.message);else load();
+                        }} style={{
+                          border: `1px solid ${r.published ? "#034b45" : "#e6e6e6"}`,
+                          background: r.published ? "#034b45" : "#ffffff",
+                          color: r.published ? "#ffffff" : "#666666",
+                          fontFamily: FONT_STACK
+                        }} className="[font-size:11px] [padding:4px_10px] [border-radius:4px] [cursor:pointer] [font-weight:600]">
+                          {r.published ? "Published" : "Draft"}
+                        </button>
+                        <button type="button" onClick={() => setEditId(r.id)} className="[font-size:11px] [color:#1f42aa] [background:transparent] [border:none] [cursor:pointer] [padding:0px] [font-weight:500]">Edit</button>
+                        <button type="button" onClick={async () => {
+                          if (!confirm("Delete this report?")) return;
+                          const { error } = await supabase.from("public_wp_reports").delete().eq("id", r.id);
+                          if (error) alert(error.message);else load();
+                        }} className="[font-size:11px] [color:#a83f34] [background:transparent] [border:none] [cursor:pointer] [padding:0px]">Delete</button>
+                      </div>
+                    </li>)}
+                </ul>}
+            </div>)}
+        </div>
+      </section>
+    </div>;
+}
+
+function formatMonth(isoDate: string): string {
+  // "2026-04-01" -> "April 2026"
+  const d = new Date(isoDate);
+  return d.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+}
+
+function WpReportForm({
+  editId,
+  onSaved,
+  onCancel
+}: {
+  editId: string | null;
+  onSaved: () => void;
+  onCancel: () => void;
+}) {
+  const [wpId, setWpId] = useState<WpId>("wp1");
+  const [monthStr, setMonthStr] = useState(""); // HTML month input: "YYYY-MM"
+  const [summary, setSummary] = useState("");
+  const [highlights, setHighlights] = useState<string[]>([]);
+  const [nextSteps, setNextSteps] = useState("");
+  const [interviewer, setInterviewer] = useState("Comte");
+  const [interviewee, setInterviewee] = useState("");
+  const [published, setPublished] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [status, setStatus] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
+
+  useEffect(() => {
+    if (!editId) return;
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase.from("public_wp_reports").select("*").eq("id", editId).single();
+      if (cancelled) return;
+      if (error || !data) {
+        setStatus({ kind: "err", msg: error?.message ?? "Report not found." });
+        return;
+      }
+      const r = data as WpReportRow;
+      setWpId((WP_IDS.includes(r.wp_id as WpId) ? (r.wp_id as WpId) : "wp1"));
+      setMonthStr(r.month.slice(0, 7)); // "YYYY-MM-01" -> "YYYY-MM"
+      setSummary(r.summary);
+      setHighlights(r.highlights ?? []);
+      setNextSteps(r.next_steps);
+      setInterviewer(r.interviewer);
+      setInterviewee(r.interviewee ?? "");
+      setPublished(r.published);
+    })();
+    return () => { cancelled = true; };
+  }, [editId]);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!monthStr) {
+      setStatus({ kind: "err", msg: "Pick a month." });
+      return;
+    }
+    setSubmitting(true);
+    setStatus(null);
+    const row = {
+      id: editId ?? crypto.randomUUID(),
+      wp_id: wpId,
+      month: `${monthStr}-01`,
+      summary: summary.trim(),
+      highlights: highlights.map(h => h.trim()).filter(h => h.length > 0),
+      next_steps: nextSteps.trim(),
+      interviewer: interviewer.trim() || "Comte",
+      interviewee: interviewee.trim() || null,
+      published,
+      updated_at: new Date().toISOString()
+    };
+    const { error } = await supabase.from("public_wp_reports").upsert(row, { onConflict: "id" });
+    setSubmitting(false);
+    if (error) {
+      const friendly = /duplicate key|unique/i.test(error.message)
+        ? `A report for ${WP_LABELS[wpId].label} in ${formatMonth(row.month)} already exists. Edit that one instead.`
+        : error.message;
+      setStatus({ kind: "err", msg: friendly });
+      return;
+    }
+    setStatus({ kind: "ok", msg: editId ? "Report updated." : "Report saved." });
+    if (!editId) {
+      setSummary("");
+      setHighlights([]);
+      setNextSteps("");
+      setInterviewee("");
+      setMonthStr("");
+    }
+    onSaved();
+  }
+
+  return <Form onSubmit={submit}>
+      <FormRow>
+        <FormField label="Work package">
+          <select style={inputStyle} value={wpId} onChange={e => setWpId(e.target.value as WpId)}>
+            {WP_IDS.map(k => <option key={k} value={k}>{WP_LABELS[k].label}</option>)}
+          </select>
+        </FormField>
+        <FormField label="Month">
+          <input style={inputStyle} type="month" value={monthStr} onChange={e => setMonthStr(e.target.value)} required />
+        </FormField>
+      </FormRow>
+      <FormField label="Summary">
+        <textarea style={inputStyle} value={summary} onChange={e => setSummary(e.target.value)} className="[min-height:110px]" />
+      </FormField>
+      <FormField label="Highlights">
+        <div className="[display:flex] [flex-direction:column] [gap:8px]">
+          {highlights.map((h, i) => <div key={i} className="[display:flex] [gap:8px]">
+              <input style={inputStyle} value={h} onChange={e => setHighlights(highlights.map((x, j) => j === i ? e.target.value : x))} placeholder="One highlight…" />
+              <button type="button" onClick={() => setHighlights(highlights.filter((_, j) => j !== i))} className="[padding:8px_12px] [font-size:12px] [color:#a83f34] [background:transparent] [border:1px_solid_#e6e6e6] [border-radius:8px] [cursor:pointer]">Remove</button>
+            </div>)}
+          <button type="button" onClick={() => setHighlights([...highlights, ""])} className="[align-self:flex-start] [padding:6px_12px] [font-size:12px] [color:#1f42aa] [background:transparent] [border:1px_dashed_#1f42aa] [border-radius:8px] [cursor:pointer]">+ Add highlight</button>
+        </div>
+      </FormField>
+      <FormField label="Next steps">
+        <textarea style={inputStyle} value={nextSteps} onChange={e => setNextSteps(e.target.value)} className="[min-height:80px]" />
+      </FormField>
+      <FormRow>
+        <FormField label="Interviewer">
+          <input style={inputStyle} value={interviewer} onChange={e => setInterviewer(e.target.value)} />
+        </FormField>
+        <FormField label="Interviewee">
+          <input style={inputStyle} value={interviewee} onChange={e => setInterviewee(e.target.value)} placeholder="Name (optional)" />
+        </FormField>
+      </FormRow>
+      <PublishToggle value={published} onChange={setPublished} />
+      <SubmitBar status={status} submitting={submitting} label={editId ? "Update report" : "Save report"} />
+      {editId && <button type="button" onClick={onCancel} className="[font-size:12px] [color:#666666] [background:transparent] [border:none] [cursor:pointer] [padding:0px] [align-self:flex-start]">Cancel edit</button>}
+    </Form>;
 }
 
 // ─── Shared form pieces ───
