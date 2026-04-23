@@ -35,8 +35,12 @@ function findLinkedResponses(story: PublicStory, responses: SolutionItem[]): Sol
   const explicit = responses.filter(r => r.source_stories.includes(story.id));
   const explicitIds = new Set(explicit.map(r => r.id));
   const storyFrictions = new Set(story.frictions ?? []);
-  const byFriction = responses.filter(r => !explicitIds.has(r.id) && r.frictions.some(f => storyFrictions.has(f)));
-  return [...explicit, ...byFriction];
+  const storyQualities = new Set(story.qualities ?? []);
+  const byCategory = responses.filter(r =>
+    !explicitIds.has(r.id) &&
+    (r.frictions.some(f => storyFrictions.has(f)) || r.qualities.some(q => storyQualities.has(q)))
+  );
+  return [...explicit, ...byCategory];
 }
 export default async function StoryPage({
   params
@@ -103,7 +107,9 @@ export default async function StoryPage({
             <div className="[display:grid] [gap:8px]">
               {linkedResponses.map(r => {
             const stage = STAGES.find(s => s.key === r.stage);
-            return <Link key={r.id} href="/solutions" className="[display:block] [padding:16px] [background:#ffffff] [border:1px_solid_#e6e6e6] [border-radius:8px] [text-decoration:none] [color:#2c2c2c]">
+            const storyFrictions = new Set(story.frictions ?? []);
+            const storyQualities = new Set(story.qualities ?? []);
+            return <article key={r.id} className="[display:block] [padding:16px] [background:#ffffff] [border:1px_solid_#e6e6e6] [border-radius:8px] [color:#2c2c2c]">
                     <span style={{
                 color: stage?.color ?? "#808080"
               }} className="[font-size:11px] [font-weight:600] [text-transform:uppercase] [letter-spacing:0.12em]">
@@ -112,10 +118,36 @@ export default async function StoryPage({
                     <h3 className="[font-size:18px] [font-weight:600] [color:#2a2859] [margin-top:4px] [margin-bottom:8px]">
                       {r.title}
                     </h3>
-                    <p className="[font-size:14px] [line-height:1.55] [color:#666666]">
+                    <p className="[font-size:14px] [line-height:1.55] [color:#666666] [margin-bottom:12px]">
                       {r.description}
                     </p>
-                  </Link>;
+                    {(r.frictions.length > 0 || r.qualities.length > 0) && (
+                      <div className="[display:flex] [flex-wrap:wrap] [gap:4px]">
+                        {r.frictions.map(f => {
+                          const emphasized = storyFrictions.has(f);
+                          const color = FRICTIONS[f]?.color ?? "#808080";
+                          return <Link key={f} href={`/frictions?friction=${f}`} style={{
+                            background: emphasized ? color : color + "18",
+                            color: emphasized ? "#ffffff" : color,
+                            fontWeight: emphasized ? 600 : 500,
+                          }} className="[font-size:11px] [padding:3px_10px] [border-radius:4px] [text-decoration:none]">
+                            {FRICTIONS[f]?.label ?? f}
+                          </Link>;
+                        })}
+                        {r.qualities.map(q => {
+                          const emphasized = storyQualities.has(q);
+                          const color = QUALITIES[q]?.color ?? "#808080";
+                          return <Link key={q} href={`/qualities#${q}`} style={{
+                            background: emphasized ? color : color + "18",
+                            color: emphasized ? "#ffffff" : color,
+                            fontWeight: emphasized ? 600 : 500,
+                          }} className="[font-size:11px] [padding:3px_10px] [border-radius:4px] [text-decoration:none]">
+                            {QUALITIES[q]?.label ?? q}
+                          </Link>;
+                        })}
+                      </div>
+                    )}
+                  </article>;
           })}
             </div>
           </section>}

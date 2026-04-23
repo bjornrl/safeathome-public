@@ -57,6 +57,7 @@ export interface SolutionItem {
   description: string;
   stage: string;
   frictions: CareFriction[];
+  qualities: CareQuality[];
   outcome: string | null;
   source_stories: string[];
 }
@@ -75,6 +76,7 @@ export async function getDesignResponses(): Promise<SolutionItem[]> {
       description: s.description,
       stage: s.stage,
       frictions: s.frictions,
+      qualities: [],
       outcome: s.outcome || null,
       source_stories: s.source_stories,
     }));
@@ -87,6 +89,7 @@ export async function getDesignResponses(): Promise<SolutionItem[]> {
     description: r.body ?? r.description ?? "",
     stage: r.stage ?? "mapping",
     frictions: (r.frictions ?? []) as CareFriction[],
+    qualities: (r.qualities ?? []) as CareQuality[],
     outcome: r.outcome ?? null,
     source_stories: (r.source_stories ?? []) as string[],
   }));
