@@ -10,6 +10,7 @@ export type NavVariant = "default" | "minimal";
 
 const NAV_LINKS: { href: string; label: string }[] = [
   { href: "/explore", label: "Utforsk" },
+  { href: "/index", label: "Register" },
   { href: "/frictions", label: "Friksjoner" },
   { href: "/qualities", label: "Kvaliteter" },
   { href: "/solutions", label: "Løsninger" },
