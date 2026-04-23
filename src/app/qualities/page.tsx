@@ -4,8 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Nav from "@/components/Nav";
 import { QUALITIES, FRICTIONS, QUALITY_COPY } from "@/lib/constants";
-import type { CareFriction, CareQuality, PublicStory } from "@/lib/types";
-import { getMapStories } from "@/lib/queries";
+import type { CareFriction, CareQuality, CategoryDescription, PublicStory } from "@/lib/types";
+import { getMapStories, getQualityDescriptions } from "@/lib/queries";
 const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
 const QUALITY_KEYS = Object.keys(QUALITIES) as CareQuality[];
 
@@ -35,11 +35,18 @@ function firstSharedCategory(a: PublicStory, b: PublicStory): { key: string; col
 
 export default function QualitiesPage() {
   const [stories, setStories] = useState<PublicStory[]>([]);
+  const [descriptions, setDescriptions] = useState<Record<string, CategoryDescription>>({});
+  const [expandedKey, setExpandedKey] = useState<CareQuality | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [hoverCapable, setHoverCapable] = useState(false);
 
   useEffect(() => {
     getMapStories().then(setStories);
+    getQualityDescriptions().then((rows) => {
+      const map: Record<string, CategoryDescription> = {};
+      for (const r of rows) map[r.key] = r;
+      setDescriptions(map);
+    });
   }, []);
 
   useEffect(() => {
@@ -82,7 +89,10 @@ export default function QualitiesPage() {
             {QUALITY_KEYS.map(k => {
             const q = QUALITIES[k];
             const bucket = stories.filter(s => s.qualities?.includes(k));
-            return <section key={k} style={{
+            const desc = descriptions[k];
+            const hasDescription = Boolean(desc && (desc.long_description.trim().length > 0 || (desc.examples?.length ?? 0) > 0));
+            const isExpanded = expandedKey === k;
+            return <section key={k} id={k} style={{
               borderTop: `4px solid ${q.color}`
             }} className="[flex:0_0_320px] [scroll-snap-align:start] [background:#ffffff] [border:1px_solid_#e6e6e6] [border-radius:8px] [padding:24px] [display:flex] [flex-direction:column] [gap:16px]">
                   <div>
@@ -91,12 +101,63 @@ export default function QualitiesPage() {
                 }} className="[display:inline-block] [font-size:11px] [font-weight:600] [text-transform:uppercase] [letter-spacing:0.12em] [margin-bottom:8px]">
                       {bucket.length} {bucket.length === 1 ? "story" : "stories"}
                     </span>
-                    <h2 className="[font-size:22px] [font-weight:700] [line-height:1.2] [color:#2a2859] [margin-bottom:8px]">
-                      {q.label}
-                    </h2>
+                    <button
+                      type="button"
+                      onClick={() => hasDescription && setExpandedKey(isExpanded ? null : k)}
+                      aria-expanded={isExpanded}
+                      disabled={!hasDescription}
+                      style={{
+                        background: "transparent",
+                        border: "none",
+                        padding: 0,
+                        textAlign: "left",
+                        cursor: hasDescription ? "pointer" : "default",
+                        display: "block",
+                        width: "100%",
+                        fontFamily: FONT_STACK,
+                      }}
+                    >
+                      <h2 className="[font-size:22px] [font-weight:700] [line-height:1.2] [color:#2a2859] [margin-bottom:8px]">
+                        {q.label}
+                        {hasDescription && <span aria-hidden style={{ fontSize: 14, marginLeft: 8, color: "#9a9a9a", fontWeight: 500 }}>{isExpanded ? "−" : "+"}</span>}
+                      </h2>
+                    </button>
                     <p className="[font-size:14px] [line-height:1.55] [color:#666666]">
                       {QUALITY_COPY[k]}
                     </p>
+                    {!hasDescription && (
+                      <p className="[font-size:11px] [color:#9a9a9a] [font-style:italic] [margin-top:8px]">
+                        Longer description coming soon.
+                      </p>
+                    )}
+                    {isExpanded && hasDescription && (
+                      <div style={{
+                        marginTop: 16,
+                        padding: 16,
+                        background: "#f9f9f9",
+                        borderLeft: `3px solid ${q.color}`,
+                      }}>
+                        {desc.long_description.trim().length > 0 && (
+                          <p className="[font-size:14px] [line-height:1.6] [color:#2c2c2c] [margin-bottom:12px]">
+                            {desc.long_description}
+                          </p>
+                        )}
+                        {(desc.examples?.length ?? 0) > 0 && (
+                          <>
+                            <p className="[font-size:11px] [font-weight:600] [text-transform:uppercase] [letter-spacing:0.12em] [color:#808080] [margin-bottom:6px]">
+                              Examples
+                            </p>
+                            <ul className="[list-style:disc] [padding-left:20px] [margin:0]">
+                              {desc.examples.map((ex, i) => (
+                                <li key={i} className="[font-size:13px] [line-height:1.55] [color:#2c2c2c] [margin-bottom:4px]">
+                                  {ex}
+                                </li>
+                              ))}
+                            </ul>
+                          </>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   <div className="[display:flex] [flex-direction:column] [gap:8px]">

@@ -50,6 +50,12 @@ function storiesMatchingSelection(stories: PublicStory[], sel: Selection): Publi
   }
   return stories.filter(s => s.frictions?.includes(sel.a) && s.frictions?.includes(sel.b));
 }
+// phase4: expandable long descriptions + examples (from
+// public_friction_descriptions) not wired here yet. The legend
+// buttons already own a click action (select/deselect a friction),
+// so adding an inline expand would conflict with that UX. A better
+// surface would be a dedicated `/frictions/[key]` page per friction
+// or a side drawer opened from the legend. Deferred for a later pass.
 export default function FrictionsPage() {
   const [stories, setStories] = useState<PublicStory[]>([]);
   const [selection, setSelection] = useState<Selection>({
