@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Nav from "@/components/Nav";
-import { Button, Card, Footer, SkipToContent } from "@/components/ui";
+import { Button, Card, Footer } from "@/components/ui";
 import { colors, radius, space, typography } from "@/lib/design-tokens";
 import { FRICTIONS, QUALITIES } from "@/lib/constants";
 import type { CareFriction, CareQuality } from "@/lib/types";
@@ -67,7 +67,6 @@ const sectionDivider: React.CSSProperties = { borderBottom: `1px solid ${colors.
 export default function HomePage() {
   return (
     <>
-      <SkipToContent />
       <Nav />
       <main id="main-content" style={{ background: colors.bg, color: colors.textBody }}>
         {/* Hero */}

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Nav from "@/components/Nav";
-import { Card, Footer, SkipToContent } from "@/components/ui";
+import { Card, Footer } from "@/components/ui";
 import { colors, space, typography } from "@/lib/design-tokens";
 import { FRICTIONS, QUALITIES, QUALITY_COPY } from "@/lib/constants";
 import type { CareFriction, CareQuality } from "@/lib/types";
@@ -30,7 +30,6 @@ const container: React.CSSProperties = { maxWidth: "960px", margin: "0 auto", pa
 export default function AboutPage() {
   return (
     <>
-      <SkipToContent />
       <Nav />
       <main id="main-content" style={{ background: colors.bg, color: colors.textBody }}>
         <section>

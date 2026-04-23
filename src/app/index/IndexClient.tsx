@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import Nav from "@/components/Nav";
-import { Footer, SkipToContent } from "@/components/ui";
+import { Footer } from "@/components/ui";
 import { FRICTIONS, QUALITIES } from "@/lib/constants";
 import { colors, motion, radius, space, typography } from "@/lib/design-tokens";
 import type { PublicStory } from "@/lib/types";
@@ -25,7 +25,6 @@ export default function IndexClient({ stories }: { stories: PublicStory[] }) {
 
   return (
     <>
-      <SkipToContent />
       <Nav />
       <main id="main-content" style={{ background: colors.bg, color: colors.textBody }}>
         <section>

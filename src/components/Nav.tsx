@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { colors, motion, space, typography } from "@/lib/design-tokens";
@@ -37,8 +38,15 @@ function useAuthState() {
   return signedIn;
 }
 
+function isLinkActive(pathname: string | null, href: string): boolean {
+  if (!pathname) return false;
+  if (href === "/") return pathname === "/";
+  return pathname === href || pathname.startsWith(href + "/");
+}
+
 export default function Nav({ variant = "default" }: { variant?: NavVariant }) {
   const signedIn = useAuthState();
+  const pathname = usePathname();
   const authHref = signedIn ? "/admin" : "/auth";
   const authLabel = signedIn ? "Admin" : "Logg inn";
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -173,23 +181,30 @@ export default function Nav({ variant = "default" }: { variant?: NavVariant }) {
               flexWrap: "wrap",
             }}
           >
-            {NAV_LINKS.map((link) => (
-              <li key={link.href}>
-                <Link
-                  href={link.href}
-                  style={{
-                    fontSize: "16px",
-                    lineHeight: "24px",
-                    fontWeight: 500,
-                    color: colors.textBody,
-                    textDecoration: "none",
-                    transition: `color ${motion.fast}`,
-                  }}
-                >
-                  {link.label}
-                </Link>
-              </li>
-            ))}
+            {NAV_LINKS.map((link) => {
+              const active = isLinkActive(pathname, link.href);
+              return (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    aria-current={active ? "page" : undefined}
+                    style={{
+                      display: "inline-block",
+                      fontSize: "16px",
+                      lineHeight: "24px",
+                      fontWeight: active ? 600 : 500,
+                      color: active ? colors.brandWarmBlue : colors.textBody,
+                      textDecoration: "none",
+                      paddingBottom: "4px",
+                      borderBottom: `2px solid ${active ? colors.brandWarmBlue : "transparent"}`,
+                      transition: `color ${motion.fast}, border-color ${motion.fast}`,
+                    }}
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
 
           <Button
@@ -230,13 +245,27 @@ export default function Nav({ variant = "default" }: { variant?: NavVariant }) {
           }}
         >
           <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: space.s12 }}>
-            {NAV_LINKS.map((link) => (
-              <li key={link.href}>
-                <Link href={link.href} style={{ color: colors.textBody, textDecoration: "none", fontSize: "16px", fontWeight: 500 }}>
-                  {link.label}
-                </Link>
-              </li>
-            ))}
+            {NAV_LINKS.map((link) => {
+              const active = isLinkActive(pathname, link.href);
+              return (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    aria-current={active ? "page" : undefined}
+                    style={{
+                      color: active ? colors.brandWarmBlue : colors.textBody,
+                      textDecoration: "none",
+                      fontSize: "16px",
+                      fontWeight: active ? 600 : 500,
+                      borderLeft: `2px solid ${active ? colors.brandWarmBlue : "transparent"}`,
+                      paddingLeft: active ? space.s8 : 0,
+                    }}
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         </div>
       )}
