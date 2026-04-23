@@ -1,12 +1,13 @@
 import type { PublicStory, PublicConnection, CareFriction, CareQuality, MapScale, HouseTheme } from "./types";
 
 function story(
-  id: string, title: string, body: string, theme: HouseTheme,
+  id: string, title: string, body: string, theme: HouseTheme | null,
   field_site: string, frictions: CareFriction[], qualities: CareQuality[],
   map_scale: MapScale, latitude: number | null, longitude: number | null,
 ): PublicStory {
   return {
     id, title, body, theme, frictions, qualities, map_scale, latitude, longitude,
+    home_based: theme !== null,
     field_site: field_site as PublicStory["field_site"],
     source_insight_id: null, media_urls: [], author_credit: "safe@home fieldwork team",
     published: true, published_at: "2025-01-01", sort_order: 0,
@@ -18,7 +19,12 @@ function conn(
   id: string, from: string, to: string, friction: CareFriction,
   type: "direct" | "indirect", desc: string,
 ): PublicConnection {
-  return { id, from_story_id: from, to_story_id: to, friction, connection_type: type, description: desc, published: true, created_at: "2025-01-01" };
+  return {
+    id, from_story_id: from, to_story_id: to, friction,
+    category_kind: "friction", category_key: friction,
+    connection_type: type, description: desc,
+    published: true, created_at: "2025-01-01",
+  };
 }
 
 export const SEED_STORIES: PublicStory[] = [

@@ -1,5 +1,14 @@
 import { supabase } from "./supabase";
-import type { PublicStory, PublicConnection, PublicResource, CareFriction, ResourceType } from "./types";
+import type {
+  PublicStory,
+  PublicConnection,
+  PublicResource,
+  CareFriction,
+  CareQuality,
+  ResourceType,
+  CategoryDescription,
+  WpReport,
+} from "./types";
 import { SEED_STORIES, SEED_CONNECTIONS } from "./seed-data";
 import { SEED_SOLUTIONS } from "./seed-solutions";
 import { SEED_RESOURCES } from "./seed-resources";
@@ -34,7 +43,12 @@ export async function getConnections(): Promise<PublicConnection[]> {
     .eq("published", true);
 
   if (error || !data || data.length === 0) return SEED_CONNECTIONS;
-  return data;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return data.map((r: any) => ({
+    ...r,
+    category_kind: r.category_kind ?? "friction",
+    category_key: r.category_key ?? r.friction,
+  })) as PublicConnection[];
 }
 
 export interface SolutionItem {
@@ -98,4 +112,52 @@ export async function getResources(types?: ResourceType[]): Promise<PublicResour
       : seed;
   }
   return data as PublicResource[];
+}
+
+export async function getFrictionDescriptions(): Promise<CategoryDescription[]> {
+  const { data, error } = await supabase
+    .from("public_friction_descriptions")
+    .select("*");
+
+  if (error || !data) return [];
+  return data as CategoryDescription[];
+}
+
+export async function getQualityDescriptions(): Promise<CategoryDescription[]> {
+  const { data, error } = await supabase
+    .from("public_quality_descriptions")
+    .select("*");
+
+  if (error || !data) return [];
+  return data as CategoryDescription[];
+}
+
+export async function getWpReports(): Promise<WpReport[]> {
+  const { data, error } = await supabase
+    .from("public_wp_reports")
+    .select("*")
+    .eq("published", true)
+    .order("month", { ascending: false })
+    .order("wp_id", { ascending: true });
+
+  if (error || !data) return [];
+  return data as WpReport[];
+}
+
+export async function getResourceLinks(resourceId: string): Promise<{
+  stories: string[];
+  frictions: CareFriction[];
+  qualities: CareQuality[];
+}> {
+  const [storyRes, frictionRes, qualityRes] = await Promise.all([
+    supabase.from("public_resource_stories").select("story_id").eq("resource_id", resourceId),
+    supabase.from("public_resource_frictions").select("friction_key").eq("resource_id", resourceId),
+    supabase.from("public_resource_qualities").select("quality_key").eq("resource_id", resourceId),
+  ]);
+
+  return {
+    stories: (storyRes.data ?? []).map((r) => r.story_id as string),
+    frictions: (frictionRes.data ?? []).map((r) => r.friction_key as CareFriction),
+    qualities: (qualityRes.data ?? []).map((r) => r.quality_key as CareQuality),
+  };
 }

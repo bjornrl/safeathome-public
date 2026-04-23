@@ -49,7 +49,8 @@ export interface PublicStory {
   title: string;
   body: string;
   source_insight_id: string | null;
-  theme: HouseTheme;
+  theme: HouseTheme | null;
+  home_based: boolean;
   field_site: FieldSite | null;
   frictions: CareFriction[];
   qualities: CareQuality[];
@@ -92,7 +93,10 @@ export interface PublicConnection {
   id: string;
   from_story_id: string;
   to_story_id: string;
+  // deprecated: will be removed after UI migrates to category_key
   friction: CareFriction;
+  category_kind: "friction" | "quality";
+  category_key: string;
   connection_type: ConnectionType;
   description: string | null;
   published: boolean;
@@ -120,4 +124,40 @@ export interface PublicPage {
   body: string;
   published: boolean;
   updated_at: string;
+}
+
+export interface CategoryDescription {
+  key: string;
+  long_description: string;
+  examples: string[];
+  updated_at: string;
+}
+
+export interface WpReport {
+  id: string;
+  wp_id: string;
+  month: string;
+  summary: string;
+  highlights: string[];
+  next_steps: string;
+  interviewer: string;
+  interviewee: string | null;
+  published: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ResourceStoryLink {
+  resource_id: string;
+  story_id: string;
+}
+
+export interface ResourceFrictionLink {
+  resource_id: string;
+  friction_key: CareFriction;
+}
+
+export interface ResourceQualityLink {
+  resource_id: string;
+  quality_key: CareQuality;
 }
