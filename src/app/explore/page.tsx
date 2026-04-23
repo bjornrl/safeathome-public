@@ -106,6 +106,12 @@ export default function ExplorePage() {
           features: features as GeoJSON.Feature[]
         }
       });
+      // phase4: connection_type (direct/indirect) is only rendered visually
+      // here — direct = solid line, indirect = dashed line-dasharray. It's
+      // also surfaced as editable text in the admin form and as an inline
+      // annotation in the story side-panel below. Nothing filters, groups,
+      // or analyzes on this field elsewhere. If we keep it, a small map
+      // legend explaining "dashed = mediated causation" would help readers.
       map.addLayer({
         id: "conn-solid",
         type: "line",
