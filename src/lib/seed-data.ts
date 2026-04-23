@@ -114,13 +114,6 @@ export const SEED_STORIES: PublicStory[] = [
     "front_door", "Søndre Nordstrand", ["exclude", "reduce"], ["intergenerational_exchange"], "meso", 59.8320, 10.7900),
 
   // ════════════════════════════════════════
-  // MESO — Skien
-  // ════════════════════════════════════════
-  story("seed-meso-12", "The only Somali-speaking aide in Skien",
-    "There is one homecare worker in Skien who speaks Somali. She is assigned to eleven elderly Somali clients across the municipality. When she takes holiday, her clients receive care from strangers who cannot communicate with them.\n\nThe municipality considers this 'adequate coverage.'",
-    "front_door", "Skien", ["rotate", "exclude"], ["belonging_negotiation", "cultural_anchoring"], "meso", 59.2110, 9.6050),
-
-  // ════════════════════════════════════════
   // MACRO — City / systemic level
   // ════════════════════════════════════════
   story("seed-macro-1", "Bus route 37 cancelled",
@@ -143,9 +136,6 @@ export const SEED_STORIES: PublicStory[] = [
     "The municipality introduced a standardized algorithm to determine homecare hours. It scores physical mobility, cognitive function, and daily living activities. It does not score loneliness, cultural isolation, or the complexity of managing care across languages.\n\nClients who score 'low need' on the algorithm may have enormous unmet needs the algorithm was not designed to see.",
     "study", "Alna", ["reduce", "script"], ["invisible_labor"], "macro", 59.9050, 10.7800),
 
-  story("seed-macro-6", "Skien's integration strategy doesn't reach the elderly",
-    "Skien's municipal integration plan focuses on employment, language courses, and school-age children. Elderly immigrants who arrived through family reunification fall outside every target group.\n\nThey are too old for language courses designed for job seekers. Too isolated for community programs that assume mobility. Too dignified to ask for help they don't know exists.",
-    "hallway", "Skien", ["exclude", "isolate"], ["belonging_negotiation"], "macro", 59.2060, 9.6120),
 ];
 
 export const SEED_CONNECTIONS: PublicConnection[] = [
@@ -162,8 +152,6 @@ export const SEED_CONNECTIONS: PublicConnection[] = [
     "Interpreter budget cuts cause scheduling mismatches"),
   conn("seed-conn-6", "seed-macro-5", "seed-micro-4", "reduce", "indirect",
     "Algorithm can't see transnational care networks"),
-  conn("seed-conn-7", "seed-macro-6", "seed-meso-12", "exclude", "indirect",
-    "Integration strategy leaves elderly without language support"),
 
   // ─── Meso → Micro cascades ───
   conn("seed-conn-8", "seed-meso-1", "seed-micro-2", "rotate", "direct",

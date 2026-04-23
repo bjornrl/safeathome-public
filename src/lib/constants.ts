@@ -37,7 +37,6 @@ export const MAP_STYLE: maplibregl.StyleSpecification = {
 export const DISTRICTS: Record<string, { center: [number, number]; zoom: number; label: string }> = {
   alna: { center: [10.8155, 59.8976], zoom: 14, label: "Alna, Oslo" },
   sondre_nordstrand: { center: [10.7920, 59.8340], zoom: 14, label: "Søndre Nordstrand, Oslo" },
-  skien: { center: [9.6089, 59.2094], zoom: 14, label: "Skien, Telemark" },
 };
 
 // ─── Care Frictions ───

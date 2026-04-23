@@ -150,14 +150,4 @@ export const SEED_RESOURCES: PublicResource[] = [
     2026,
     "Søndre Nordstrand",
   ),
-  resource(
-    "res-exp-skien",
-    "Skien: one Somali-speaking aide, eleven households",
-    "Reflection from Skien's homecare leadership on the structural dependence created by having a single language-matched aide — and the interim strategies considered while recruitment lags.",
-    "experience",
-    "https://safeathome.research/experiences/skien-somali-aide",
-    "Skien Municipality",
-    2026,
-    "Skien",
-  ),
 ];

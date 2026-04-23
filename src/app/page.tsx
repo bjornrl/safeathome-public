@@ -147,8 +147,7 @@ export default function HomePage() {
             <div style={{ display: "flex", flexDirection: "column", gap: space.s16, maxWidth: "680px" }}>
               <p style={{ ...typography.sizes.t18, color: colors.textBody }}>
                 SAFE@HOME er et samarbeidsprosjekt (2026–2029) mellom OsloMet, Universitetet i Oslo,
-                Durham University, Comte Bureau og tre kommuner: bydelene Alna og Søndre Nordstrand i Oslo,
-                og Skien i Telemark.
+                Durham University, Comte Bureau og bydelene Alna og Søndre Nordstrand i Oslo.
               </p>
               <p style={{ ...typography.sizes.t18, color: colors.textBody }}>
                 Prosjektet undersøker hvordan hjemmebasert omsorg kan tilpasses en voksende gruppe

@@ -10,7 +10,6 @@ const RESEARCH_PARTNERS = [
 const MUNICIPALITIES = [
   "Bydel Alna",
   "Bydel Søndre Nordstrand",
-  "Skien kommune",
 ];
 
 export function Footer() {

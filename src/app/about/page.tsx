@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 // phase3: copy hard-coded here for now. When public_pages has a row
 // with slug='about-project', swap to load that body at render time.
 const PROJECT_COPY = [
-  "safe@home er et samarbeidsprosjekt (2026–2029) mellom OsloMet, Universitetet i Oslo, Durham University og Comte Bureau, i samarbeid med tre kommuner: bydelene Alna og Søndre Nordstrand i Oslo, og Skien kommune i Telemark.",
+  "safe@home er et samarbeidsprosjekt (2026–2029) mellom OsloMet, Universitetet i Oslo, Durham University og Comte Bureau, i samarbeid med bydelene Alna og Søndre Nordstrand i Oslo.",
   "Prosjektet kombinerer feltarbeid, politikkanalyse og ko-design for å undersøke hvordan hjemmebaserte omsorgstjenester kan tilpasses en voksende gruppe eldre innvandrere — en gruppe hvis rutiner, familieformer og behov ofte ikke passer inn i standardiserte løsninger.",
   "Vi spør blant annet: Hva skjer når velferdsteknologi møter en transnasjonal hverdag? Hvordan virker reformen Bo trygt hjemme på tvers av språk, kultur og generasjoner? Hvilke lokale strategier og improvisasjoner holder folk oppe der tjenestene svikter?",
 ];
@@ -36,7 +36,7 @@ export default function AboutPage() {
           <div style={{ ...container, padding: `${space.s64} ${space.s24} ${space.s40}` }}>
             <p className="pkt-eyebrow" style={{ marginBottom: space.s16 }}>Om prosjektet</p>
             <h1 style={{ marginBottom: space.s24, maxWidth: "20ch" }}>
-              Eldre, omsorg og teknologi — forskning på tvers av tre kommuner.
+              Eldre, omsorg og teknologi — forskning i Oslo.
             </h1>
             <div style={{ display: "flex", flexDirection: "column", gap: space.s16, maxWidth: "680px" }}>
               {PROJECT_COPY.map((paragraph, i) => (

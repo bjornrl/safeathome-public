@@ -12,7 +12,7 @@ const WP_IDS = Object.keys(WP_LABELS) as WpId[];
 const FRICTION_KEYS = Object.keys(FRICTIONS) as CareFriction[];
 const QUALITY_KEYS = Object.keys(QUALITIES) as CareQuality[];
 const THEMES: HouseTheme[] = ["front_door", "living_room", "kitchen", "bedroom", "study", "childrens_room", "garden", "phone", "prayer_space", "bathroom", "hallway"];
-const FIELD_SITES: FieldSite[] = ["Alna", "Søndre Nordstrand", "Skien"];
+const FIELD_SITES: FieldSite[] = ["Alna", "Søndre Nordstrand"];
 const SCALE_KEYS = Object.keys(SCALES) as MapScale[];
 const RESOURCE_TYPES = Object.keys(RESOURCE_TYPE_LABELS) as ResourceType[];
 

@@ -11,7 +11,7 @@ export type HouseTheme =
   | "bathroom"
   | "hallway";
 
-export type FieldSite = "Alna" | "Søndre Nordstrand" | "Skien";
+export type FieldSite = "Alna" | "Søndre Nordstrand";
 
 export type MapScale = "micro" | "meso" | "macro";
 
