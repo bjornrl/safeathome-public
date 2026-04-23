@@ -229,11 +229,11 @@ export default function ExplorePage() {
     setSelectedQualities(p => p.includes(q) ? p.filter(x => x !== q) : [...p, q]);
   }, []);
   const relatedConnections = selectedStory ? connections.filter(c => c.from_story_id === selectedStory.id || c.to_story_id === selectedStory.id) : [];
-  return <div className="[width:100vw] [height:100vh] [position:relative] [overflow:hidden]">
+  return <div style={{ width: "100vw", height: "100vh", position: "relative", overflow: "hidden" }}>
       <Nav variant="minimal" />
 
       {/* Map canvas */}
-      <div ref={containerRef} className="[position:absolute] [inset:0px]" />
+      <div ref={containerRef} style={{ position: "absolute", top: 0, right: 0, bottom: 0, left: 0 }} />
 
       {/* ─── District selector (top-right, below nav control) ─── */}
       <div className="[position:absolute] [top:64px] [right:16px] [z-index:20]">

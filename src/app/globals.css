@@ -24,14 +24,8 @@
   font-style: normal;
   font-display: swap;
 }
-@font-face {
-  font-family: "Oslo Sans";
-  src: url("https://punkt-cdn.oslo.kommune.no/latest/fonts/OsloSans-Italic.woff2") format("woff2"),
-       url("https://punkt-cdn.oslo.kommune.no/latest/fonts/OsloSans-Italic.woff") format("woff");
-  font-weight: 400;
-  font-style: italic;
-  font-display: swap;
-}
+/* Italic is synthesized from Regular — Punkt's CDN doesn't publish
+   an OsloSans-Italic file, so declaring one would 404 on every page. */
 @font-face {
   font-family: "Oslo Sans";
   src: url("https://punkt-cdn.oslo.kommune.no/latest/fonts/OsloSans-Medium.woff2") format("woff2"),
