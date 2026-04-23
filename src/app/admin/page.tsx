@@ -439,24 +439,27 @@ interface ResponseRow {
   theme: HouseTheme;
   stage: string;
   frictions: CareFriction[];
+  qualities: CareQuality[];
+  source_stories: string[];
   outcome: string | null;
   published: boolean;
   created_at?: string;
 }
 function ChallengesPanel() {
   const [rows, setRows] = useState<ResponseRow[]>([]);
+  const [stories, setStories] = useState<{ id: string; title: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const load = useCallback(async () => {
     setLoading(true);
-    const {
-      data,
-      error
-    } = await supabase.from("public_design_responses").select("*").order("created_at", {
-      ascending: false
-    }).limit(25);
+    const [respRes, storyRes] = await Promise.all([
+      supabase.from("public_design_responses").select("*").order("created_at", { ascending: false }).limit(25),
+      supabase.from("public_stories").select("id,title").order("title", { ascending: true })
+    ]);
     setLoading(false);
-    if (error) console.warn("Load responses:", error.message);
-    setRows(data as ResponseRow[] ?? []);
+    if (respRes.error) console.warn("Load responses:", respRes.error.message);
+    if (storyRes.error) console.warn("Load stories for picker:", storyRes.error.message);
+    setRows((respRes.data as ResponseRow[]) ?? []);
+    setStories((storyRes.data as { id: string; title: string }[]) ?? []);
   }, []);
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -465,7 +468,7 @@ function ChallengesPanel() {
   return <div className="[display:grid] [grid-template-columns:minmax(320px,_1fr)_minmax(320px,_1.2fr)] [gap:32px]">
       <section>
         <SectionHeading>New design challenge</SectionHeading>
-        <ChallengeForm onCreated={load} />
+        <ChallengeForm stories={stories} onCreated={load} />
       </section>
 
       <section>
@@ -475,7 +478,7 @@ function ChallengesPanel() {
         title: r.title,
         subtitle: STAGES.find(s => s.key === r.stage)?.label ?? r.stage,
         published: r.published,
-        tags: r.frictions ?? []
+        tags: [...(r.frictions ?? []), ...(r.qualities ?? [])]
       }))} onTogglePublish={async (id, next) => {
         const {
           error
@@ -494,8 +497,10 @@ function ChallengesPanel() {
     </div>;
 }
 function ChallengeForm({
+  stories,
   onCreated
 }: {
+  stories: { id: string; title: string }[];
   onCreated: () => void;
 }) {
   const [title, setTitle] = useState("");
@@ -503,6 +508,8 @@ function ChallengeForm({
   const [stage, setStage] = useState(STAGES[0].key);
   const [theme, setTheme] = useState<HouseTheme>("living_room");
   const [frictions, setFrictions] = useState<CareFriction[]>([]);
+  const [qualities, setQualities] = useState<CareQuality[]>([]);
+  const [sourceStories, setSourceStories] = useState<string[]>([]);
   const [outcome, setOutcome] = useState("");
   const [published, setPublished] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -522,6 +529,8 @@ function ChallengeForm({
       theme,
       stage,
       frictions,
+      qualities,
+      source_stories: sourceStories,
       outcome: outcome.trim() || null,
       published,
       published_at: published ? new Date().toISOString() : null,
@@ -546,6 +555,8 @@ function ChallengeForm({
     setBody("");
     setOutcome("");
     setFrictions([]);
+    setQualities([]);
+    setSourceStories([]);
     onCreated();
   }
   return <Form onSubmit={submit}>
@@ -580,6 +591,16 @@ function ChallengeForm({
         color: FRICTIONS[k].color
       }))} value={frictions} onChange={next => setFrictions(next as CareFriction[])} />
       </FormField>
+      <FormField label="Qualities addressed">
+        <CheckboxGroup options={QUALITY_KEYS.map(k => ({
+        value: k,
+        label: QUALITIES[k].label,
+        color: QUALITIES[k].color
+      }))} value={qualities} onChange={next => setQualities(next as CareQuality[])} />
+      </FormField>
+      <FormField label="Source insights (optional — challenges link primarily to categories)">
+        <StoryMultiSelect stories={stories} value={sourceStories} onChange={setSourceStories} />
+      </FormField>
       <FormField label="Outcome (optional)">
         <textarea style={{
         ...inputStyle
@@ -589,6 +610,29 @@ function ChallengeForm({
       <PublishToggle value={published} onChange={setPublished} />
       <SubmitBar status={status} submitting={submitting} label="Save challenge" />
     </Form>;
+}
+
+function StoryMultiSelect({
+  stories,
+  value,
+  onChange
+}: {
+  stories: { id: string; title: string }[];
+  value: string[];
+  onChange: (next: string[]) => void;
+}) {
+  if (stories.length === 0) {
+    return <p className="[font-size:12px] [color:#9a9a9a] [font-style:italic]">No insights yet — leave empty to skip.</p>;
+  }
+  return <div className="[max-height:180px] [overflow-y:auto] [border:1px_solid_#e6e6e6] [border-radius:8px] [padding:8px] [background:#fafafa]">
+      {stories.map(s => {
+        const on = value.includes(s.id);
+        return <label key={s.id} className="[display:flex] [align-items:center] [gap:8px] [padding:4px_8px] [cursor:pointer] [font-size:13px] [color:#2c2c2c]">
+            <input type="checkbox" checked={on} onChange={() => onChange(on ? value.filter(x => x !== s.id) : [...value, s.id])} className="[accent-color:#2a2859]" />
+            <span className="[line-height:1.3]">{s.title}</span>
+          </label>;
+      })}
+    </div>;
 }
 
 // ─── Resources (reading room + municipal) ───
