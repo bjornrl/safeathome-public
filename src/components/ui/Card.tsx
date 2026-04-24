@@ -36,19 +36,18 @@ export function Card({
         padding: paddingMap[padding],
         background: colors.bgCard,
         border: `1px solid ${colors.borderSubtle}`,
-        borderRadius: radius.sm,
         color: colors.textBody,
         textDecoration: "none",
         transition: `border-color ${motion.fast}, box-shadow ${motion.fast}, transform ${motion.fast}`,
         ...(isInteractive
           ? {
-              cursor: "pointer",
-            }
+            cursor: "pointer",
+          }
           : {}),
         ...(isInteractive
           ? ({
-              "--card-hover-shadow": shadow.sm,
-            } as CSSProperties)
+            "--card-hover-shadow": shadow.sm,
+          } as CSSProperties)
           : {}),
         ...style,
       }}

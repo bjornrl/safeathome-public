@@ -64,6 +64,27 @@ const container: React.CSSProperties = { maxWidth: "1200px", margin: "0 auto", p
 const narrow: React.CSSProperties = { maxWidth: "960px", margin: "0 auto", padding: `0 ${space.s24}` };
 const sectionDivider: React.CSSProperties = { borderBottom: `1px solid ${colors.borderSubtle}` };
 
+const FRICTION_CARD_TOKENS: Record<CareFriction, { bg: string; text: string }> = {
+  rotate: { bg: colors.brandRed, text: colors.textBody },
+  script: { bg: colors.brandBlue, text: colors.textBody },
+  isolate: { bg: colors.brandGreen, text: colors.textBody },
+  reduce: { bg: colors.brandYellow, text: colors.textBody },
+  exclude: { bg: colors.brandPurple, text: colors.textBody },
+  invisible: { bg: colors.brandYellowFaded, text: colors.textBody },
+  displace: { bg: colors.brandRedFaded, text: colors.textBody },
+};
+
+const QUALITY_CARD_TOKENS: Record<CareQuality, { bg: string; text: string }> = {
+  transnational_flow: { bg: colors.brandYellowFaded, text: colors.textBody },
+  household_choreography: { bg: colors.brandRed, text: colors.textBody },
+  invisible_labor: { bg: colors.brandBeigeStrong, text: colors.textBody },
+  cultural_anchoring: { bg: colors.brandPurple, text: colors.textBody },
+  adaptive_resistance: { bg: colors.brandGreenFaded, text: colors.textBody },
+  intergenerational_exchange: { bg: colors.brandBlue, text: colors.textBody },
+  digital_bridging: { bg: colors.brandBlueFaded, text: colors.textBody },
+  belonging_negotiation: { bg: colors.brandYellow, text: colors.textBody },
+};
+
 export default function HomePage() {
   return (
     <>
@@ -124,7 +145,16 @@ export default function HomePage() {
                   <p className="pkt-eyebrow" style={{ color: colors.brandWarmBlue, marginBottom: space.s16 }}>
                     {entry.hint}
                   </p>
-                  <h3 style={{ marginBottom: space.s8, color: colors.textBody }}>{entry.title}</h3>
+                  <h3
+                    style={{
+                      marginBottom: space.s8,
+                      color: colors.textBody,
+                      overflowWrap: "anywhere",
+                      hyphens: "auto",
+                    }}
+                  >
+                    {entry.title}
+                  </h3>
                   <p style={{ ...typography.sizes.t14, color: colors.textMuted, marginBottom: space.s24 }}>
                     {entry.line}
                   </p>
@@ -213,10 +243,26 @@ export default function HomePage() {
         {/* Care frictions */}
         <section style={{ ...sectionDivider, background: colors.bgSubtle }}>
           <div style={{ ...container, padding: `${space.s64} ${space.s24}` }}>
-            <p className="pkt-eyebrow" style={{ marginBottom: space.s12 }}>Omsorgsfriksjoner</p>
-            <h2 style={{ marginBottom: space.s16, maxWidth: "22ch" }}>
-              Sju måter systemet kolliderer med virkeligheten.
-            </h2>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                justifyContent: "space-between",
+                gap: space.s16,
+                flexWrap: "wrap",
+                marginBottom: space.s16,
+              }}
+            >
+              <div>
+                <p className="pkt-eyebrow" style={{ marginBottom: space.s12 }}>Omsorgsfriksjoner</p>
+                <h2 style={{ maxWidth: "22ch" }}>
+                  Sju måter systemet kolliderer med virkeligheten.
+                </h2>
+              </div>
+              <Link href="/frictions" style={{ textDecoration: "none" }}>
+                <Button variant="secondary" size="md">Se alle friksjoner</Button>
+              </Link>
+            </div>
             <p style={{ ...typography.sizes.t18, color: colors.textMuted, maxWidth: "640px", marginBottom: space.s40 }}>
               Gjentagende mønstre der velmenende omsorg skaper motstand for menneskene den skal betjene.
             </p>
@@ -225,8 +271,18 @@ export default function HomePage() {
               gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
               gap: space.s16,
             }}>
-              {(Object.entries(FRICTIONS) as [CareFriction, (typeof FRICTIONS)[CareFriction]][]).map(([key, val]) => (
-                <Card key={key} variant="interactive" href={`/frictions?friction=${key}`} padding="md">
+              {(Object.entries(FRICTIONS) as [CareFriction, (typeof FRICTIONS)[CareFriction]][]).map(([key, val]) => {
+                const cardTheme = FRICTION_CARD_TOKENS[key];
+                const cardTextColor = cardTheme.text;
+
+                return (
+                <Card
+                  key={key}
+                  variant="interactive"
+                  href={`/frictions?friction=${key}`}
+                  padding="md"
+                  style={{ background: cardTheme.bg, borderColor: cardTheme.bg, color: cardTextColor }}
+                >
                   <div style={{ display: "flex", alignItems: "flex-start", gap: space.s12 }}>
                     <span aria-hidden style={{
                       display: "inline-block",
@@ -236,14 +292,15 @@ export default function HomePage() {
                       flexShrink: 0,
                     }} />
                     <div>
-                      <p style={{ ...typography.sizes.t18, fontWeight: typography.weights.medium, color: colors.textBody, marginBottom: space.s4 }}>
+                      <p style={{ ...typography.sizes.t18, fontWeight: typography.weights.medium, color: cardTextColor, marginBottom: space.s4 }}>
                         {val.label}
                       </p>
-                      <p style={{ ...typography.sizes.t14, color: colors.textMuted }}>{FRICTION_COPY[key]}</p>
+                      <p style={{ ...typography.sizes.t14, color: cardTextColor, opacity: 0.9 }}>{FRICTION_COPY[key]}</p>
                     </div>
                   </div>
                 </Card>
-              ))}
+                );
+              })}
             </div>
           </div>
         </section>
@@ -251,10 +308,26 @@ export default function HomePage() {
         {/* Care qualities */}
         <section style={sectionDivider}>
           <div style={{ ...container, padding: `${space.s64} ${space.s24}` }}>
-            <p className="pkt-eyebrow" style={{ marginBottom: space.s12 }}>Omsorgskvaliteter</p>
-            <h2 style={{ marginBottom: space.s16, maxWidth: "22ch" }}>
-              Hvordan folk faktisk lever og mestrer.
-            </h2>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                justifyContent: "space-between",
+                gap: space.s16,
+                flexWrap: "wrap",
+                marginBottom: space.s16,
+              }}
+            >
+              <div>
+                <p className="pkt-eyebrow" style={{ marginBottom: space.s12 }}>Omsorgskvaliteter</p>
+                <h2 style={{ maxWidth: "22ch" }}>
+                  Hvordan folk faktisk lever og mestrer.
+                </h2>
+              </div>
+              <Link href="/qualities" style={{ textDecoration: "none" }}>
+                <Button variant="secondary" size="md">Se alle kvaliteter</Button>
+              </Link>
+            </div>
             <p style={{ ...typography.sizes.t18, color: colors.textMuted, maxWidth: "640px", marginBottom: space.s40 }}>
               Kvalitetene beskriver hverdagen, strategiene og styrkene til eldre innvandrere og
               familiene deres — delene av omsorg som sjelden finner veien inn i tjenesteloggen.
@@ -264,14 +337,22 @@ export default function HomePage() {
               gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
               gap: space.s16,
             }}>
-              {(Object.entries(QUALITIES) as [CareQuality, (typeof QUALITIES)[CareQuality]][]).map(([key, val]) => (
-                <Card key={key} padding="md" style={{ borderLeft: `3px solid ${val.color}` }}>
-                  <p style={{ ...typography.sizes.t18, fontWeight: typography.weights.medium, color: colors.textBody, marginBottom: space.s4 }}>
+              {(Object.entries(QUALITIES) as [CareQuality, (typeof QUALITIES)[CareQuality]][]).map(([key, val]) => {
+                const cardTheme = QUALITY_CARD_TOKENS[key];
+
+                return (
+                <Card
+                  key={key}
+                  padding="md"
+                  style={{ background: cardTheme.bg, borderColor: cardTheme.bg, color: cardTheme.text }}
+                >
+                  <p style={{ ...typography.sizes.t18, fontWeight: typography.weights.medium, color: cardTheme.text, marginBottom: space.s4 }}>
                     {val.label}
                   </p>
-                  <p style={{ ...typography.sizes.t14, color: colors.textMuted }}>{QUALITY_COPY[key]}</p>
+                  <p style={{ ...typography.sizes.t14, color: cardTheme.text, opacity: 0.9 }}>{QUALITY_COPY[key]}</p>
                 </Card>
-              ))}
+                );
+              })}
             </div>
           </div>
         </section>
