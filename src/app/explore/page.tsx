@@ -228,12 +228,55 @@ export default function ExplorePage() {
   const toggleQuality = useCallback((q: CareQuality) => {
     setSelectedQualities(p => p.includes(q) ? p.filter(x => x !== q) : [...p, q]);
   }, []);
+  const zoomToScale = useCallback((s: MapScale) => {
+    const target = s === "micro" ? 18 : s === "meso" ? 15 : 11;
+    mapRef.current?.easeTo({ zoom: target, duration: 1200 });
+  }, []);
   const relatedConnections = selectedStory ? connections.filter(c => c.from_story_id === selectedStory.id || c.to_story_id === selectedStory.id) : [];
   return <div style={{ width: "100vw", height: "100vh", position: "relative", overflow: "hidden" }}>
       <Nav variant="minimal" />
 
       {/* Map canvas */}
       <div ref={containerRef} style={{ position: "absolute", top: 0, right: 0, bottom: 0, left: 0 }} />
+
+      {/* ─── House view overlay (replaces map at micro scale) ─── */}
+      <AnimatePresence>
+        {currentScale === "micro" && (
+          <motion.div
+            key="house-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
+            style={{
+              position: "absolute",
+              top: 0,
+              right: 0,
+              bottom: 0,
+              left: 0,
+              zIndex: 10,
+              background: "#EDE9E0",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              padding: "64px 24px 24px",
+              pointerEvents: "none",
+            }}
+          >
+            <img
+              src="/images/Revidert_plantegning.png"
+              alt="Revidert plantegning — floor plan of the home"
+              style={{
+                maxWidth: "min(1200px, 95%)",
+                maxHeight: "90%",
+                width: "auto",
+                height: "auto",
+                objectFit: "contain",
+              }}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ─── District selector (top-right, below nav control) ─── */}
       <div className="[position:absolute] [top:64px] [right:16px] [z-index:20]">
@@ -258,23 +301,28 @@ export default function ExplorePage() {
       setSelectedQualities([]);
     }} />
 
-      {/* ─── Zoom indicator (bottom-left) ─── */}
+      {/* ─── Zoom indicator / scale jumper (bottom-left) ─── */}
       <div style={{
       fontFamily: FONT_STACK
-    }} className="[position:absolute] [bottom:32px] [left:16px] [z-index:20] [background:#ffffff] [padding:8px_16px] [border-radius:8px] [border:1px_solid_#e6e6e6]">
-        {(["macro", "meso", "micro"] as MapScale[]).map(s => <div key={s} style={{
-        marginBottom: s !== "micro" ? 8 : 0
-      }} className="[display:flex] [align-items:center] [gap:8px]">
-            <div style={{
-          background: currentScale === s ? "#2a2859" : "#e6e6e6"
-        }} className="[width:8px] [height:8px] [border-radius:50%]" />
-            <span style={{
-          fontWeight: currentScale === s ? 600 : 400,
-          color: currentScale === s ? "#2a2859" : "#9a9a9a"
-        }} className="[font-size:12px]">
-              {SCALES[s].label}
-            </span>
-          </div>)}
+    }} className="[position:absolute] [bottom:32px] [left:16px] [z-index:20] [background:#ffffff] [padding:8px] [border-radius:8px] [border:1px_solid_#e6e6e6] [display:flex] [flex-direction:column] [gap:2px]">
+        {(["macro", "meso", "micro"] as MapScale[]).map(s => {
+          const active = currentScale === s;
+          return <button key={s} type="button" onClick={() => zoomToScale(s)} style={{
+            fontFamily: FONT_STACK,
+            background: active ? "#f5f4f0" : "transparent",
+            cursor: "pointer"
+          }} className="[display:flex] [align-items:center] [gap:8px] [padding:6px_10px] [border-radius:4px] [border:none] [text-align:left] [transition:background_.15s] hover:[background:#f5f4f0]">
+              <span style={{
+                background: active ? "#2a2859" : "#e6e6e6"
+              }} className="[width:8px] [height:8px] [border-radius:50%] [flex-shrink:0]" />
+              <span style={{
+                fontWeight: active ? 600 : 400,
+                color: active ? "#2a2859" : "#9a9a9a"
+              }} className="[font-size:12px]">
+                {SCALES[s].label}
+              </span>
+            </button>;
+        })}
       </div>
 
       {/* ─── Story panel ─── */}
