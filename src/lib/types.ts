@@ -161,3 +161,132 @@ export interface ResourceQualityLink {
   resource_id: string;
   quality_key: CareQuality;
 }
+
+// ─── Internal platform: profiles, quick notes, insights, suggested categories ───
+
+export type Institution =
+  | "OsloMet"
+  | "UiO"
+  | "Durham"
+  | "Comte Bureau"
+  | "Alna District"
+  | "Søndre Nordstrand"
+  | "Skien Municipality";
+
+export type UserRole = "researcher" | "municipal_partner" | "designer" | "admin";
+
+// DB enum is uppercase WP1..WP4; the codebase elsewhere uses lowercase wp1..wp4.
+export type WorkPackage = "WP1" | "WP2" | "WP3" | "WP4";
+
+export type MaterialType =
+  | "fieldnote"
+  | "photo"
+  | "sketch"
+  | "map"
+  | "transcript"
+  | "case_study"
+  | "policy_doc"
+  | "workshop_output"
+  | "prototype_doc";
+
+export interface Profile {
+  id: string;
+  full_name: string;
+  institution: Institution;
+  role: UserRole;
+  work_packages: WorkPackage[] | null;
+  avatar_url: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Insight {
+  id: string;
+  title: string;
+  body: string;
+  author_id: string;
+  work_package: WorkPackage;
+  field_site: FieldSite;
+  material_type: MaterialType;
+  tags: string[];
+  flagged_for_design: boolean;
+  flagged_by: string | null;
+  flagged_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface QuickNote {
+  id: string;
+  author_id: string | null;
+  headline: string | null;
+  body: string;
+  work_package: WorkPackage | null;
+  field_site: FieldSite | null;
+  house_themes: HouseTheme[] | null;
+  care_frictions: CareFriction[] | null;
+  care_qualities: CareQuality[] | null;
+  map_scale: MapScale | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// Polymorphic edge: exactly one of from_*_id and one of to_*_id is set.
+export interface NoteConnection {
+  id: string;
+  from_note_id: string | null;
+  from_insight_id: string | null;
+  to_note_id: string | null;
+  to_insight_id: string | null;
+  created_by: string | null;
+  created_at: string;
+}
+
+export type SuggestionStatus = "pending" | "approved" | "rejected";
+
+export interface SuggestedCategory {
+  id: string;
+  label: string;
+  description: string | null;
+  suggested_by: string | null;
+  status: SuggestionStatus;
+  created_at: string;
+}
+
+export interface CommentRow {
+  id: string;
+  body: string;
+  author_id: string;
+  insight_id: string | null;
+  challenge_id: string | null;
+  quick_note_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WelfareTechnology {
+  id: string;
+  title: string;
+  description: string;
+  category: string | null;
+  tags: string[] | null;
+  url: string | null;
+  image_url: string | null;
+  manufacturer: string | null;
+  country_availability: string[] | null;
+  notes: string | null;
+  published: boolean;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export type LinkableEntityKind = "quick_note" | "insight";
+
+export interface LinkableEntity {
+  kind: LinkableEntityKind;
+  id: string;
+  title: string;
+  subtitle: string | null;
+  updated_at: string;
+}

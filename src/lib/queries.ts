@@ -8,6 +8,7 @@ import type {
   ResourceType,
   CategoryDescription,
   WpReport,
+  WelfareTechnology,
 } from "./types";
 import { SEED_STORIES, SEED_CONNECTIONS } from "./seed-data";
 import { SEED_SOLUTIONS } from "./seed-solutions";
@@ -174,6 +175,16 @@ export type ResourceLinksByResource = Record<
   string,
   { stories: string[]; frictions: CareFriction[]; qualities: CareQuality[] }
 >;
+
+export async function getWelfareTechnologies(): Promise<WelfareTechnology[]> {
+  const { data, error } = await supabase
+    .from("welfare_technologies")
+    .select("*")
+    .eq("published", true)
+    .order("title", { ascending: true });
+  if (error || !data) return [];
+  return data as WelfareTechnology[];
+}
 
 export async function getAllResourceLinks(): Promise<ResourceLinksByResource> {
   const [storyRes, frictionRes, qualityRes] = await Promise.all([

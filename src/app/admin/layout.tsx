@@ -1,20 +1,29 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import Nav from "@/components/Nav";
 import { supabase } from "@/lib/supabase";
 
 const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
+function buildLoginRedirect(pathname: string | null, search: string): string {
+  const path = pathname ?? "/admin";
+  const target = search ? `${path}?${search}` : path;
+  return `/login?redirect=${encodeURIComponent(target)}`;
+}
+
+function AdminGate({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [status, setStatus] = useState<"checking" | "authed" | "anon">("checking");
   const [email, setEmail] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
+    const loginUrl = buildLoginRedirect(pathname, searchParams.toString());
 
     supabase.auth.getSession().then(({ data }) => {
       if (!active) return;
@@ -23,7 +32,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         setEmail(data.session.user.email ?? null);
       } else {
         setStatus("anon");
-        router.replace("/auth");
+        router.replace(loginUrl);
       }
     });
 
@@ -33,7 +42,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         setEmail(session.user.email ?? null);
       } else {
         setStatus("anon");
-        router.replace("/auth");
+        router.replace(loginUrl);
       }
     });
 
@@ -41,21 +50,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       active = false;
       sub.subscription.unsubscribe();
     };
-  }, [router]);
+  }, [router, pathname, searchParams]);
 
   async function signOut() {
     await supabase.auth.signOut();
-    router.replace("/auth");
+    router.replace("/login");
   }
 
   if (status === "checking") {
     return (
-      <>
-        <Nav />
-        <main style={{ padding: "80px 24px", textAlign: "center", color: "#808080", fontFamily: FONT_STACK }}>
-          Checking session…
-        </main>
-      </>
+      <main style={{ padding: "80px 24px", textAlign: "center", color: "#808080", fontFamily: FONT_STACK }}>
+        Sjekker økt…
+      </main>
     );
   }
 
@@ -65,7 +71,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   return (
     <>
-      <Nav />
       <div
         style={{
           background: "#f2f2f2",
@@ -138,6 +143,23 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
       </div>
       {children}
+    </>
+  );
+}
+
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <>
+      <Nav mode="internal" />
+      <Suspense
+        fallback={
+          <main style={{ padding: "80px 24px", textAlign: "center", color: "#808080", fontFamily: FONT_STACK }}>
+            Sjekker økt…
+          </main>
+        }
+      >
+        <AdminGate>{children}</AdminGate>
+      </Suspense>
     </>
   );
 }

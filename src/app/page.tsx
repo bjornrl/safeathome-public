@@ -1,88 +1,85 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Nav from "@/components/Nav";
-import { Button, Card, Footer } from "@/components/ui";
-import { colors, radius, space, typography } from "@/lib/design-tokens";
-import { FRICTIONS, QUALITIES } from "@/lib/constants";
-import type { CareFriction, CareQuality } from "@/lib/types";
+import People from "@/components/People";
+import { Button, Card } from "@/components/ui";
+import { colors, space, typography } from "@/lib/design-tokens";
 
 export const metadata: Metadata = {
-  title: "safe@home — Technologies of care for aging migrants",
+  title: "SAFE@HOME — Tilpasning av kommunale hjemmetjenester for aldrende innvandrere",
   description:
-    "A research platform mapping how aging immigrants in Norway navigate care, technology, and belonging — across the intimacy of a bedroom and the policies that shape a city.",
+    "Et forskningsprosjekt (2026–2029) som tilpasser kommunale hjemmetjenester for eldre innvandrere — ledet av OsloMet med UiO, Durham og Comte Bureau, i feltsamarbeid med bydelene Alna og Søndre Nordstrand.",
 };
-
-const FRICTION_COPY: Record<CareFriction, string> = {
-  rotate: "Staff turnover breaks relational continuity",
-  script: "Technologies embed assumptions that don't fit",
-  isolate: "Care plans sever people from support systems",
-  reduce: "Complex lives flattened to categories",
-  exclude: "Barriers prevent access to services",
-  invisible: "Care work the system doesn't see",
-  displace: "Interventions make people feel less at home",
-};
-
-const QUALITY_COPY: Record<CareQuality, string> = {
-  transnational_flow: "Care circulating across borders",
-  household_choreography: "Daily orchestration of multi-use spaces",
-  invisible_labor: "Unpaid care by relatives and community",
-  cultural_anchoring: "Practices sustaining identity",
-  adaptive_resistance: "Quietly working around services",
-  intergenerational_exchange: "Bidirectional care between old and young",
-  digital_bridging: "Technology maintaining connections",
-  belonging_negotiation: "Tension between here and there",
-};
-
-const FOUR_ENTRIES = [
-  { href: "/explore",   title: "Utforsk kartet",     line: "Fra soverommet til rådhuset",       hint: "HVOR" },
-  { href: "/frictions", title: "Omsorgsfriksjoner",  line: "Hvordan systemer kolliderer med folk", hint: "HVORDAN DET SVIKTER" },
-  { href: "/qualities", title: "Omsorgskvaliteter",  line: "Hvordan folk faktisk lever og mestrer",  hint: "HVORDAN DE LEVER" },
-  { href: "/solutions", title: "Designløsninger",    line: "Fra observasjon til inngripen",           hint: "SVAR" },
-];
-
-const SCALES_COPY = [
-  { label: "Mikro", title: "I hjemmet",
-    body: "Der omsorgsteknologi møter hverdagen — en bønneteppe ved siden av en bevegelsessensor, en telefon på stuebordet, en baderomsdør med lås på utsiden." },
-  { label: "Meso", title: "Nabolaget",
-    body: "Der tjenester møter mennesker — apoteket som ble et klasserom, moskeen som er venterom, tolv ansikter på tre måneder." },
-  { label: "Makro", title: "Byen",
-    body: "Der politikk treffer husstandene — en nedlagt bussrute, en digital søknadsportal, en standardisert tildelingsalgoritme." },
-];
 
 const WORK_PACKAGES = [
-  { code: "WP1", title: "Hjem og fellesskap",
-    body: "Hvordan materielle rom og sosial dynamikk former hjemmebasert omsorg." },
-  { code: "WP2", title: "Helse- og omsorgsinstitusjoner",
-    body: "Hvilke barrierer og muligheter påvirker tilgang til tjenester." },
-  { code: "WP3", title: "Transnasjonale kontekster",
-    body: "Hvordan familiebånd på tvers av landegrenser påvirker det å eldes hjemme." },
-  { code: "WP4", title: "Innovasjon og design",
-    body: "Å ko-skape praktiske løsninger sammen med brukere og kommuner." },
+  {
+    code: "WP1",
+    title: "Homes & Communities",
+    titleNo: "Hjem og fellesskap",
+    lead: "Carolina Rau",
+    institution: "UiO",
+    body: "Hvordan materielle rom og sosial dynamikk i og rundt boligen former hjemmebasert omsorg.",
+  },
+  {
+    code: "WP2",
+    title: "Health & Care Institutions",
+    titleNo: "Helse- og omsorgsinstitusjoner",
+    lead: "Jonas Debesay",
+    institution: "OsloMet",
+    body: "Hvilke barrierer og muligheter institusjonene gir for tilgang til hjemmetjenester.",
+  },
+  {
+    code: "WP3",
+    title: "Transnational Contexts & Policies",
+    titleNo: "Transnasjonale kontekster og politikk",
+    lead: "Erika Gubrium",
+    institution: "OsloMet",
+    body: "Hvordan familiebånd og politikk på tvers av landegrenser påvirker det å eldes hjemme.",
+  },
+  {
+    code: "WP4",
+    title: "Innovation & Service Development",
+    titleNo: "Innovasjon og tjenesteutvikling",
+    lead: "Alejandro Miranda Nieto · Øystein Evensen",
+    institution: "OsloMet · Comte Bureau",
+    body: "Å ko-skape praktiske løsninger og tjenester sammen med beboere, ansatte og kommuner.",
+  },
 ];
 
-const container: React.CSSProperties = { maxWidth: "1200px", margin: "0 auto", padding: `0 ${space.s24}` };
-const narrow: React.CSSProperties = { maxWidth: "960px", margin: "0 auto", padding: `0 ${space.s24}` };
-const sectionDivider: React.CSSProperties = { borderBottom: `1px solid ${colors.borderSubtle}` };
+const PARTNERS = [
+  { name: "OsloMet", role: "Prosjektleder" },
+  { name: "Universitetet i Oslo (UiO)", role: "Forskningspartner" },
+  { name: "Durham University", role: "Forskningspartner" },
+  { name: "Comte Bureau", role: "Designpartner" },
+  { name: "Bydel Alna, Oslo", role: "Feltsamarbeid" },
+  { name: "Bydel Søndre Nordstrand, Oslo", role: "Feltsamarbeid" },
+];
 
-const FRICTION_CARD_TOKENS: Record<CareFriction, { bg: string; text: string }> = {
-  rotate: { bg: colors.brandRed, text: colors.textBody },
-  script: { bg: colors.brandBlue, text: colors.textBody },
-  isolate: { bg: colors.brandGreen, text: colors.textBody },
-  reduce: { bg: colors.brandYellow, text: colors.textBody },
-  exclude: { bg: colors.brandPurple, text: colors.textBody },
-  invisible: { bg: colors.brandYellowFaded, text: colors.textBody },
-  displace: { bg: colors.brandRedFaded, text: colors.textBody },
+const FIELD_SITES = [
+  { place: "Alna", region: "Oslo" },
+  { place: "Søndre Nordstrand", region: "Oslo" },
+];
+
+const FOOTER_LINKS = [
+  { href: "/about", label: "Om prosjektet" },
+  { href: "/explore", label: "Utforsk" },
+  { href: "/welfare-tech", label: "Velferdsteknologi" },
+  { href: "/for-municipalities", label: "For kommuner" },
+  { href: "/reading-room", label: "Lesesal" },
+];
+
+const container: React.CSSProperties = {
+  maxWidth: "1200px",
+  margin: "0 auto",
+  padding: `0 ${space.s24}`,
 };
-
-const QUALITY_CARD_TOKENS: Record<CareQuality, { bg: string; text: string }> = {
-  transnational_flow: { bg: colors.brandYellowFaded, text: colors.textBody },
-  household_choreography: { bg: colors.brandRed, text: colors.textBody },
-  invisible_labor: { bg: colors.brandBeigeStrong, text: colors.textBody },
-  cultural_anchoring: { bg: colors.brandPurple, text: colors.textBody },
-  adaptive_resistance: { bg: colors.brandGreenFaded, text: colors.textBody },
-  intergenerational_exchange: { bg: colors.brandBlue, text: colors.textBody },
-  digital_bridging: { bg: colors.brandBlueFaded, text: colors.textBody },
-  belonging_negotiation: { bg: colors.brandYellow, text: colors.textBody },
+const narrow: React.CSSProperties = {
+  maxWidth: "880px",
+  margin: "0 auto",
+  padding: `0 ${space.s24}`,
+};
+const sectionDivider: React.CSSProperties = {
+  borderBottom: `1px solid ${colors.borderSubtle}`,
 };
 
 export default function HomePage() {
@@ -94,295 +91,438 @@ export default function HomePage() {
         <section style={sectionDivider}>
           <div style={{ ...narrow, padding: `${space.s104} ${space.s24} ${space.s64}` }}>
             <p className="pkt-eyebrow" style={{ marginBottom: space.s16 }}>
-              Forskningsplattform · 2026–2029
+              Forskningsprosjekt · 2026–2029
             </p>
-            <h1 style={{ marginBottom: space.s24, maxWidth: "12ch" }}>safe@home</h1>
-            <p style={{
-              ...typography.sizes.t24,
-              fontWeight: typography.weights.regular,
-              color: colors.textBody,
-              maxWidth: "680px",
-              marginBottom: space.s24,
-            }}>
-              Teknologier for omsorg til eldre med innvandrerbakgrunn.
+            <h1 style={{ marginBottom: space.s24, maxWidth: "14ch" }}>SAFE@HOME</h1>
+            <p
+              style={{
+                ...typography.sizes.t24,
+                fontWeight: typography.weights.regular,
+                color: colors.textBody,
+                maxWidth: "680px",
+                marginBottom: space.s12,
+              }}
+            >
+              Tilpasning av kommunale hjemmetjenester for aldrende innvandrere.
             </p>
-            <p style={{
-              ...typography.sizes.t18,
-              fontWeight: typography.weights.light,
-              color: colors.textMuted,
-              maxWidth: "680px",
-              marginBottom: space.s32,
-            }}>
-              Hva skjer når reformen Bo trygt hjemme møter hverdagen i transnasjonale husholdninger?
-              Plattformen kartlegger erfaringer til eldre innvandrere som navigerer omsorg, teknologi
-              og tilhørighet i tre skalaer — fra et soverom til byens beslutninger.
+            <p
+              style={{
+                ...typography.sizes.t18,
+                fontWeight: typography.weights.light,
+                color: colors.textMuted,
+                maxWidth: "680px",
+                marginBottom: space.s32,
+                fontStyle: "italic",
+              }}
+            >
+              Adapting municipal homecare for aging immigrants.
+            </p>
+            <p
+              style={{
+                ...typography.sizes.t18,
+                color: colors.textBody,
+                maxWidth: "680px",
+                marginBottom: space.s32,
+              }}
+            >
+              SAFE@HOME undersøker hvordan reformen Bo trygt hjemme møter hverdagen i transnasjonale
+              husholdninger. Vi følger tre skalaer — fra soverom til bystyresal — og kartlegger
+              friksjonene og kvalitetene som oppstår når kommunal omsorg møter mangfoldige
+              eldreliv. Sammen med bydelene Alna og Søndre Nordstrand utvikler vi løsninger som
+              kan gjøre tjenestene mer treffsikre.
             </p>
             <div style={{ display: "flex", gap: space.s12, flexWrap: "wrap" }}>
               <Link href="/explore" style={{ textDecoration: "none" }}>
-                <Button variant="primary" size="lg">Utforsk kartet</Button>
+                <Button variant="primary" size="lg">Utforsk prosjektet</Button>
               </Link>
               <Link href="/about" style={{ textDecoration: "none" }}>
-                <Button variant="secondary" size="lg">Om prosjektet</Button>
+                <Button variant="secondary" size="lg">Les mer om SAFE@HOME</Button>
               </Link>
-            </div>
-          </div>
-        </section>
-
-        {/* Four entries */}
-        <section style={{ ...sectionDivider, background: colors.bgSubtle }}>
-          <div style={{ ...container, padding: `${space.s64} ${space.s24}` }}>
-            <p className="pkt-eyebrow" style={{ marginBottom: space.s12 }}>Fire innganger</p>
-            <h2 style={{ marginBottom: space.s40, maxWidth: "20ch" }}>
-              Samme historier, sett gjennom fire ulike linser.
-            </h2>
-            <div style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-              gap: space.s16,
-            }}>
-              {FOUR_ENTRIES.map((entry) => (
-                <Card key={entry.href} variant="interactive" href={entry.href} padding="md" style={{ borderTop: `3px solid ${colors.brandDarkBlue}` }}>
-                  <p className="pkt-eyebrow" style={{ color: colors.brandWarmBlue, marginBottom: space.s16 }}>
-                    {entry.hint}
-                  </p>
-                  <h3
-                    style={{
-                      marginBottom: space.s8,
-                      color: colors.textBody,
-                      overflowWrap: "anywhere",
-                      hyphens: "auto",
-                    }}
-                  >
-                    {entry.title}
-                  </h3>
-                  <p style={{ ...typography.sizes.t14, color: colors.textMuted, marginBottom: space.s24 }}>
-                    {entry.line}
-                  </p>
-                  <span style={{ ...typography.sizes.t14, fontWeight: typography.weights.medium, color: colors.brandWarmBlue }}>
-                    Åpne →
-                  </span>
-                </Card>
-              ))}
             </div>
           </div>
         </section>
 
         {/* About */}
-        <section style={sectionDivider}>
+        <section style={{ ...sectionDivider, background: colors.bgSubtle }}>
           <div style={{ ...narrow, padding: `${space.s64} ${space.s24}` }}>
             <p className="pkt-eyebrow" style={{ marginBottom: space.s12 }}>Om prosjektet</p>
-            <h2 style={{ marginBottom: space.s32, maxWidth: "22ch" }}>
-              Et forskningsprosjekt om Bo trygt hjemme-reformen.
+            <h2 style={{ marginBottom: space.s24, maxWidth: "22ch" }}>
+              Bo trygt hjemme — for hvem, og på hvilke vilkår?
             </h2>
             <div style={{ display: "flex", flexDirection: "column", gap: space.s16, maxWidth: "680px" }}>
               <p style={{ ...typography.sizes.t18, color: colors.textBody }}>
-                SAFE@HOME er et samarbeidsprosjekt (2026–2029) mellom OsloMet, Universitetet i Oslo,
-                Durham University, Comte Bureau og bydelene Alna og Søndre Nordstrand i Oslo.
+                Norges «Bo trygt hjemme»-reform legger opp til at flere eldre skal kunne bli boende
+                lenger hjemme. Reformen forutsetter at hjemmet, familien og lokalsamfunnet kan bære
+                en større del av omsorgsarbeidet — og at kommunale tjenester møter folk der de er.
               </p>
               <p style={{ ...typography.sizes.t18, color: colors.textBody }}>
-                Prosjektet undersøker hvordan hjemmebasert omsorg kan tilpasses en voksende gruppe
-                eldre innvandrere — en gruppe hvis behov, rutiner og familieformer ofte ikke passer
-                inn i standardiserte omsorgsteknologier og byråkratiske løp.
-              </p>
-              <p style={{ ...typography.sizes.t18, color: colors.textMuted }}>
-                Fire arbeidspakker beveger seg fra hjemmet utover til politikkens rammer, og tilbake igjen.
+                Men hjemmene, familiene og hverdagene til eldre med innvandrerbakgrunn følger ikke
+                alltid de mønstrene tjenestene er bygget rundt. SAFE@HOME undersøker hva som skjer
+                i dette møtet, og hvordan tjenestene kan tilpasses uten å miste retning eller
+                rettferdighet.
               </p>
             </div>
-            <div style={{
-              marginTop: space.s40,
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-              gap: space.s16,
-            }}>
+
+            <div
+              style={{
+                marginTop: space.s40,
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                gap: space.s16,
+              }}
+            >
+              <Card padding="md">
+                <p className="pkt-eyebrow" style={{ marginBottom: space.s8 }}>Periode</p>
+                <p style={{ ...typography.sizes.t20, fontWeight: typography.weights.medium, color: colors.textBody }}>
+                  2026–2029
+                </p>
+              </Card>
+              <Card padding="md">
+                <p className="pkt-eyebrow" style={{ marginBottom: space.s8 }}>Feltsteder</p>
+                <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
+                  {FIELD_SITES.map((s) => (
+                    <li
+                      key={s.place}
+                      style={{
+                        ...typography.sizes.t16,
+                        color: colors.textBody,
+                        marginBottom: space.s4,
+                      }}
+                    >
+                      <span style={{ fontWeight: typography.weights.medium }}>{s.place}</span>
+                      <span style={{ color: colors.textMuted }}> · {s.region}</span>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+              <Card padding="md">
+                <p className="pkt-eyebrow" style={{ marginBottom: space.s8 }}>Finansiering</p>
+                <p style={{ ...typography.sizes.t14, color: colors.textMuted, fontStyle: "italic" }}>
+                  Annonseres når midler er bekreftet.
+                </p>
+              </Card>
+            </div>
+          </div>
+        </section>
+
+        {/* Work packages */}
+        <section style={sectionDivider}>
+          <div style={{ ...container, padding: `${space.s64} ${space.s24}` }}>
+            <p className="pkt-eyebrow" style={{ marginBottom: space.s12 }}>Arbeidspakker</p>
+            <h2 style={{ marginBottom: space.s16, maxWidth: "22ch" }}>
+              Fire spor som beveger seg fra hjem til politikk.
+            </h2>
+            <p
+              style={{
+                ...typography.sizes.t18,
+                color: colors.textMuted,
+                maxWidth: "640px",
+                marginBottom: space.s40,
+              }}
+            >
+              Hver arbeidspakke ledes av en av prosjektpartnerne, og resultatene kobles sammen i
+              en felles plattform for innsikter, utfordringer og tjenesteforslag.
+            </p>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+                gap: space.s16,
+              }}
+            >
               {WORK_PACKAGES.map((wp) => (
-                <Card key={wp.code} padding="md">
-                  <p style={{
-                    ...typography.sizes.t12,
-                    fontWeight: typography.weights.bold,
-                    letterSpacing: "0.12em",
-                    color: colors.brandWarmBlue,
-                    marginBottom: space.s8,
-                  }}>
+                <Card
+                  key={wp.code}
+                  padding="md"
+                  style={{ borderTop: `3px solid ${colors.brandDarkBlue}` }}
+                >
+                  <p
+                    style={{
+                      ...typography.sizes.t12,
+                      fontWeight: typography.weights.bold,
+                      letterSpacing: "0.12em",
+                      color: colors.brandWarmBlue,
+                      marginBottom: space.s8,
+                    }}
+                  >
                     {wp.code}
                   </p>
-                  <h4 style={{ marginBottom: space.s8 }}>{wp.title}</h4>
-                  <p style={{ ...typography.sizes.t14, color: colors.textMuted }}>{wp.body}</p>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Three scales */}
-        <section style={sectionDivider}>
-          <div style={{ ...container, padding: `${space.s64} ${space.s24}` }}>
-            <p className="pkt-eyebrow" style={{ marginBottom: space.s12 }}>Tre skalaer</p>
-            <h2 style={{ marginBottom: space.s16, maxWidth: "22ch" }}>Fra soverom til rådhus.</h2>
-            <p style={{ ...typography.sizes.t18, color: colors.textMuted, maxWidth: "640px", marginBottom: space.s40 }}>
-              Den samme historien utspiller seg på tre skalaer samtidig. Zoom inn og se en bønneteppe
-              ved siden av en bevegelsessensor. Zoom ut og se budsjettlinjen som stille fjernet en bussrute.
-            </p>
-            <div style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-              gap: space.s24,
-            }}>
-              {SCALES_COPY.map((s) => (
-                <Card key={s.label} padding="md">
-                  <p className="pkt-eyebrow" style={{ color: colors.brandWarmBlue, marginBottom: space.s8 }}>
-                    {s.label}
+                  <h3 style={{ marginBottom: space.s4, color: colors.textBody }}>{wp.title}</h3>
+                  <p style={{ ...typography.sizes.t14, color: colors.textMuted, marginBottom: space.s16, fontStyle: "italic" }}>
+                    {wp.titleNo}
                   </p>
-                  <h3 style={{ marginBottom: space.s12 }}>{s.title}</h3>
-                  <p style={{ ...typography.sizes.t16, color: colors.textBody }}>{s.body}</p>
+                  <p style={{ ...typography.sizes.t14, color: colors.textBody, marginBottom: space.s16 }}>
+                    {wp.body}
+                  </p>
+                  <p style={{ ...typography.sizes.t12, color: colors.textMuted }}>
+                    Ledet av <span style={{ color: colors.textBody, fontWeight: typography.weights.medium }}>{wp.lead}</span>
+                    <span style={{ color: colors.textMuted }}> · {wp.institution}</span>
+                  </p>
                 </Card>
               ))}
             </div>
           </div>
         </section>
 
-        {/* Care frictions */}
+        {/* Partners */}
         <section style={{ ...sectionDivider, background: colors.bgSubtle }}>
           <div style={{ ...container, padding: `${space.s64} ${space.s24}` }}>
+            <p className="pkt-eyebrow" style={{ marginBottom: space.s12 }}>Partnere</p>
+            <h2 style={{ marginBottom: space.s16, maxWidth: "22ch" }}>
+              Et tverrfaglig konsortium på tvers av forskning, design og kommune.
+            </h2>
             <div
               style={{
-                display: "flex",
-                alignItems: "flex-start",
-                justifyContent: "space-between",
+                marginTop: space.s32,
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
                 gap: space.s16,
-                flexWrap: "wrap",
-                marginBottom: space.s16,
               }}
             >
-              <div>
-                <p className="pkt-eyebrow" style={{ marginBottom: space.s12 }}>Omsorgsfriksjoner</p>
-                <h2 style={{ maxWidth: "22ch" }}>
-                  Sju måter systemet kolliderer med virkeligheten.
-                </h2>
-              </div>
-              <Link href="/frictions" style={{ textDecoration: "none" }}>
-                <Button variant="secondary" size="md">Se alle friksjoner</Button>
-              </Link>
-            </div>
-            <p style={{ ...typography.sizes.t18, color: colors.textMuted, maxWidth: "640px", marginBottom: space.s40 }}>
-              Gjentagende mønstre der velmenende omsorg skaper motstand for menneskene den skal betjene.
-            </p>
-            <div style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-              gap: space.s16,
-            }}>
-              {(Object.entries(FRICTIONS) as [CareFriction, (typeof FRICTIONS)[CareFriction]][]).map(([key, val]) => {
-                const cardTheme = FRICTION_CARD_TOKENS[key];
-                const cardTextColor = cardTheme.text;
-
-                return (
-                <Card
-                  key={key}
-                  variant="interactive"
-                  href={`/frictions?friction=${key}`}
-                  padding="md"
-                  style={{ background: cardTheme.bg, borderColor: cardTheme.bg, color: cardTextColor }}
-                >
-                  <div style={{ display: "flex", alignItems: "flex-start", gap: space.s12 }}>
-                    <span aria-hidden style={{
-                      display: "inline-block",
-                      width: 12, height: 12,
-                      marginTop: 6,
-                      background: val.color,
-                      flexShrink: 0,
-                    }} />
-                    <div>
-                      <p style={{ ...typography.sizes.t18, fontWeight: typography.weights.medium, color: cardTextColor, marginBottom: space.s4 }}>
-                        {val.label}
-                      </p>
-                      <p style={{ ...typography.sizes.t14, color: cardTextColor, opacity: 0.9 }}>{FRICTION_COPY[key]}</p>
-                    </div>
-                  </div>
+              {PARTNERS.map((p) => (
+                <Card key={p.name} padding="md">
+                  <p
+                    style={{
+                      ...typography.sizes.t18,
+                      fontWeight: typography.weights.medium,
+                      color: colors.textBody,
+                      marginBottom: space.s4,
+                    }}
+                  >
+                    {p.name}
+                  </p>
+                  <p style={{ ...typography.sizes.t14, color: colors.textMuted }}>{p.role}</p>
                 </Card>
-                );
-              })}
+              ))}
             </div>
           </div>
         </section>
 
-        {/* Care qualities */}
+        {/* People */}
         <section style={sectionDivider}>
           <div style={{ ...container, padding: `${space.s64} ${space.s24}` }}>
-            <div
+            <p className="pkt-eyebrow" style={{ marginBottom: space.s12 }}>Prosjektgruppe</p>
+            <h2 style={{ marginBottom: space.s16, maxWidth: "22ch" }}>
+              Forskere, designere og kommunale partnere.
+            </h2>
+            <p
               style={{
-                display: "flex",
-                alignItems: "flex-start",
-                justifyContent: "space-between",
-                gap: space.s16,
-                flexWrap: "wrap",
-                marginBottom: space.s16,
+                ...typography.sizes.t18,
+                color: colors.textMuted,
+                maxWidth: "640px",
+                marginBottom: space.s40,
               }}
             >
-              <div>
-                <p className="pkt-eyebrow" style={{ marginBottom: space.s12 }}>Omsorgskvaliteter</p>
-                <h2 style={{ maxWidth: "22ch" }}>
-                  Hvordan folk faktisk lever og mestrer.
-                </h2>
-              </div>
-              <Link href="/qualities" style={{ textDecoration: "none" }}>
-                <Button variant="secondary" size="md">Se alle kvaliteter</Button>
-              </Link>
-            </div>
-            <p style={{ ...typography.sizes.t18, color: colors.textMuted, maxWidth: "640px", marginBottom: space.s40 }}>
-              Kvalitetene beskriver hverdagen, strategiene og styrkene til eldre innvandrere og
-              familiene deres — delene av omsorg som sjelden finner veien inn i tjenesteloggen.
+              Prosjektet drives av et team på tvers av OsloMet, Universitetet i Oslo, Durham
+              University og Comte Bureau, i tett samarbeid med Bydel Alna og Bydel Søndre
+              Nordstrand.
             </p>
-            <div style={{
+            <People />
+          </div>
+        </section>
+
+        {/* Contact */}
+        <section style={{ ...sectionDivider, background: colors.bgSubtle }}>
+          <div style={{ ...narrow, padding: `${space.s64} ${space.s24}` }}>
+            <p className="pkt-eyebrow" style={{ marginBottom: space.s12 }}>Kontakt</p>
+            <h2 style={{ marginBottom: space.s32, maxWidth: "22ch" }}>
+              Ta kontakt med prosjektet.
+            </h2>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+                gap: space.s24,
+              }}
+            >
+              <Card padding="md">
+                <p className="pkt-eyebrow" style={{ marginBottom: space.s8 }}>
+                  Prosjektleder (PI)
+                </p>
+                <p
+                  style={{
+                    ...typography.sizes.t20,
+                    fontWeight: typography.weights.medium,
+                    color: colors.textBody,
+                    marginBottom: space.s4,
+                  }}
+                >
+                  Marit Haldar
+                </p>
+                <p style={{ ...typography.sizes.t14, color: colors.textMuted, marginBottom: space.s12 }}>
+                  OsloMet
+                </p>
+                <a
+                  href="mailto:mariha@oslomet.no"
+                  style={{
+                    ...typography.sizes.t16,
+                    color: colors.brandWarmBlue,
+                    textDecoration: "none",
+                    fontWeight: typography.weights.medium,
+                  }}
+                >
+                  mariha@oslomet.no
+                </a>
+              </Card>
+              <Card padding="md">
+                <p className="pkt-eyebrow" style={{ marginBottom: space.s8 }}>
+                  Plattform · WP4
+                </p>
+                <p
+                  style={{
+                    ...typography.sizes.t20,
+                    fontWeight: typography.weights.medium,
+                    color: colors.textBody,
+                    marginBottom: space.s4,
+                  }}
+                >
+                  Øystein Evensen
+                </p>
+                <p style={{ ...typography.sizes.t14, color: colors.textMuted, marginBottom: space.s12 }}>
+                  Comte Bureau
+                </p>
+                <a
+                  href="mailto:oystein@comte.no"
+                  style={{
+                    ...typography.sizes.t16,
+                    color: colors.brandWarmBlue,
+                    textDecoration: "none",
+                    fontWeight: typography.weights.medium,
+                  }}
+                >
+                  oystein@comte.no
+                </a>
+              </Card>
+            </div>
+          </div>
+        </section>
+
+        {/* Footer (custom — public homepage version with team login) */}
+        <footer
+          style={{
+            background: colors.brandDarkBlue,
+            color: colors.textLight,
+          }}
+        >
+          <div
+            style={{
+              maxWidth: "1200px",
+              margin: "0 auto",
+              padding: `${space.s64} ${space.s24} ${space.s40}`,
               display: "grid",
               gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-              gap: space.s16,
-            }}>
-              {(Object.entries(QUALITIES) as [CareQuality, (typeof QUALITIES)[CareQuality]][]).map(([key, val]) => {
-                const cardTheme = QUALITY_CARD_TOKENS[key];
-
-                return (
-                <Card
-                  key={key}
-                  padding="md"
-                  style={{ background: cardTheme.bg, borderColor: cardTheme.bg, color: cardTheme.text }}
-                >
-                  <p style={{ ...typography.sizes.t18, fontWeight: typography.weights.medium, color: cardTheme.text, marginBottom: space.s4 }}>
-                    {val.label}
-                  </p>
-                  <p style={{ ...typography.sizes.t14, color: cardTheme.text, opacity: 0.9 }}>{QUALITY_COPY[key]}</p>
-                </Card>
-                );
-              })}
+              gap: space.s40,
+            }}
+          >
+            <div>
+              <p
+                style={{
+                  ...typography.sizes.t22,
+                  fontWeight: typography.weights.bold,
+                  marginBottom: space.s12,
+                  color: colors.textLight,
+                }}
+              >
+                SAFE@HOME
+              </p>
+              <p
+                style={{
+                  ...typography.sizes.t14,
+                  color: "rgba(255, 255, 255, 0.75)",
+                  maxWidth: "32ch",
+                }}
+              >
+                Forskningsprosjekt om aldring, omsorg og tilhørighet i reformen Bo trygt hjemme.
+              </p>
+            </div>
+            <div>
+              <p
+                className="pkt-eyebrow"
+                style={{ color: "rgba(255, 255, 255, 0.6)", marginBottom: space.s12 }}
+              >
+                Naviger
+              </p>
+              <ul
+                style={{
+                  listStyle: "none",
+                  padding: 0,
+                  margin: 0,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: space.s8,
+                }}
+              >
+                {FOOTER_LINKS.map((link) => (
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
+                      style={{
+                        ...typography.sizes.t14,
+                        color: colors.textLight,
+                        textDecoration: "none",
+                      }}
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <p
+                className="pkt-eyebrow"
+                style={{ color: "rgba(255, 255, 255, 0.6)", marginBottom: space.s12 }}
+              >
+                Konsortium
+              </p>
+              <p style={{ ...typography.sizes.t14, color: "rgba(255, 255, 255, 0.85)", marginBottom: space.s4 }}>
+                OsloMet · UiO · Durham · Comte
+              </p>
+              <p style={{ ...typography.sizes.t14, color: "rgba(255, 255, 255, 0.7)" }}>
+                Bydel Alna · Bydel Søndre Nordstrand
+              </p>
             </div>
           </div>
-        </section>
-
-        {/* Final CTA */}
-        <section style={{ background: colors.brandDarkBlue, color: colors.textLight }}>
-          <div style={{ ...narrow, padding: `${space.s104} ${space.s24}`, textAlign: "center" }}>
-            <h2 style={{ marginBottom: space.s16, color: colors.textLight }}>Klar til å utforske?</h2>
-            <p style={{
-              ...typography.sizes.t18,
-              color: "rgba(255, 255, 255, 0.85)",
-              maxWidth: "560px",
-              margin: `0 auto ${space.s32}`,
-              fontWeight: typography.weights.light,
-            }}>
-              Start på byskalaen og zoom inn til du står i en stue. Eller følg én friksjon gjennom
-              alle sju historiene den berører.
-            </p>
-            <Link href="/explore" style={{ textDecoration: "none" }}>
-              <Button
-                size="lg"
-                style={{ background: colors.white, color: colors.brandDarkBlue, borderColor: colors.white, borderRadius: radius.none }}
+          <div
+            style={{
+              borderTop: "1px solid rgba(255, 255, 255, 0.15)",
+              padding: `${space.s16} ${space.s24}`,
+            }}
+          >
+            <div
+              style={{
+                maxWidth: "1200px",
+                margin: "0 auto",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: space.s16,
+                flexWrap: "wrap",
+              }}
+            >
+              <p
+                style={{
+                  ...typography.sizes.t12,
+                  color: "rgba(255, 255, 255, 0.55)",
+                }}
               >
-                Åpne kartet
-              </Button>
-            </Link>
+                © 2026 SAFE@HOME-konsortiet
+              </p>
+              <Link
+                href="/login"
+                style={{
+                  ...typography.sizes.t12,
+                  color: "rgba(255, 255, 255, 0.55)",
+                  textDecoration: "none",
+                  borderBottom: "1px dashed rgba(255, 255, 255, 0.35)",
+                  paddingBottom: "2px",
+                }}
+              >
+                Team login →
+              </Link>
+            </div>
           </div>
-        </section>
-
-        <Footer />
+        </footer>
       </main>
     </>
   );

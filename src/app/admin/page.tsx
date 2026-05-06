@@ -1,13 +1,17 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { FRICTIONS, QUALITIES, SCALES, WP_LABELS, type WpId } from "@/lib/constants";
 import { RESOURCE_TYPE_LABELS } from "@/lib/seed-resources";
 import { STAGES } from "@/lib/seed-solutions";
 import type { CareFriction, CareQuality, FieldSite, HouseTheme, MapScale, ResourceType } from "@/lib/types";
+import { QuickNotesPanel } from "@/components/admin/QuickNotesPanel";
+import { WelfareTechPanel } from "@/components/admin/WelfareTechPanel";
 const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
-type Tab = "stories" | "challenges" | "resources" | "descriptions" | "wp";
+type Tab = "notes" | "stories" | "challenges" | "resources" | "descriptions" | "wp" | "welfare-tech";
+const TAB_VALUES: Tab[] = ["notes", "stories", "challenges", "resources", "descriptions", "wp", "welfare-tech"];
 const WP_IDS = Object.keys(WP_LABELS) as WpId[];
 const FRICTION_KEYS = Object.keys(FRICTIONS) as CareFriction[];
 const QUALITY_KEYS = Object.keys(QUALITIES) as CareQuality[];
@@ -19,7 +23,56 @@ const RESOURCE_TYPES = Object.keys(RESOURCE_TYPE_LABELS) as ResourceType[];
 // ─── Page ───
 
 export default function AdminPage() {
-  const [tab, setTab] = useState<Tab>("stories");
+  const searchParams = useSearchParams();
+  const initialTab = (() => {
+    const raw = searchParams.get("tab");
+    return raw && (TAB_VALUES as string[]).includes(raw) ? (raw as Tab) : "notes";
+  })();
+  const [tab, setTab] = useState<Tab>(initialTab);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData.session?.user?.id ?? null;
+      if (!active) return;
+      setCurrentUserId(userId);
+      if (!userId) {
+        setIsAdmin(false);
+        return;
+      }
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", userId)
+        .maybeSingle();
+      if (!active) return;
+      setIsAdmin((profile as { role?: string } | null)?.role === "admin");
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const raw = searchParams.get("tab");
+    if (raw && (TAB_VALUES as string[]).includes(raw) && raw !== tab) {
+      setTab(raw as Tab);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  function selectTab(next: Tab) {
+    setTab(next);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("tab", next);
+      window.history.replaceState({}, "", url);
+    }
+  }
+
   return <main style={{
     fontFamily: FONT_STACK
   }} className="[max-width:1200px] [margin:0_auto] [padding:40px_24px_96px]">
@@ -27,33 +80,49 @@ export default function AdminPage() {
         Content editor
       </h1>
       <p className="[font-size:15px] [color:#666666] [margin-bottom:24px] [line-height:1.6]">
-        Post new insights, design challenges, or reading-room entries.
-        Everything you create here lands in the matching Supabase table.
+        Quick notes, insights, design challenges, and reading-room entries —
+        everything written here lands in the matching Supabase table.
       </p>
 
       <nav className="[display:flex] [gap:8px] [margin-bottom:32px] [flex-wrap:wrap]">
-        <TabButton active={tab === "stories"} onClick={() => setTab("stories")}>
+        <TabButton active={tab === "notes"} onClick={() => selectTab("notes")}>
+          Quick notes
+        </TabButton>
+        <TabButton active={tab === "stories"} onClick={() => selectTab("stories")}>
           Insights
         </TabButton>
-        <TabButton active={tab === "challenges"} onClick={() => setTab("challenges")}>
+        <TabButton active={tab === "challenges"} onClick={() => selectTab("challenges")}>
           Design challenges
         </TabButton>
-        <TabButton active={tab === "resources"} onClick={() => setTab("resources")}>
+        <TabButton active={tab === "resources"} onClick={() => selectTab("resources")}>
           Resources
         </TabButton>
-        <TabButton active={tab === "descriptions"} onClick={() => setTab("descriptions")}>
+        <TabButton active={tab === "descriptions"} onClick={() => selectTab("descriptions")}>
           Descriptions
         </TabButton>
-        <TabButton active={tab === "wp"} onClick={() => setTab("wp")}>
+        <TabButton active={tab === "wp"} onClick={() => selectTab("wp")}>
           WP progress
         </TabButton>
+        {isAdmin && (
+          <TabButton active={tab === "welfare-tech"} onClick={() => selectTab("welfare-tech")}>
+            Welfare tech
+          </TabButton>
+        )}
       </nav>
 
+      {tab === "notes" && <QuickNotesPanel />}
       {tab === "stories" && <StoriesPanel />}
       {tab === "challenges" && <ChallengesPanel />}
       {tab === "resources" && <ResourcesPanel />}
       {tab === "descriptions" && <DescriptionsPanel />}
       {tab === "wp" && <WpPanel />}
+      {tab === "welfare-tech" && (isAdmin ? (
+        <WelfareTechPanel currentUserId={currentUserId} />
+      ) : (
+        <p className="[font-size:14px] [color:#a83f34]">
+          Du må være administrator for å redigere velferdsteknologi.
+        </p>
+      ))}
     </main>;
 }
 function TabButton({

@@ -3,23 +3,30 @@ import { createServerClient } from "@supabase/ssr";
 
 const DEV_LOCK_ENABLED = process.env.NEXT_PUBLIC_DEV_LOCK === "1";
 
-const PUBLIC_PATHS = ["/", "/auth", "/auth/reset"];
+const PUBLIC_PATHS = new Set(["/", "/login", "/auth", "/auth/reset"]);
 
 function isPublicPath(pathname: string): boolean {
-  if (PUBLIC_PATHS.includes(pathname)) return true;
-  return pathname.startsWith("/auth/");
+  if (PUBLIC_PATHS.has(pathname)) return true;
+  // /auth/* and /login/* (e.g. callback subroutes) stay public.
+  if (pathname.startsWith("/auth/") || pathname.startsWith("/login/")) return true;
+  return false;
 }
 
-function isAdminPath(pathname: string): boolean {
-  return pathname === "/admin" || pathname.startsWith("/admin/");
+function isInternalPath(pathname: string): boolean {
+  if (pathname === "/admin" || pathname.startsWith("/admin/")) return true;
+  if (pathname === "/internal" || pathname.startsWith("/internal/")) return true;
+  return false;
+}
+
+function loginRedirect(request: NextRequest): URL {
+  const target = `${request.nextUrl.pathname}${request.nextUrl.search}`;
+  const url = new URL("/login", request.url);
+  url.searchParams.set("redirect", target);
+  return url;
 }
 
 export async function proxy(request: NextRequest) {
-  if (!DEV_LOCK_ENABLED) return NextResponse.next();
-
   const { pathname } = request.nextUrl;
-
-  // Build a response we can attach refreshed cookies to.
   const response = NextResponse.next();
 
   const supabase = createServerClient(
@@ -42,19 +49,17 @@ export async function proxy(request: NextRequest) {
   const { data: claims } = await supabase.auth.getClaims();
   const signedIn = Boolean(claims);
 
-  if (isAdminPath(pathname)) {
+  // Internal area always requires auth.
+  if (isInternalPath(pathname)) {
     if (!signedIn) {
-      const redirect = new URL("/auth", request.url);
-      return NextResponse.redirect(redirect);
+      return NextResponse.redirect(loginRedirect(request));
     }
     return response;
   }
 
-  if (isPublicPath(pathname)) return response;
-
-  if (!signedIn) {
-    const redirect = new URL("/", request.url);
-    return NextResponse.redirect(redirect);
+  // Optional dev lock: require auth on every non-public route.
+  if (DEV_LOCK_ENABLED && !isPublicPath(pathname) && !signedIn) {
+    return NextResponse.redirect(loginRedirect(request));
   }
 
   return response;
