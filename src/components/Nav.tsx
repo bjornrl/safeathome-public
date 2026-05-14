@@ -11,6 +11,9 @@ export type NavVariant = "default" | "minimal";
 export type NavMode = "public" | "internal";
 
 const PUBLIC_LINKS: { href: string; label: string }[] = [
+  { href: "/explore", label: "Utforsk" },
+  { href: "/frictions", label: "Friksjoner" },
+  { href: "/qualities", label: "Kvaliteter" },
   { href: "/about", label: "Om" },
   { href: "/reading-room", label: "Lesesal" },
 ];
