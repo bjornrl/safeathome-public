@@ -10,8 +10,22 @@ import type { CareFriction, CareQuality, FieldSite, HouseTheme, MapScale, Resour
 import { QuickNotesPanel } from "@/components/admin/QuickNotesPanel";
 import { WelfareTechPanel } from "@/components/admin/WelfareTechPanel";
 const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
-type Tab = "notes" | "stories" | "challenges" | "resources" | "descriptions" | "wp" | "welfare-tech";
-const TAB_VALUES: Tab[] = ["notes", "stories", "challenges", "resources", "descriptions", "wp", "welfare-tech"];
+type Tab = "notes" | "stories" | "challenges" | "resources" | "wp" | "welfare-tech";
+const TAB_VALUES: Tab[] = ["notes", "stories", "challenges", "resources", "wp", "welfare-tech"];
+
+const TAB_DESCRIPTIONS: Record<Tab, string> = {
+  notes:
+    "Scratchpad for in-progress observations, ideas, and questions from the field. Tag with work package, friction, quality, theme, or scale so notes surface in the node map and AI suggestions.",
+  stories:
+    "Polished, published findings — what becomes the public-facing story map. Pair an insight with the work package it came from, the field site, and the frictions/qualities it illustrates. Use the connection form below to draw typed edges between two published insights.",
+  challenges:
+    "Open problems the design team is working on, drawn from one or more insights and tagged by the frictions or qualities they address. Each challenge moves through stages: framing → exploring → testing → adopted.",
+  resources:
+    "Reading-room and municipal-resource entries — publications, toolkits, policy briefs, teaching guides. Link to the insights they relate to and tag with frictions/qualities so they appear on the matching public pages.",
+  wp: "Monthly status reports, one row per work package per month. Captures the interview, the highlights, and the next steps. Sets the cadence for the WP progress overview.",
+  "welfare-tech":
+    "Technology entries with manufacturer, country availability, and a description. Surface on the public welfare-tech page once published.",
+};
 const WP_IDS = Object.keys(WP_LABELS) as WpId[];
 const FRICTION_KEYS = Object.keys(FRICTIONS) as CareFriction[];
 const QUALITY_KEYS = Object.keys(QUALITIES) as CareQuality[];
@@ -105,9 +119,6 @@ export default function AdminPage() {
         <TabButton active={tab === "resources"} onClick={() => selectTab("resources")}>
           Resources
         </TabButton>
-        <TabButton active={tab === "descriptions"} onClick={() => selectTab("descriptions")}>
-          Descriptions
-        </TabButton>
         <TabButton active={tab === "wp"} onClick={() => selectTab("wp")}>
           WP progress
         </TabButton>
@@ -118,11 +129,14 @@ export default function AdminPage() {
         )}
       </nav>
 
+      <p className="[font-size:14px] [color:#4d4d4d] [line-height:1.65] [max-width:760px] [margin-bottom:24px] [padding:14px_18px] [background:#f7f6f0] [border:1px_solid_#e6e6e6] [border-radius:8px]">
+        {TAB_DESCRIPTIONS[tab]}
+      </p>
+
       {tab === "notes" && <QuickNotesPanel />}
       {tab === "stories" && <StoriesPanel />}
       {tab === "challenges" && <ChallengesPanel />}
       {tab === "resources" && <ResourcesPanel />}
-      {tab === "descriptions" && <DescriptionsPanel />}
       {tab === "wp" && <WpPanel />}
       {tab === "welfare-tech" && (isAdmin ? (
         <WelfareTechPanel currentUserId={currentUserId} />
@@ -941,123 +955,6 @@ function ResourceForm({
       <SubmitBar status={status} submitting={submitting} label={editId ? "Update resource" : "Save resource"} />
       {editId && <button type="button" onClick={onCancel} className="[font-size:12px] [color:#666666] [background:transparent] [border:none] [cursor:pointer] [padding:0px] [align-self:flex-start]">Cancel edit</button>}
     </Form>;
-}
-
-// ─── Category descriptions (frictions + qualities long-form) ───
-
-interface CategoryDescriptionRow {
-  key: string;
-  long_description: string;
-  examples: string[];
-  updated_at: string;
-}
-
-function DescriptionsPanel() {
-  return <div className="[display:flex] [flex-direction:column] [gap:48px]">
-      <section>
-        <SectionHeading>Frictions</SectionHeading>
-        <DescriptionList table="public_friction_descriptions" labelMap={FRICTIONS as unknown as Record<string, { label: string }>} />
-      </section>
-      <section>
-        <SectionHeading>Qualities</SectionHeading>
-        <DescriptionList table="public_quality_descriptions" labelMap={QUALITIES as unknown as Record<string, { label: string }>} />
-      </section>
-    </div>;
-}
-
-function DescriptionList({ table, labelMap }: { table: string; labelMap: Record<string, { label: string }> }) {
-  const [rows, setRows] = useState<CategoryDescriptionRow[]>([]);
-  const [loading, setLoading] = useState(false);
-  const load = useCallback(async () => {
-    setLoading(true);
-    const { data, error } = await supabase.from(table).select("*").order("key", { ascending: true });
-    setLoading(false);
-    if (error) console.warn(`Load ${table}:`, error.message);
-    setRows((data as CategoryDescriptionRow[]) ?? []);
-  }, [table]);
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    load();
-  }, [load]);
-  if (loading && rows.length === 0) {
-    return <p className="[font-size:14px] [color:#9a9a9a]">Loading…</p>;
-  }
-  if (rows.length === 0) {
-    return <p className="[font-size:14px] [color:#666666] [padding:24px] [background:#ffffff] [border:1px_dashed_#e6e6e6] [border-radius:8px] [line-height:1.6]">
-        No rows found. Did the Phase 1 migration seed this table?
-      </p>;
-  }
-  return <div className="[display:flex] [flex-direction:column] [gap:16px]">
-      {rows.map(r => <DescriptionRow key={r.key} table={table} row={r} label={labelMap[r.key]?.label ?? r.key} onSaved={load} />)}
-    </div>;
-}
-
-function DescriptionRow({
-  table,
-  row,
-  label,
-  onSaved
-}: {
-  table: string;
-  row: CategoryDescriptionRow;
-  label: string;
-  onSaved: () => void;
-}) {
-  const [longDescription, setLongDescription] = useState(row.long_description);
-  const [examples, setExamples] = useState<string[]>(row.examples);
-  const [submitting, setSubmitting] = useState(false);
-  const [status, setStatus] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
-  async function save() {
-    setSubmitting(true);
-    setStatus(null);
-    const { error } = await supabase.from(table).update({
-      long_description: longDescription,
-      examples: examples.map(e => e.trim()).filter(e => e.length > 0),
-      updated_at: new Date().toISOString()
-    }).eq("key", row.key);
-    setSubmitting(false);
-    if (error) {
-      setStatus({ kind: "err", msg: error.message });
-      return;
-    }
-    setStatus({ kind: "ok", msg: "Saved." });
-    onSaved();
-  }
-  return <div className="[display:flex] [flex-direction:column] [gap:12px] [padding:20px] [background:#ffffff] [border:1px_solid_#e6e6e6] [border-radius:8px]">
-      <div className="[display:flex] [align-items:baseline] [justify-content:space-between] [gap:16px]">
-        <div>
-          <p className="[font-size:16px] [font-weight:600] [color:#2a2859]">{label}</p>
-          <p className="[font-size:11px] [color:#9a9a9a] [font-family:monospace]">{row.key}</p>
-        </div>
-        <p className="[font-size:11px] [color:#9a9a9a]">Updated {new Date(row.updated_at).toLocaleDateString()}</p>
-      </div>
-      <FormField label="Long description">
-        <textarea style={inputStyle} value={longDescription} onChange={e => setLongDescription(e.target.value)} className="[min-height:110px]" />
-      </FormField>
-      <FormField label="Examples">
-        <div className="[display:flex] [flex-direction:column] [gap:8px]">
-          {examples.map((ex, i) => <div key={i} className="[display:flex] [gap:8px]">
-              <input style={inputStyle} value={ex} onChange={e => setExamples(examples.map((x, j) => j === i ? e.target.value : x))} placeholder="One example…" />
-              <button type="button" onClick={() => setExamples(examples.filter((_, j) => j !== i))} className="[padding:8px_12px] [font-size:12px] [color:#a83f34] [background:transparent] [border:1px_solid_#e6e6e6] [border-radius:8px] [cursor:pointer]">Remove</button>
-            </div>)}
-          <button type="button" onClick={() => setExamples([...examples, ""])} className="[align-self:flex-start] [padding:6px_12px] [font-size:12px] [color:#1f42aa] [background:transparent] [border:1px_dashed_#1f42aa] [border-radius:8px] [cursor:pointer]">+ Add example</button>
-        </div>
-      </FormField>
-      <div className="[display:flex] [gap:12px] [align-items:center]">
-        <button type="button" onClick={save} disabled={submitting} style={{
-          cursor: submitting ? "wait" : "pointer",
-          opacity: submitting ? 0.7 : 1,
-          fontFamily: FONT_STACK
-        }} className="[padding:10px_16px] [background:#2a2859] [color:#ffffff] [border-radius:8px] [border:1px_solid_#2a2859] [font-size:13px] [font-weight:600]">
-          {submitting ? "Saving…" : "Save"}
-        </button>
-        {status && <p style={{
-          color: status.kind === "ok" ? "#034b45" : "#a83f34"
-        }} className="[font-size:12px]">
-          {status.msg}
-        </p>}
-      </div>
-    </div>;
 }
 
 // ─── WP monthly reports ───
