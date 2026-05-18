@@ -52,6 +52,7 @@ export interface PublicStory {
   theme: HouseTheme | null;
   home_based: boolean;
   field_site: FieldSite | null;
+  work_package: WorkPackage | null;
   frictions: CareFriction[];
   qualities: CareQuality[];
   map_scale: MapScale;

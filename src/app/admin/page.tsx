@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { FRICTIONS, QUALITIES, SCALES, WP_LABELS, type WpId } from "@/lib/constants";
 import { RESOURCE_TYPE_LABELS } from "@/lib/seed-resources";
 import { STAGES } from "@/lib/seed-solutions";
-import type { CareFriction, CareQuality, FieldSite, HouseTheme, MapScale, ResourceType } from "@/lib/types";
+import type { CareFriction, CareQuality, FieldSite, HouseTheme, MapScale, ResourceType, WorkPackage } from "@/lib/types";
 import { QuickNotesPanel } from "@/components/admin/QuickNotesPanel";
 import { WelfareTechPanel } from "@/components/admin/WelfareTechPanel";
 const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
@@ -19,6 +19,14 @@ const THEMES: HouseTheme[] = ["front_door", "living_room", "kitchen", "bedroom",
 const FIELD_SITES: FieldSite[] = ["Alna", "Søndre Nordstrand"];
 const SCALE_KEYS = Object.keys(SCALES) as MapScale[];
 const RESOURCE_TYPES = Object.keys(RESOURCE_TYPE_LABELS) as ResourceType[];
+
+// DB enum is uppercase WP1..WP4 — same shape as quick_notes.work_package.
+const WORK_PACKAGES: { value: WorkPackage; label: string }[] = [
+  { value: "WP1", label: "WP1 · Homes & Communities" },
+  { value: "WP2", label: "WP2 · Health & Care Institutions" },
+  { value: "WP3", label: "WP3 · Transnational Contexts" },
+  { value: "WP4", label: "WP4 · Innovation & Design" },
+];
 
 // ─── Page ───
 
@@ -152,6 +160,7 @@ interface StoryRow {
   body: string;
   theme: HouseTheme;
   field_site: FieldSite | null;
+  work_package: WorkPackage | null;
   frictions: CareFriction[];
   qualities: CareQuality[];
   map_scale: MapScale;
@@ -197,7 +206,7 @@ function StoriesPanel() {
           <ItemList loading={loading} rows={rows.map(r => ({
           id: r.id,
           title: r.title,
-          subtitle: `${SCALES[r.map_scale]?.label ?? r.map_scale}${r.field_site ? ` · ${r.field_site}` : ""}`,
+          subtitle: `${SCALES[r.map_scale]?.label ?? r.map_scale}${r.field_site ? ` · ${r.field_site}` : ""}${r.work_package ? ` · ${r.work_package}` : ""}`,
           published: r.published,
           tags: r.frictions
         }))} onTogglePublish={async (id, next) => {
@@ -382,6 +391,7 @@ function StoryForm({
   const [mapScale, setMapScale] = useState<MapScale>("meso");
   const [theme, setTheme] = useState<HouseTheme>("living_room");
   const [fieldSite, setFieldSite] = useState<FieldSite | "">("Alna");
+  const [workPackage, setWorkPackage] = useState<WorkPackage | "">("");
   const [frictions, setFrictions] = useState<CareFriction[]>([]);
   const [qualities, setQualities] = useState<CareQuality[]>([]);
   const [latitude, setLatitude] = useState("");
@@ -404,6 +414,7 @@ function StoryForm({
       body: body.trim(),
       theme,
       field_site: fieldSite || null,
+      work_package: workPackage || null,
       frictions,
       qualities,
       map_scale: mapScale,
@@ -436,6 +447,7 @@ function StoryForm({
     setQualities([]);
     setLatitude("");
     setLongitude("");
+    setWorkPackage("");
     onCreated();
   }
   return <Form onSubmit={submit}>
@@ -468,6 +480,14 @@ function StoryForm({
             <option value="">—</option>
             {FIELD_SITES.map(f => <option key={f} value={f}>
                 {f}
+              </option>)}
+          </select>
+        </FormField>
+        <FormField label="Work package">
+          <select style={inputStyle} value={workPackage} onChange={e => setWorkPackage(e.target.value as WorkPackage | "")}>
+            <option value="">—</option>
+            {WORK_PACKAGES.map(wp => <option key={wp.value} value={wp.value}>
+                {wp.label}
               </option>)}
           </select>
         </FormField>

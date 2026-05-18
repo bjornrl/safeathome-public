@@ -9,6 +9,7 @@ function story(
     id, title, body, theme, frictions, qualities, map_scale, latitude, longitude,
     home_based: theme !== null,
     field_site: field_site as PublicStory["field_site"],
+    work_package: null,
     source_insight_id: null, media_urls: [], author_credit: "safe@home fieldwork team",
     published: true, published_at: "2025-01-01", sort_order: 0,
     created_by: "seed", created_at: "2025-01-01", updated_at: "2025-01-01",
