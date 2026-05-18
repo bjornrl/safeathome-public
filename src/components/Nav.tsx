@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { colors, motion, space, typography } from "@/lib/design-tokens";
+import { clay, colors, motion, space, typography } from "@/lib/design-tokens";
 import { Button } from "@/components/ui";
 
 export type NavVariant = "default" | "minimal";
@@ -118,16 +118,19 @@ export default function Nav({
             alignItems: "center",
             gap: space.s8,
             padding: `${space.s8} ${space.s16}`,
-            background: colors.bgCard,
-            border: `1px solid ${colors.borderSubtle}`,
+            background: clay.colors.canvas,
+            border: `1px solid ${clay.colors.hairline}`,
+            borderRadius: "var(--clay-radius-md)",
+            fontFamily: clay.font.body,
             fontSize: "14px",
             fontWeight: 600,
-            color: colors.textBody,
+            color: clay.colors.ink,
             textDecoration: "none",
+            letterSpacing: "-0.2px",
           }}
         >
           <span aria-hidden>←</span>
-          <span style={{ fontWeight: 700 }}>safe@home</span>
+          <span style={{ fontWeight: 600 }}>safe@home</span>
         </Link>
 
         <div style={{ pointerEvents: "auto" }}>
@@ -148,8 +151,8 @@ export default function Nav({
   return (
     <header
       style={{
-        background: colors.bgCard,
-        borderBottom: `1px solid ${colors.borderSubtle}`,
+        background: clay.colors.canvas,
+        borderBottom: `1px solid ${clay.colors.hairline}`,
         position: "sticky",
         top: 0,
         zIndex: 50,
@@ -158,20 +161,21 @@ export default function Nav({
       {/* Utility row */}
       <div
         style={{
-          borderBottom: `1px solid ${colors.borderSubtle}`,
-          background: colors.bgSubtle,
+          borderBottom: `1px solid ${clay.colors.hairline}`,
+          background: clay.colors.surfaceSoft,
         }}
       >
         <div
           style={{
-            maxWidth: "1200px",
+            maxWidth: "1280px",
             margin: "0 auto",
             padding: `${space.s8} ${space.s24}`,
             display: "flex",
             justifyContent: "flex-end",
             gap: space.s16,
             ...typography.sizes.t12,
-            color: colors.textMuted,
+            color: clay.colors.muted,
+            fontFamily: clay.font.body,
           }}
         >
           <span>Forskning · OsloMet, UiO, Durham, Comte</span>
@@ -182,7 +186,7 @@ export default function Nav({
       <div
         style={{
           position: "relative",
-          maxWidth: "1200px",
+          maxWidth: "1280px",
           margin: "0 auto",
           padding: `${space.s16} ${space.s24}`,
           display: "flex",
@@ -194,12 +198,13 @@ export default function Nav({
         <Link
           href={homeHref}
           style={{
+            fontFamily: clay.font.display,
             fontSize: "22px",
-            lineHeight: "34px",
-            fontWeight: 700,
-            color: colors.textBody,
+            lineHeight: 1.2,
+            fontWeight: 500,
+            color: clay.colors.ink,
             textDecoration: "none",
-            letterSpacing: "-0.2px",
+            letterSpacing: "-0.5px",
           }}
         >
           safe@home
@@ -262,13 +267,14 @@ function PublicNavRow({
                 aria-current={active ? "page" : undefined}
                 style={{
                   display: "inline-block",
-                  fontSize: "16px",
-                  lineHeight: "24px",
+                  fontFamily: clay.font.body,
+                  fontSize: "14px",
+                  lineHeight: 1.4,
                   fontWeight: active ? 600 : 500,
-                  color: active ? colors.brandWarmBlue : colors.textBody,
+                  color: active ? clay.colors.ink : clay.colors.body,
                   textDecoration: "none",
                   paddingBottom: "4px",
-                  borderBottom: `2px solid ${active ? colors.brandWarmBlue : "transparent"}`,
+                  borderBottom: `2px solid ${active ? clay.colors.ink : "transparent"}`,
                   transition: `color ${motion.fast}, border-color ${motion.fast}`,
                 }}
               >
@@ -287,11 +293,12 @@ function PublicNavRow({
         <Link
           href="/login"
           style={{
-            ...typography.sizes.t14,
-            fontWeight: typography.weights.medium,
-            color: colors.textMuted,
+            fontFamily: clay.font.body,
+            fontSize: "14px",
+            fontWeight: 500,
+            color: clay.colors.muted,
             textDecoration: "none",
-            borderBottom: `1px dashed ${colors.borderSubtle}`,
+            borderBottom: `1px dashed ${clay.colors.hairline}`,
             paddingBottom: "2px",
             transition: `color ${motion.fast}, border-color ${motion.fast}`,
           }}
@@ -327,13 +334,14 @@ function InternalNavRow({
         alignItems: "center",
         gap: space.s8,
         padding: `${space.s8} ${space.s12}`,
-        background: menuOpen ? colors.brandDarkBlue : colors.bgCard,
-        color: menuOpen ? colors.textLight : colors.textBody,
-        border: `1px solid ${menuOpen ? colors.brandDarkBlue : colors.borderSubtle}`,
+        background: menuOpen ? clay.colors.ink : clay.colors.canvas,
+        color: menuOpen ? clay.colors.onPrimary : clay.colors.ink,
+        border: `1px solid ${menuOpen ? clay.colors.ink : clay.colors.hairline}`,
+        borderRadius: "var(--clay-radius-md)",
         cursor: "pointer",
-        fontFamily: "var(--pkt-font-family)",
+        fontFamily: clay.font.body,
         ...typography.sizes.t14,
-        fontWeight: typography.weights.medium,
+        fontWeight: 600,
         transition: `background ${motion.fast}, color ${motion.fast}, border-color ${motion.fast}`,
       }}
     >
@@ -410,9 +418,10 @@ function DropdownMenu({
         right: space.s24,
         minWidth: 280,
         maxWidth: "calc(100vw - 48px)",
-        background: colors.bgCard,
-        border: `1px solid ${colors.borderSubtle}`,
-        boxShadow: "0 8px 24px rgba(42, 40, 89, 0.12)",
+        background: clay.colors.canvas,
+        border: `1px solid ${clay.colors.hairline}`,
+        borderRadius: "var(--clay-radius-lg)",
+        boxShadow: "0 8px 24px rgba(10, 10, 10, 0.10)",
         zIndex: 60,
         padding: space.s16,
         display: "flex",
@@ -420,10 +429,10 @@ function DropdownMenu({
         gap: space.s16,
       }}
     >
-      <MenuSection title="Internt" links={INTERNAL_LINKS} pathname={pathname} accent={colors.brandWarmBlue} />
-      <div style={{ height: 1, background: colors.borderSubtle }} />
-      <MenuSection title="Offentlige sider" links={PUBLIC_LINKS} pathname={pathname} accent={colors.brandDarkBlue} />
-      <div style={{ height: 1, background: colors.borderSubtle }} />
+      <MenuSection title="Internt" links={INTERNAL_LINKS} pathname={pathname} accent={clay.colors.ink} />
+      <div style={{ height: 1, background: clay.colors.hairline }} />
+      <MenuSection title="Offentlige sider" links={PUBLIC_LINKS} pathname={pathname} accent={clay.colors.ink} />
+      <div style={{ height: 1, background: clay.colors.hairline }} />
       <button
         type="button"
         role="menuitem"
@@ -433,13 +442,13 @@ function DropdownMenu({
           textAlign: "left",
           padding: `${space.s8} ${space.s12}`,
           ...typography.sizes.t14,
-          fontWeight: typography.weights.medium,
-          color: colors.brandWarmBlue,
+          fontWeight: 600,
+          color: clay.colors.ink,
           background: "transparent",
           border: "none",
           borderLeft: `2px solid transparent`,
           cursor: "pointer",
-          fontFamily: "var(--pkt-font-family)",
+          fontFamily: clay.font.body,
         }}
       >
         Logg ut
@@ -464,10 +473,11 @@ function MenuSection({
       <p
         style={{
           ...typography.sizes.t12,
-          fontWeight: typography.weights.bold,
+          fontFamily: clay.font.body,
+          fontWeight: 600,
           textTransform: "uppercase",
-          letterSpacing: "0.14em",
-          color: colors.textMuted,
+          letterSpacing: "1.5px",
+          color: clay.colors.muted,
           marginBottom: space.s8,
         }}
       >
@@ -494,10 +504,12 @@ function MenuSection({
                   display: "block",
                   padding: `${space.s8} ${space.s12}`,
                   ...typography.sizes.t14,
-                  fontWeight: active ? typography.weights.medium : typography.weights.regular,
-                  color: active ? accent : colors.textBody,
+                  fontFamily: clay.font.body,
+                  fontWeight: active ? 600 : 500,
+                  color: active ? accent : clay.colors.body,
                   textDecoration: "none",
-                  background: active ? colors.bgSubtle : "transparent",
+                  background: active ? clay.colors.surfaceSoft : "transparent",
+                  borderRadius: "var(--clay-radius-sm)",
                   borderLeft: `2px solid ${active ? accent : "transparent"}`,
                   transition: `background ${motion.fast}, border-color ${motion.fast}`,
                 }}

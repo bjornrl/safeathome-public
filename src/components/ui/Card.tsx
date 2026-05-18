@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
-import { colors, motion, radius, shadow, space } from "@/lib/design-tokens";
+import { clay, motion, shadow, space } from "@/lib/design-tokens";
 
 export interface CardProps {
   children: ReactNode;
@@ -34,18 +34,15 @@ export function Card({
       style={{
         display: "block",
         padding: paddingMap[padding],
-        background: colors.bgCard,
-        border: `1px solid ${colors.borderSubtle}`,
-        color: colors.textBody,
+        background: clay.colors.canvas,
+        border: `1px solid ${clay.colors.hairline}`,
+        borderRadius: "var(--clay-radius-lg)",
+        color: clay.colors.body,
         textDecoration: "none",
         transition: `border-color ${motion.fast}, box-shadow ${motion.fast}, transform ${motion.fast}`,
         ...(isInteractive
-          ? {
-            cursor: "pointer",
-          }
-          : {}),
-        ...(isInteractive
           ? ({
+            cursor: "pointer",
             "--card-hover-shadow": shadow.sm,
           } as CSSProperties)
           : {}),

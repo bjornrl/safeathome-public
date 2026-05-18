@@ -66,7 +66,9 @@ export const space = {
   s24:  "var(--pkt-size-24)",
   s32:  "var(--pkt-size-32)",
   s40:  "var(--pkt-size-40)",
+  s48:  "var(--clay-space-xxl)",
   s64:  "var(--pkt-size-64)",
+  s96:  "var(--clay-space-section)",
   s104: "var(--pkt-size-104)",
 } as const;
 
@@ -74,6 +76,47 @@ export const radius = {
   none: "var(--pkt-radius-none)",
   sm:   "var(--pkt-radius-sm)",
   md:   "var(--pkt-radius-md)",
+  lg:   "var(--clay-radius-lg)",
+  xl:   "var(--clay-radius-xl)",
+  pill: "var(--clay-radius-pill)",
+} as const;
+
+/** Clay design-language tokens — additive layer on top of the Punkt
+ *  vars. Use these for new Clay-styled surfaces and feature cards. */
+export const clay = {
+  colors: {
+    canvas:        "var(--clay-canvas)",
+    surfaceSoft:   "var(--clay-surface-soft)",
+    surfaceCard:   "var(--clay-surface-card)",
+    surfaceStrong: "var(--clay-surface-strong)",
+    surfaceDark:   "var(--clay-surface-dark)",
+    hairline:      "var(--clay-hairline)",
+
+    ink:        "var(--clay-ink)",
+    bodyStrong: "var(--clay-body-strong)",
+    body:       "var(--clay-body)",
+    muted:      "var(--clay-muted)",
+    mutedSoft:  "var(--clay-muted-soft)",
+    onPrimary:  "var(--clay-on-primary)",
+
+    pink:     "var(--clay-pink)",
+    teal:     "var(--clay-teal)",
+    lavender: "var(--clay-lavender)",
+    peach:    "var(--clay-peach)",
+    ochre:    "var(--clay-ochre)",
+    mint:     "var(--clay-mint)",
+    coral:    "var(--clay-coral)",
+  },
+  font: {
+    display: "var(--clay-font-display)",
+    body:    "var(--clay-font-body)",
+  },
+  display: {
+    xl: { fontSize: "var(--clay-display-xl)", lineHeight: 1.0,  letterSpacing: "-2.5px", fontWeight: 500 },
+    lg: { fontSize: "var(--clay-display-lg)", lineHeight: 1.05, letterSpacing: "-2px",   fontWeight: 500 },
+    md: { fontSize: "var(--clay-display-md)", lineHeight: 1.1,  letterSpacing: "-1px",   fontWeight: 500 },
+    sm: { fontSize: "var(--clay-display-sm)", lineHeight: 1.15, letterSpacing: "-0.5px", fontWeight: 500 },
+  },
 } as const;
 
 export const shadow = {
