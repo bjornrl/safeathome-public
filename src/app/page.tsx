@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Nav from "@/components/Nav";
 import People from "@/components/People";
-import { Button, Card } from "@/components/ui";
+import { HomeHeroCtas } from "@/components/HomeHeroCtas";
+import { Card } from "@/components/ui";
 import { clay, space, typography } from "@/lib/design-tokens";
 
 export const metadata: Metadata = {
@@ -175,14 +176,7 @@ export default function HomePage() {
                   friksjonene og kvalitetene som oppstår når kommunal omsorg møter mangfoldige
                   eldreliv.
                 </p>
-                <div style={{ display: "flex", gap: space.s12, flexWrap: "wrap" }}>
-                  <Link href="/about" style={{ textDecoration: "none" }}>
-                    <Button variant="primary" size="lg">Les mer om SAFE@HOME</Button>
-                  </Link>
-                  <Link href="/explore" style={{ textDecoration: "none" }}>
-                    <Button variant="secondary" size="lg">Utforsk plattformen →</Button>
-                  </Link>
-                </div>
+                <HomeHeroCtas />
               </div>
 
               {/* Hero illustration card — placeholder for the 3D claymation
