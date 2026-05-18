@@ -2,14 +2,11 @@
 @import "maplibre-gl/dist/maplibre-gl.css";
 
 /* ───────────────────────────────────────────────────────────────────
-   Inter — Clay-design-language substitute for the licensed Plain Black
-   display face. Loaded from Google Fonts. Weight 500 with negative
-   letter-spacing handles display headlines; 400/600 handle body + UI.
-   Falls back to system sans. Oslo Sans is still defined below for
-   surfaces that haven't migrated to Clay yet.
+   Inter (Clay's Plain Black substitute) is loaded via next/font in
+   src/app/layout.tsx. It exposes itself through the
+   `--font-inter` CSS variable, which `--clay-font-display` /
+   `--clay-font-body` reference below.
    ─────────────────────────────────────────────────────────────────── */
-
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 
 /* ───────────────────────────────────────────────────────────────────
    Oslo Sans — loaded from Punkt's public CDN.
@@ -151,8 +148,8 @@
   --clay-display-md: 40px;
   --clay-display-sm: 32px;
 
-  --clay-font-display: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --clay-font-body:    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --clay-font-display: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --clay-font-body:    var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
   /* ── Semantic aliases (Clay-shifted) ── */
   /* Canvas + cards now sit on cream, not white. The Punkt blue ink is
