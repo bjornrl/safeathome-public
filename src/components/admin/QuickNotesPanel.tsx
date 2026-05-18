@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { colors, space, typography } from "@/lib/design-tokens";
 import { FRICTIONS, QUALITIES, SCALES } from "@/lib/constants";
@@ -20,6 +20,15 @@ import type {
 } from "@/lib/types";
 import { CategoryBadge } from "./CategoryBadge";
 import { SuggestedCategoryInput } from "./SuggestedCategoryInput";
+import {
+  getSuggestionAvailability,
+  requestSuggestions,
+  type SuggestionRelated,
+} from "@/app/actions/suggest";
+
+const SUGGEST_MIN_CHARS = 80;
+const SUGGEST_DEBOUNCE_MS = 3000;
+const SUGGEST_ACCENT = "#C45D3E";
 
 const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
 
@@ -65,24 +74,9 @@ const inputStyle: React.CSSProperties = {
 };
 
 type View =
-  | { kind: "list" }
   | { kind: "create" }
   | { kind: "edit"; id: string }
   | { kind: "detail"; id: string };
-
-interface AggregatedCounts {
-  connections: number;
-  comments: number;
-  suggestions: SuggestedCategory[];
-}
-
-interface NotesIndex {
-  notes: QuickNote[];
-  authors: Record<string, Profile>;
-  counts: Record<string, AggregatedCounts>;
-}
-
-const EMPTY_INDEX: NotesIndex = { notes: [], authors: {}, counts: {} };
 
 async function getCurrentProfile(): Promise<Profile | null> {
   const { data: sessionData } = await supabase.auth.getSession();
@@ -97,69 +91,6 @@ async function getCurrentProfile(): Promise<Profile | null> {
   return data as Profile;
 }
 
-async function loadNotesIndex(): Promise<NotesIndex> {
-  const { data: notesData, error: notesErr } = await supabase
-    .from("quick_notes")
-    .select("*")
-    .order("created_at", { ascending: false });
-  if (notesErr || !notesData) return EMPTY_INDEX;
-  const notes = notesData as QuickNote[];
-  if (notes.length === 0) return { notes, authors: {}, counts: {} };
-
-  const noteIds = notes.map((n) => n.id);
-  const authorIds = Array.from(new Set(notes.map((n) => n.author_id).filter((x): x is string => Boolean(x))));
-
-  const [authorsRes, connectionsRes, commentsRes, joinRes] = await Promise.all([
-    authorIds.length > 0
-      ? supabase.from("profiles").select("*").in("id", authorIds)
-      : Promise.resolve({ data: [] as Profile[], error: null }),
-    supabase
-      .from("note_connections")
-      .select("from_note_id,to_note_id")
-      .or(`from_note_id.in.(${noteIds.join(",")}),to_note_id.in.(${noteIds.join(",")})`),
-    supabase.from("comments").select("quick_note_id").in("quick_note_id", noteIds),
-    supabase.from("note_suggested_categories").select("note_id,suggestion_id").in("note_id", noteIds),
-  ]);
-
-  const authors: Record<string, Profile> = {};
-  for (const p of (authorsRes.data as Profile[] | null) ?? []) authors[p.id] = p;
-
-  const counts: Record<string, AggregatedCounts> = {};
-  const ensure = (id: string) => {
-    if (!counts[id]) counts[id] = { connections: 0, comments: 0, suggestions: [] };
-    return counts[id];
-  };
-
-  for (const c of (connectionsRes.data as { from_note_id: string | null; to_note_id: string | null }[] | null) ?? []) {
-    if (c.from_note_id && noteIds.includes(c.from_note_id)) ensure(c.from_note_id).connections += 1;
-    if (c.to_note_id && noteIds.includes(c.to_note_id)) ensure(c.to_note_id).connections += 1;
-  }
-
-  for (const c of (commentsRes.data as { quick_note_id: string | null }[] | null) ?? []) {
-    if (c.quick_note_id) ensure(c.quick_note_id).comments += 1;
-  }
-
-  const suggestionIds = Array.from(
-    new Set(
-      ((joinRes.data as { note_id: string; suggestion_id: string }[] | null) ?? []).map((j) => j.suggestion_id),
-    ),
-  );
-  if (suggestionIds.length > 0) {
-    const { data: sugRows } = await supabase
-      .from("suggested_categories")
-      .select("*")
-      .in("id", suggestionIds);
-    const sugMap: Record<string, SuggestedCategory> = {};
-    for (const s of (sugRows as SuggestedCategory[] | null) ?? []) sugMap[s.id] = s;
-    for (const j of (joinRes.data as { note_id: string; suggestion_id: string }[] | null) ?? []) {
-      const sug = sugMap[j.suggestion_id];
-      if (sug) ensure(j.note_id).suggestions.push(sug);
-    }
-  }
-
-  return { notes, authors, counts };
-}
-
 function formatTimestamp(ts: string | null | undefined): string {
   if (!ts) return "";
   const d = new Date(ts);
@@ -171,11 +102,6 @@ function authorInitials(name: string): string {
   if (parts.length === 0) return "?";
   if (parts.length === 1) return parts[0].slice(0, 1).toUpperCase();
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-}
-
-function previewBody(body: string, headline: string | null | undefined, max = 180): string {
-  if (headline && headline.trim()) return body.length > max ? `${body.slice(0, max).trim()}…` : body;
-  return body.length > max ? `${body.slice(0, max).trim()}…` : body;
 }
 
 // ─── Avatar ───
@@ -223,8 +149,9 @@ function Avatar({ profile, size = 36 }: { profile: Profile | null; size?: number
 // ─── Panel root ───
 
 export function QuickNotesPanel() {
-  const [view, setView] = useState<View>({ kind: "list" });
+  const [view, setView] = useState<View>({ kind: "create" });
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [formKey, setFormKey] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -236,256 +163,19 @@ export function QuickNotesPanel() {
     };
   }, []);
 
-  const goList = useCallback(() => setView({ kind: "list" }), []);
-  const goCreate = useCallback(() => setView({ kind: "create" }), []);
+  const reset = useCallback(() => {
+    setFormKey((k) => k + 1);
+    setView({ kind: "create" });
+  }, []);
   const goEdit = useCallback((id: string) => setView({ kind: "edit", id }), []);
-  const goDetail = useCallback((id: string) => setView({ kind: "detail", id }), []);
 
-  if (view.kind === "create") {
-    return <NoteForm currentProfile={profile} onDone={goList} onCancel={goList} />;
-  }
   if (view.kind === "edit") {
-    return <NoteForm noteId={view.id} currentProfile={profile} onDone={goList} onCancel={goDetail.bind(null, view.id)} />;
+    return <NoteForm noteId={view.id} currentProfile={profile} onDone={reset} onCancel={reset} />;
   }
   if (view.kind === "detail") {
-    return <NoteDetail noteId={view.id} currentProfile={profile} onEdit={goEdit} onBack={goList} />;
+    return <NoteDetail noteId={view.id} currentProfile={profile} onEdit={goEdit} onBack={reset} />;
   }
-  return <NotesList currentProfile={profile} onOpen={goDetail} onCreate={goCreate} />;
-}
-
-// ─── List view ───
-
-function NotesList({
-  currentProfile,
-  onOpen,
-  onCreate,
-}: {
-  currentProfile: Profile | null;
-  onOpen: (id: string) => void;
-  onCreate: () => void;
-}) {
-  const [index, setIndex] = useState<NotesIndex>(EMPTY_INDEX);
-  const [loading, setLoading] = useState(true);
-
-  const reload = useCallback(async () => {
-    setLoading(true);
-    const data = await loadNotesIndex();
-    setIndex(data);
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    void reload();
-  }, [reload]);
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: space.s24 }}>
-      <div
-        style={{
-          display: "flex",
-          alignItems: "flex-start",
-          justifyContent: "space-between",
-          gap: space.s16,
-          flexWrap: "wrap",
-        }}
-      >
-        <div>
-          <p
-            style={{
-              ...typography.sizes.t12,
-              fontWeight: typography.weights.bold,
-              letterSpacing: "0.14em",
-              textTransform: "uppercase",
-              color: colors.textMuted,
-              marginBottom: space.s4,
-            }}
-          >
-            Quick notes
-          </p>
-          <p
-            style={{
-              ...typography.sizes.t14,
-              color: colors.textMuted,
-              maxWidth: "60ch",
-            }}
-          >
-            Lette notater fra felt og samtaler. Skriv en idé, en lenke eller en observasjon —
-            koble den til relaterte innsikter eller andre notater.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={onCreate}
-          disabled={!currentProfile}
-          title={!currentProfile ? "Profil mangler — kan ikke opprette notater." : undefined}
-          style={{
-            ...typography.sizes.t14,
-            padding: `${space.s8} ${space.s16}`,
-            background: currentProfile ? colors.brandWarmBlue : colors.bgSubtle,
-            color: currentProfile ? colors.textLight : colors.textMuted,
-            border: `1px solid ${currentProfile ? colors.brandWarmBlue : colors.borderSubtle}`,
-            cursor: currentProfile ? "pointer" : "not-allowed",
-            fontFamily: FONT_STACK,
-            fontWeight: typography.weights.medium,
-          }}
-        >
-          + Nytt notat
-        </button>
-      </div>
-
-      {loading && index.notes.length === 0 ? (
-        <p style={{ ...typography.sizes.t14, color: colors.textMuted }}>Laster…</p>
-      ) : index.notes.length === 0 ? (
-        <p
-          style={{
-            ...typography.sizes.t14,
-            color: colors.textMuted,
-            padding: space.s24,
-            background: colors.bgCard,
-            border: `1px dashed ${colors.borderSubtle}`,
-            lineHeight: 1.6,
-          }}
-        >
-          Ingen notater ennå. Lag det første ved å klikke <strong>+ Nytt notat</strong>.
-        </p>
-      ) : (
-        <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: space.s12 }}>
-          {index.notes.map((n) => (
-            <NoteCard
-              key={n.id}
-              note={n}
-              author={n.author_id ? index.authors[n.author_id] ?? null : null}
-              counts={index.counts[n.id] ?? { connections: 0, comments: 0, suggestions: [] }}
-              onOpen={() => onOpen(n.id)}
-            />
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}
-
-function NoteCard({
-  note,
-  author,
-  counts,
-  onOpen,
-}: {
-  note: QuickNote;
-  author: Profile | null;
-  counts: AggregatedCounts;
-  onOpen: () => void;
-}) {
-  const headline = note.headline?.trim();
-  const wpLabel = note.work_package
-    ? WORK_PACKAGES.find((w) => w.value === note.work_package)?.label.split(" · ")[0]
-    : null;
-  return (
-    <li>
-      <button
-        type="button"
-        onClick={onOpen}
-        style={{
-          width: "100%",
-          textAlign: "left",
-          display: "flex",
-          gap: space.s16,
-          padding: space.s16,
-          background: colors.bgCard,
-          border: `1px solid ${colors.borderSubtle}`,
-          cursor: "pointer",
-          fontFamily: FONT_STACK,
-          color: colors.textBody,
-        }}
-      >
-        <Avatar profile={author} />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "baseline",
-              justifyContent: "space-between",
-              gap: space.s8,
-              marginBottom: space.s4,
-            }}
-          >
-            <p
-              style={{
-                ...typography.sizes.t14,
-                fontWeight: typography.weights.medium,
-                color: colors.textBody,
-              }}
-            >
-              {author?.full_name ?? "Ukjent forfatter"}
-            </p>
-            <p style={{ ...typography.sizes.t12, color: colors.textMuted }}>
-              {formatTimestamp(note.created_at)}
-            </p>
-          </div>
-          {headline ? (
-            <p
-              style={{
-                ...typography.sizes.t18,
-                fontWeight: typography.weights.medium,
-                color: colors.textBody,
-                marginBottom: space.s4,
-              }}
-            >
-              {headline}
-            </p>
-          ) : null}
-          <p
-            style={{
-              ...typography.sizes.t14,
-              color: headline ? colors.textMuted : colors.textBody,
-              marginBottom: space.s8,
-              lineHeight: 1.55,
-            }}
-          >
-            {previewBody(note.body, headline)}
-          </p>
-
-          <div style={{ display: "flex", flexWrap: "wrap", gap: space.s4, marginBottom: space.s8 }}>
-            {wpLabel && (
-              <CategoryBadge color={colors.brandDarkBlue}>{wpLabel}</CategoryBadge>
-            )}
-            {note.field_site && (
-              <CategoryBadge color={colors.brandWarmBlue}>{note.field_site}</CategoryBadge>
-            )}
-            {(note.care_frictions ?? []).map((k) => (
-              <CategoryBadge key={`f-${k}`} color={FRICTIONS[k].color}>
-                {FRICTIONS[k].label}
-              </CategoryBadge>
-            ))}
-            {(note.care_qualities ?? []).map((k) => (
-              <CategoryBadge key={`q-${k}`} color={QUALITIES[k].color}>
-                {QUALITIES[k].label}
-              </CategoryBadge>
-            ))}
-            {counts.suggestions.map((s) => (
-              <CategoryBadge key={`s-${s.id}`} kind="dashed">
-                {s.label}
-              </CategoryBadge>
-            ))}
-          </div>
-
-          <div
-            style={{
-              display: "flex",
-              gap: space.s12,
-              ...typography.sizes.t12,
-              color: colors.textMuted,
-            }}
-          >
-            <span>🔗 {counts.connections} {counts.connections === 1 ? "kobling" : "koblinger"}</span>
-            <span>💬 {counts.comments} {counts.comments === 1 ? "kommentar" : "kommentarer"}</span>
-            {note.map_scale && <span>{SCALES[note.map_scale].label}</span>}
-          </div>
-        </div>
-      </button>
-    </li>
-  );
+  return <NoteForm key={formKey} currentProfile={profile} onDone={reset} onCancel={reset} />;
 }
 
 // ─── Pill toggle ───
@@ -529,6 +219,191 @@ function PillGroup<T extends string>({
   );
 }
 
+// ─── AI suggestion UI helpers ───
+
+function SuggestBar({
+  availability,
+  bodyLength,
+  loading,
+  coolingDown,
+  cleared,
+  onClick,
+}: {
+  availability: "checking" | "ready" | "limit_reached" | "unavailable";
+  bodyLength: number;
+  loading: boolean;
+  coolingDown: boolean;
+  cleared: boolean;
+  onClick: () => void;
+}) {
+  if (availability === "unavailable") return null;
+
+  if (availability === "limit_reached") {
+    return (
+      <p
+        style={{
+          ...typography.sizes.t12,
+          color: colors.textMuted,
+          fontStyle: "italic",
+        }}
+      >
+        Forslagskvoten er brukt opp for i dag.
+      </p>
+    );
+  }
+
+  const tooShort = bodyLength < SUGGEST_MIN_CHARS;
+  const disabled = availability !== "ready" || tooShort || loading || coolingDown;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: space.s4 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: space.s12, flexWrap: "wrap" }}>
+        <button
+          type="button"
+          onClick={onClick}
+          disabled={disabled}
+          style={{
+            ...typography.sizes.t14,
+            padding: `${space.s8} ${space.s16}`,
+            background: disabled ? colors.bgSubtle : SUGGEST_ACCENT,
+            color: disabled ? colors.textMuted : colors.textLight,
+            border: `1px solid ${disabled ? colors.borderSubtle : SUGGEST_ACCENT}`,
+            cursor: disabled ? "not-allowed" : "pointer",
+            fontFamily: FONT_STACK,
+            fontWeight: typography.weights.medium,
+            opacity: disabled ? 0.7 : 1,
+          }}
+        >
+          {loading ? (
+            <span style={{ display: "inline-flex", alignItems: "center", gap: space.s8 }}>
+              <Spinner /> Tenker…
+            </span>
+          ) : (
+            "✦ Foreslå kategorier og koblinger"
+          )}
+        </button>
+        {cleared && (
+          <span style={{ ...typography.sizes.t12, color: colors.textMuted, fontStyle: "italic" }}>
+            Forslag tømt
+          </span>
+        )}
+      </div>
+      {tooShort && availability === "ready" && (
+        <span style={{ ...typography.sizes.t12, color: colors.textMuted }}>
+          Skriv minst {SUGGEST_MIN_CHARS} tegn for å aktivere forslag ({bodyLength}/{SUGGEST_MIN_CHARS}).
+        </span>
+      )}
+    </div>
+  );
+}
+
+function Spinner() {
+  return (
+    <span
+      aria-hidden
+      style={{
+        display: "inline-block",
+        width: 12,
+        height: 12,
+        border: "2px solid currentColor",
+        borderRightColor: "transparent",
+        borderRadius: "50%",
+        animation: "qn-spin 0.7s linear infinite",
+      }}
+    >
+      <style jsx>{`
+        @keyframes qn-spin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
+    </span>
+  );
+}
+
+function GhostBadgeRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div style={{ marginTop: space.s8, display: "flex", flexDirection: "column", gap: space.s4 }}>
+      <span
+        style={{
+          ...typography.sizes.t12,
+          color: SUGGEST_ACCENT,
+          fontWeight: typography.weights.medium,
+        }}
+      >
+        {label}
+      </span>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: space.s4 }}>{children}</div>
+    </div>
+  );
+}
+
+function GhostBadge({
+  color,
+  onAccept,
+  onDismiss,
+  children,
+}: {
+  color: string;
+  onAccept: () => void;
+  onDismiss: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <span
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 4,
+        ...typography.sizes.t12,
+        padding: `2px ${space.s4} 2px ${space.s8}`,
+        background: `${color}10`,
+        color: color,
+        border: `1px dashed ${color}`,
+        borderRadius: 4,
+        fontWeight: typography.weights.medium,
+        opacity: 0.85,
+      }}
+    >
+      <button
+        type="button"
+        onClick={onAccept}
+        title="Godta forslag"
+        aria-label="Godta forslag"
+        style={{
+          background: "transparent",
+          border: "none",
+          color,
+          cursor: "pointer",
+          padding: 0,
+          fontFamily: FONT_STACK,
+          fontSize: "inherit",
+          fontWeight: typography.weights.medium,
+        }}
+      >
+        ✓ {children}
+      </button>
+      <button
+        type="button"
+        onClick={onDismiss}
+        title="Avvis forslag"
+        aria-label="Avvis forslag"
+        style={{
+          background: "transparent",
+          border: "none",
+          color,
+          cursor: "pointer",
+          padding: `0 ${space.s4}`,
+          fontFamily: FONT_STACK,
+          fontSize: "inherit",
+          opacity: 0.7,
+        }}
+      >
+        ×
+      </button>
+    </span>
+  );
+}
+
 // ─── Form (create + edit) ───
 
 function NoteForm({
@@ -556,6 +431,140 @@ function NoteForm({
   const [submitting, setSubmitting] = useState(false);
   const [status, setStatus] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
   const [loading, setLoading] = useState(editing);
+
+  // ── AI suggestions ───────────────────────────────────────────
+  const [aiAvailability, setAiAvailability] = useState<
+    "checking" | "ready" | "limit_reached" | "unavailable"
+  >("checking");
+  const [aiFrictions, setAiFrictions] = useState<CareFriction[]>([]);
+  const [aiQualities, setAiQualities] = useState<CareQuality[]>([]);
+  const [aiWorkPackage, setAiWorkPackage] = useState<WorkPackage | null>(null);
+  const [aiRelated, setAiRelated] = useState<SuggestionRelated[]>([]);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiCoolingDown, setAiCoolingDown] = useState(false);
+  const [aiCleared, setAiCleared] = useState(false);
+  const aiHadSuggestionsRef = useRef(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    getSuggestionAvailability().then((res) => {
+      if (cancelled) return;
+      if (res.status === "ready") setAiAvailability("ready");
+      else if (res.status === "limit_reached") setAiAvailability("limit_reached");
+      else setAiAvailability("unavailable");
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const aiHasSuggestions =
+    aiFrictions.length > 0 ||
+    aiQualities.length > 0 ||
+    aiWorkPackage !== null ||
+    aiRelated.length > 0;
+
+  // Track when suggestions are emptied after having had some — show a brief
+  // "Suggestions cleared" hint, then return to idle.
+  useEffect(() => {
+    if (aiHasSuggestions) {
+      aiHadSuggestionsRef.current = true;
+      if (aiCleared) setAiCleared(false);
+      return;
+    }
+    if (!aiHadSuggestionsRef.current) return;
+    aiHadSuggestionsRef.current = false;
+    setAiCleared(true);
+    const t = setTimeout(() => setAiCleared(false), 2000);
+    return () => clearTimeout(t);
+  }, [aiHasSuggestions, aiCleared]);
+
+  const handleSuggest = useCallback(async () => {
+    if (body.length < SUGGEST_MIN_CHARS) return;
+    if (aiAvailability !== "ready") return;
+    if (aiLoading || aiCoolingDown) return;
+
+    setAiLoading(true);
+    setAiCoolingDown(true);
+    const cooldownTimer = setTimeout(() => setAiCoolingDown(false), SUGGEST_DEBOUNCE_MS);
+
+    try {
+      const res = await requestSuggestions({
+        noteHeadline: headline,
+        noteBody: body,
+        currentFrictions: frictions,
+        currentQualities: qualities,
+      });
+      if (res.status === "ok") {
+        // Drop anything the user already picked.
+        setAiFrictions(res.suggestions.frictions.filter((f) => !frictions.includes(f)));
+        setAiQualities(res.suggestions.qualities.filter((q) => !qualities.includes(q)));
+        setAiWorkPackage(
+          res.suggestions.work_package && res.suggestions.work_package !== workPackage
+            ? res.suggestions.work_package
+            : null,
+        );
+        setAiRelated(
+          res.suggestions.related.filter((r) => !linked.has(`${r.type === "note" ? "quick_note" : "insight"}:${r.id}`)),
+        );
+        if (res.remaining === 0) setAiAvailability("limit_reached");
+      } else if (res.status === "limit_reached") {
+        setAiAvailability("limit_reached");
+      } else if (res.status === "unavailable" || res.status === "unauthenticated") {
+        setAiAvailability("unavailable");
+      }
+      // "error" is silent — the form continues unchanged.
+    } catch (err) {
+      console.warn("[suggest] client call failed:", err);
+    } finally {
+      setAiLoading(false);
+      // cooldownTimer keeps the button disabled for the rest of the 3s window.
+      void cooldownTimer;
+    }
+  }, [body, headline, frictions, qualities, workPackage, linked, aiAvailability, aiLoading, aiCoolingDown]);
+
+  const acceptFrictionSuggestion = useCallback((k: CareFriction) => {
+    setFrictions((prev) => (prev.includes(k) ? prev : [...prev, k]));
+    setAiFrictions((prev) => prev.filter((x) => x !== k));
+  }, []);
+  const dismissFrictionSuggestion = useCallback((k: CareFriction) => {
+    setAiFrictions((prev) => prev.filter((x) => x !== k));
+  }, []);
+  const acceptQualitySuggestion = useCallback((k: CareQuality) => {
+    setQualities((prev) => (prev.includes(k) ? prev : [...prev, k]));
+    setAiQualities((prev) => prev.filter((x) => x !== k));
+  }, []);
+  const dismissQualitySuggestion = useCallback((k: CareQuality) => {
+    setAiQualities((prev) => prev.filter((x) => x !== k));
+  }, []);
+  const acceptWorkPackageSuggestion = useCallback(() => {
+    setWorkPackage((prev) => (aiWorkPackage && prev === "" ? aiWorkPackage : aiWorkPackage ?? prev));
+    setAiWorkPackage(null);
+  }, [aiWorkPackage]);
+  const dismissWorkPackageSuggestion = useCallback(() => {
+    setAiWorkPackage(null);
+  }, []);
+  const acceptRelatedSuggestion = useCallback(
+    (key: string) => {
+      const next = new Set(linked);
+      next.add(key);
+      setLinked(next);
+      setAiRelated((prev) =>
+        prev.filter((r) => `${r.type === "note" ? "quick_note" : "insight"}:${r.id}` !== key),
+      );
+    },
+    [linked],
+  );
+  const dismissRelatedSuggestion = useCallback((key: string) => {
+    setAiRelated((prev) =>
+      prev.filter((r) => `${r.type === "note" ? "quick_note" : "insight"}:${r.id}` !== key),
+    );
+  }, []);
+
+  const aiRelatedKeys = useMemo(
+    () => new Set(aiRelated.map((r) => `${r.type === "note" ? "quick_note" : "insight"}:${r.id}`)),
+    [aiRelated],
+  );
 
   // Hydrate from existing note when editing
   useEffect(() => {
@@ -791,6 +800,15 @@ function NoteForm({
           style={{ ...inputStyle, minHeight: 220, lineHeight: 1.55 }}
         />
 
+        <SuggestBar
+          availability={aiAvailability}
+          bodyLength={body.length}
+          loading={aiLoading}
+          coolingDown={aiCoolingDown}
+          cleared={aiCleared}
+          onClick={handleSuggest}
+        />
+
         {/* Tag selectors */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: space.s12 }}>
           <label style={{ display: "flex", flexDirection: "column", gap: space.s4 }}>
@@ -807,6 +825,17 @@ function NoteForm({
                 </option>
               ))}
             </select>
+            {aiWorkPackage && (
+              <GhostBadgeRow label="✦ AI suggestion — click to accept">
+                <GhostBadge
+                  color={SUGGEST_ACCENT}
+                  onAccept={acceptWorkPackageSuggestion}
+                  onDismiss={dismissWorkPackageSuggestion}
+                >
+                  {aiWorkPackage}
+                </GhostBadge>
+              </GhostBadgeRow>
+            )}
           </label>
           <label style={{ display: "flex", flexDirection: "column", gap: space.s4 }}>
             <span style={labelStyle}>Feltsted</span>
@@ -847,6 +876,20 @@ function NoteForm({
             value={frictions}
             onChange={(next) => setFrictions(next as CareFriction[])}
           />
+          {aiFrictions.length > 0 && (
+            <GhostBadgeRow label="✦ AI suggestions — click to accept">
+              {aiFrictions.map((k) => (
+                <GhostBadge
+                  key={k}
+                  color={FRICTIONS[k].color}
+                  onAccept={() => acceptFrictionSuggestion(k)}
+                  onDismiss={() => dismissFrictionSuggestion(k)}
+                >
+                  {FRICTIONS[k].label}
+                </GhostBadge>
+              ))}
+            </GhostBadgeRow>
+          )}
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: space.s4 }}>
@@ -856,6 +899,20 @@ function NoteForm({
             value={qualities}
             onChange={(next) => setQualities(next as CareQuality[])}
           />
+          {aiQualities.length > 0 && (
+            <GhostBadgeRow label="✦ AI suggestions — click to accept">
+              {aiQualities.map((k) => (
+                <GhostBadge
+                  key={k}
+                  color={QUALITIES[k].color}
+                  onAccept={() => acceptQualitySuggestion(k)}
+                  onDismiss={() => dismissQualitySuggestion(k)}
+                >
+                  {QUALITIES[k].label}
+                </GhostBadge>
+              ))}
+            </GhostBadgeRow>
+          )}
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: space.s4 }}>
@@ -927,7 +984,14 @@ function NoteForm({
         </div>
       </div>
 
-      <ConnectSidebar currentNoteId={noteId} linked={linked} setLinked={setLinked} />
+      <ConnectSidebar
+        currentNoteId={noteId}
+        linked={linked}
+        setLinked={setLinked}
+        suggestedKeys={aiRelatedKeys}
+        onAcceptSuggested={acceptRelatedSuggestion}
+        onDismissSuggested={dismissRelatedSuggestion}
+      />
     </form>
   );
 }
@@ -946,10 +1010,16 @@ function ConnectSidebar({
   currentNoteId,
   linked,
   setLinked,
+  suggestedKeys,
+  onAcceptSuggested,
+  onDismissSuggested,
 }: {
   currentNoteId?: string;
   linked: Set<string>;
   setLinked: (next: Set<string>) => void;
+  suggestedKeys?: Set<string>;
+  onAcceptSuggested?: (key: string) => void;
+  onDismissSuggested?: (key: string) => void;
 }) {
   const [items, setItems] = useState<LinkableEntity[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1009,7 +1079,22 @@ function ConnectSidebar({
     if (next.has(key)) next.delete(key);
     else next.add(key);
     setLinked(next);
+    // If this row was an AI suggestion, mark it as resolved either way.
+    if (suggestedKeys?.has(key)) onAcceptSuggested?.(key);
   }
+
+  // Sort: AI suggestions first, then by recency (already sorted upstream).
+  const ordered = useMemo(() => {
+    if (!suggestedKeys || suggestedKeys.size === 0) return visible;
+    const sug: LinkableEntity[] = [];
+    const rest: LinkableEntity[] = [];
+    for (const it of visible) {
+      const key = `${it.kind}:${it.id}`;
+      if (suggestedKeys.has(key)) sug.push(it);
+      else rest.push(it);
+    }
+    return [...sug, ...rest];
+  }, [visible, suggestedKeys]);
 
   return (
     <aside
@@ -1053,9 +1138,10 @@ function ConnectSidebar({
           </p>
         ) : (
           <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: space.s4 }}>
-            {visible.map((it) => {
+            {ordered.map((it) => {
               const key = `${it.kind}:${it.id}`;
               const on = linked.has(key);
+              const suggested = suggestedKeys?.has(key) ?? false;
               return (
                 <li key={key}>
                   <label
@@ -1065,29 +1151,62 @@ function ConnectSidebar({
                       gap: space.s8,
                       padding: `${space.s8} ${space.s12}`,
                       cursor: "pointer",
-                      background: on ? `${colors.brandBlueFaded}` : "transparent",
-                      border: `1px solid ${on ? colors.brandWarmBlue : "transparent"}`,
+                      background: on
+                        ? colors.brandBlueFaded
+                        : suggested
+                          ? `${SUGGEST_ACCENT}10`
+                          : "transparent",
+                      border: `1px ${suggested && !on ? "dashed" : "solid"} ${
+                        on
+                          ? colors.brandWarmBlue
+                          : suggested
+                            ? SUGGEST_ACCENT
+                            : "transparent"
+                      }`,
+                      position: "relative",
                     }}
                   >
                     <input
                       type="checkbox"
                       checked={on}
                       onChange={() => toggle(it)}
-                      style={{ marginTop: 3, accentColor: colors.brandWarmBlue }}
+                      style={{ marginTop: 3, accentColor: suggested ? SUGGEST_ACCENT : colors.brandWarmBlue }}
                     />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <p
+                      <div
                         style={{
-                          ...typography.sizes.t12,
-                          color: it.kind === "insight" ? colors.brandWarmBlue : colors.textMuted,
-                          fontWeight: typography.weights.bold,
-                          textTransform: "uppercase",
-                          letterSpacing: "0.1em",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          gap: space.s8,
                           marginBottom: 2,
                         }}
                       >
-                        {it.kind === "insight" ? "Innsikt" : "Notat"}
-                      </p>
+                        <p
+                          style={{
+                            ...typography.sizes.t12,
+                            color: it.kind === "insight" ? colors.brandWarmBlue : colors.textMuted,
+                            fontWeight: typography.weights.bold,
+                            textTransform: "uppercase",
+                            letterSpacing: "0.1em",
+                          }}
+                        >
+                          {it.kind === "insight" ? "Innsikt" : "Notat"}
+                        </p>
+                        {suggested && (
+                          <span
+                            style={{
+                              ...typography.sizes.t12,
+                              color: SUGGEST_ACCENT,
+                              fontWeight: typography.weights.bold,
+                              textTransform: "uppercase",
+                              letterSpacing: "0.1em",
+                            }}
+                          >
+                            ✦ Foreslått
+                          </span>
+                        )}
+                      </div>
                       <p
                         style={{
                           ...typography.sizes.t14,
@@ -1108,6 +1227,28 @@ function ConnectSidebar({
                         >
                           {it.subtitle}
                         </p>
+                      )}
+                      {suggested && !on && onDismissSuggested && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            onDismissSuggested(key);
+                          }}
+                          style={{
+                            ...typography.sizes.t12,
+                            background: "transparent",
+                            border: "none",
+                            color: colors.textMuted,
+                            cursor: "pointer",
+                            padding: 0,
+                            marginTop: space.s4,
+                            fontFamily: FONT_STACK,
+                          }}
+                        >
+                          × Avvis forslag
+                        </button>
                       )}
                     </div>
                   </label>

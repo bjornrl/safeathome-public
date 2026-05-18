@@ -3,6 +3,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -262,8 +263,25 @@ export default function NodeMapClient() {
   }, [nodes, search]);
 
   // ── D3 force simulation ──
-  useEffect(() => {
+  // useLayoutEffect so the synchronous pre-warm + setTick happens before
+  // the browser paints — otherwise the user briefly sees every node piled
+  // at (0, 0) before the layout snaps to its settled positions.
+  useLayoutEffect(() => {
     if (nodes.length === 0) return;
+    // Seed nodes around the canvas centre so the first paint isn't a pile in
+    // the top-left corner. Existing positions (e.g. after a drag) are kept.
+    const cx = size.width / 2;
+    const cy = size.height / 2;
+    const radius = Math.min(size.width, size.height) * 0.32;
+    nodes.forEach((n, i) => {
+      if (n.x == null || n.y == null) {
+        const angle = (i / nodes.length) * Math.PI * 2;
+        const jitter = 0.6 + Math.random() * 0.4;
+        n.x = cx + Math.cos(angle) * radius * jitter;
+        n.y = cy + Math.sin(angle) * radius * jitter;
+      }
+    });
+
     const sim = forceSimulation<GraphNode>(nodes)
       .force(
         "link",
@@ -273,11 +291,19 @@ export default function NodeMapClient() {
           .strength(0.4),
       )
       .force("charge", forceManyBody().strength(-200))
-      .force("center", forceCenter(size.width / 2, size.height / 2))
+      .force("center", forceCenter(cx, cy))
       .force("collide", forceCollide<GraphNode>().radius(20))
-      .alphaDecay(0.04);
+      .alphaDecay(0.04)
+      .stop();
+
+    // Pre-warm synchronously so the first render shows a settled layout
+    // instead of nodes animating outwards from (0, 0).
+    for (let i = 0; i < 300; i++) sim.tick();
+
     simulationRef.current = sim;
     sim.on("tick", () => setTick((v) => v + 1));
+    setTick((v) => v + 1);
+
     return () => {
       sim.stop();
       simulationRef.current = null;
@@ -353,7 +379,7 @@ export default function NodeMapClient() {
           position: "absolute",
           inset: 0,
           display: "grid",
-          gridTemplateColumns: sidebarOpen ? "300px 1fr" : "0 1fr",
+          gridTemplateColumns: sidebarOpen ? "420px 1fr" : "0 1fr",
           transition: "grid-template-columns 0.2s ease",
         }}
       >
@@ -368,6 +394,10 @@ export default function NodeMapClient() {
           totalNodes={nodes.length}
           visibleNodes={visibleNodeIds.size}
           edgesCount={visibleEdges.length}
+          listNodes={nodes.filter((n) => visibleNodeIds.has(n.id))}
+          searchHits={searchHits}
+          selectedId={selectedId}
+          onSelect={setSelectedId}
         />
 
         <div style={{ position: "relative", overflow: "hidden", background: colors.bgSubtle }}>
@@ -404,7 +434,7 @@ export default function NodeMapClient() {
           )}
           <svg
             ref={svgRef}
-            width={size.width - (sidebarOpen ? 300 : 0)}
+            width={size.width - (sidebarOpen ? 420 : 0)}
             height={size.height}
             style={{ display: "block", cursor: "grab" }}
             role="img"
@@ -538,6 +568,10 @@ function HoverTooltip({ node }: { node: GraphNode | null }) {
 }
 
 function DetailPanel({ node, onClose }: { node: GraphNode; onClose: () => void }) {
+  // Internal Nav (utility row + main row) is roughly 100px tall and sticks at
+  // the top with z-index 50. Push the panel + overlay below it so the panel
+  // header isn't hidden behind the nav.
+  const NAV_OFFSET = 120;
   return (
     <>
       <motion.div
@@ -547,7 +581,10 @@ function DetailPanel({ node, onClose }: { node: GraphNode; onClose: () => void }
         onClick={onClose}
         style={{
           position: "fixed",
-          inset: 0,
+          top: NAV_OFFSET,
+          left: 0,
+          right: 0,
+          bottom: 0,
           background: "rgba(42, 40, 89, 0.2)",
           zIndex: 30,
         }}
@@ -559,9 +596,9 @@ function DetailPanel({ node, onClose }: { node: GraphNode; onClose: () => void }
         transition={{ type: "spring", damping: 30, stiffness: 300 }}
         style={{
           position: "fixed",
-          top: 0,
+          top: NAV_OFFSET,
           right: 0,
-          height: "100%",
+          height: `calc(100vh - ${NAV_OFFSET}px)`,
           width: 480,
           maxWidth: "90vw",
           background: colors.bgCard,
@@ -704,6 +741,10 @@ function FilterSidebar({
   totalNodes,
   visibleNodes,
   edgesCount,
+  listNodes,
+  searchHits,
+  selectedId,
+  onSelect,
 }: {
   open: boolean;
   onToggle: () => void;
@@ -715,14 +756,27 @@ function FilterSidebar({
   totalNodes: number;
   visibleNodes: number;
   edgesCount: number;
+  listNodes: GraphNode[];
+  searchHits: Set<string> | null;
+  selectedId: string | null;
+  onSelect: (id: string) => void;
 }) {
+  const orderedList = useMemo(() => {
+    const sorted = [...listNodes].sort((a, b) => a.title.localeCompare(b.title, "nb"));
+    if (!searchHits) return sorted;
+    return sorted.sort((a, b) => Number(searchHits.has(b.id)) - Number(searchHits.has(a.id)));
+  }, [listNodes, searchHits]);
+
   return (
     <aside
       style={{
         background: colors.bgCard,
         borderRight: `1px solid ${colors.borderSubtle}`,
-        overflowY: "auto",
         position: "relative",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+        minWidth: 0,
       }}
     >
       <button
@@ -733,8 +787,9 @@ function FilterSidebar({
           position: "absolute",
           top: space.s12,
           right: space.s12,
+          zIndex: 5,
           ...typography.sizes.t12,
-          background: "transparent",
+          background: colors.bgCard,
           border: `1px solid ${colors.borderSubtle}`,
           padding: `2px ${space.s8}`,
           cursor: "pointer",
@@ -746,38 +801,45 @@ function FilterSidebar({
       </button>
 
       {open && (
-        <div style={{ padding: space.s24, display: "flex", flexDirection: "column", gap: space.s24 }}>
-          <div>
-            <p
-              style={{
-                ...typography.sizes.t12,
-                fontWeight: typography.weights.bold,
-                textTransform: "uppercase",
-                letterSpacing: "0.14em",
-                color: colors.textMuted,
-                marginBottom: space.s4,
-              }}
-            >
-              Node map
-            </p>
-            <p
-              style={{
-                ...typography.sizes.t12,
-                color: colors.textMuted,
-                lineHeight: 1.6,
-              }}
-            >
-              {visibleNodes} av {totalNodes} noder · {edgesCount} koblinger.
-            </p>
-          </div>
+        <>
+          <div
+            style={{
+              padding: `${space.s24} ${space.s24} ${space.s16}`,
+              display: "flex",
+              flexDirection: "column",
+              gap: space.s12,
+              flexShrink: 0,
+            }}
+          >
+            <div>
+              <p
+                style={{
+                  ...typography.sizes.t12,
+                  fontWeight: typography.weights.bold,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.14em",
+                  color: colors.textMuted,
+                  marginBottom: space.s4,
+                }}
+              >
+                Node map
+              </p>
+              <p
+                style={{
+                  ...typography.sizes.t12,
+                  color: colors.textMuted,
+                  lineHeight: 1.6,
+                }}
+              >
+                {visibleNodes} av {totalNodes} noder · {edgesCount} koblinger.
+              </p>
+            </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: space.s8 }}>
-            <SidebarLabel>Søk</SidebarLabel>
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Tittel eller tekst…"
+              placeholder="Søk i tittel eller tekst…"
               style={{
                 padding: `${space.s8} ${space.s12}`,
                 ...typography.sizes.t14,
@@ -787,10 +849,7 @@ function FilterSidebar({
                 border: `1px solid ${colors.borderSubtle}`,
               }}
             />
-          </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: space.s8 }}>
-            <SidebarLabel>Innholdstype</SidebarLabel>
             <div style={{ display: "flex", gap: space.s4, flexWrap: "wrap" }}>
               {(["all", "notes", "insights"] as const).map((t) => (
                 <button
@@ -814,105 +873,219 @@ function FilterSidebar({
             </div>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: space.s8 }}>
-            <SidebarLabel>Friksjoner</SidebarLabel>
-            <ToggleSet<CareFriction>
-              keys={FRICTION_KEYS}
-              labelOf={(k) => FRICTIONS[k].label}
-              colorOf={(k) => FRICTIONS[k].color}
-              selected={filters.frictions}
-              onChange={(next) => setFilters({ ...filters, frictions: next })}
-            />
-          </div>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: space.s8 }}>
-            <SidebarLabel>Kvaliteter</SidebarLabel>
-            <ToggleSet<CareQuality>
-              keys={QUALITY_KEYS}
-              labelOf={(k) => QUALITIES[k].label}
-              colorOf={(k) => QUALITIES[k].color}
-              selected={filters.qualities}
-              onChange={(next) => setFilters({ ...filters, qualities: next })}
-            />
-          </div>
-
-          <div style={{ display: "flex", flexDirection: "column", gap: space.s8 }}>
-            <SidebarLabel>Arbeidspakke</SidebarLabel>
-            <ToggleSet<WorkPackage>
-              keys={WP_OPTIONS}
-              labelOf={(k) => k}
-              selected={filters.workPackages}
-              onChange={(next) => setFilters({ ...filters, workPackages: next })}
-            />
-          </div>
-
-          <div style={{ display: "flex", gap: space.s8, flexWrap: "wrap" }}>
-            <button
-              type="button"
-              onClick={onZoomToFit}
-              style={{
-                ...typography.sizes.t12,
-                padding: `${space.s4} ${space.s12}`,
-                background: colors.bgSubtle,
-                color: colors.textBody,
-                border: `1px solid ${colors.borderSubtle}`,
-                cursor: "pointer",
-                fontFamily: FONT_STACK,
-                fontWeight: typography.weights.medium,
-              }}
-            >
-              Zoom to fit
-            </button>
-            <button
-              type="button"
-              onClick={() =>
-                setFilters({
-                  type: "all",
-                  frictions: new Set(),
-                  qualities: new Set(),
-                  workPackages: new Set(),
-                })
-              }
-              style={{
-                ...typography.sizes.t12,
-                padding: `${space.s4} ${space.s12}`,
-                background: "transparent",
-                color: colors.textMuted,
-                border: `1px solid ${colors.borderSubtle}`,
-                cursor: "pointer",
-                fontFamily: FONT_STACK,
-              }}
-            >
-              Nullstill filtre
-            </button>
-          </div>
-
           <div
             style={{
-              padding: space.s12,
+              flex: 1,
+              minHeight: 0,
+              overflowY: "auto",
+              borderTop: `1px solid ${colors.borderSubtle}`,
+              borderBottom: `1px solid ${colors.borderSubtle}`,
               background: colors.bgSubtle,
-              border: `1px solid ${colors.borderSubtle}`,
-              ...typography.sizes.t12,
-              color: colors.textMuted,
             }}
           >
-            <p style={{ marginBottom: 4, fontWeight: typography.weights.medium, color: colors.textBody }}>
-              Lese
-            </p>
-            <p style={{ marginBottom: 2 }}>
-              <span style={{ display: "inline-block", width: 10, height: 10, background: NOTE_COLOR, marginRight: 6, borderRadius: "50%" }} />
-              Quick note
-            </p>
-            <p>
-              <span style={{ display: "inline-block", width: 10, height: 10, background: INSIGHT_COLOR, marginRight: 6, borderRadius: "50%" }} />
-              Innsikt
-            </p>
-            <p style={{ marginTop: space.s8, lineHeight: 1.5 }}>
-              Linjer kobler noder som deler en tag — friksjonsfargen brukes når koblingen
-              går via en friksjon, ellers nøytralgrå.
-            </p>
+            {orderedList.length === 0 ? (
+              <p
+                style={{
+                  padding: space.s16,
+                  ...typography.sizes.t12,
+                  color: colors.textMuted,
+                  fontStyle: "italic",
+                }}
+              >
+                Ingen noder matcher filtrene.
+              </p>
+            ) : (
+              <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+                {orderedList.map((n) => {
+                  const dim = searchHits ? !searchHits.has(n.id) : false;
+                  const active = selectedId === n.id;
+                  return (
+                    <li key={n.id}>
+                      <button
+                        type="button"
+                        onClick={() => onSelect(n.id)}
+                        style={{
+                          width: "100%",
+                          textAlign: "left",
+                          padding: `${space.s8} ${space.s16}`,
+                          background: active ? colors.bgCard : "transparent",
+                          borderLeft: `3px solid ${
+                            active
+                              ? n.kind === "insight"
+                                ? INSIGHT_COLOR
+                                : NOTE_COLOR
+                              : "transparent"
+                          }`,
+                          borderTop: "none",
+                          borderRight: "none",
+                          borderBottom: `1px solid ${colors.borderSubtle}`,
+                          cursor: "pointer",
+                          fontFamily: FONT_STACK,
+                          opacity: dim ? 0.45 : 1,
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 2,
+                        }}
+                      >
+                        <span
+                          style={{
+                            ...typography.sizes.t12,
+                            color: n.kind === "insight" ? INSIGHT_COLOR : NOTE_COLOR,
+                            fontWeight: typography.weights.bold,
+                            textTransform: "uppercase",
+                            letterSpacing: "0.1em",
+                          }}
+                        >
+                          {n.kind === "insight" ? "Innsikt" : "Notat"}
+                        </span>
+                        <span
+                          style={{
+                            ...typography.sizes.t14,
+                            color: colors.textBody,
+                            fontWeight: typography.weights.medium,
+                            lineHeight: 1.4,
+                          }}
+                        >
+                          {n.title || "(uten tittel)"}
+                        </span>
+                        <span
+                          style={{
+                            ...typography.sizes.t12,
+                            color: colors.textMuted,
+                          }}
+                        >
+                          {n.degree} {n.degree === 1 ? "kobling" : "koblinger"}
+                          {n.workPackage ? ` · ${n.workPackage}` : ""}
+                          {n.fieldSite ? ` · ${n.fieldSite}` : ""}
+                        </span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </div>
-        </div>
+
+          <details
+            style={{
+              padding: `${space.s12} ${space.s24} ${space.s24}`,
+              flexShrink: 0,
+              maxHeight: "45%",
+              overflowY: "auto",
+            }}
+          >
+            <summary
+              style={{
+                ...typography.sizes.t12,
+                fontWeight: typography.weights.bold,
+                textTransform: "uppercase",
+                letterSpacing: "0.12em",
+                color: colors.textMuted,
+                cursor: "pointer",
+                padding: `${space.s4} 0`,
+              }}
+            >
+              Filtre & legende
+            </summary>
+            <div style={{ display: "flex", flexDirection: "column", gap: space.s16, marginTop: space.s12 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: space.s8 }}>
+                <SidebarLabel>Friksjoner</SidebarLabel>
+                <ToggleSet<CareFriction>
+                  keys={FRICTION_KEYS}
+                  labelOf={(k) => FRICTIONS[k].label}
+                  colorOf={(k) => FRICTIONS[k].color}
+                  selected={filters.frictions}
+                  onChange={(next) => setFilters({ ...filters, frictions: next })}
+                />
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: space.s8 }}>
+                <SidebarLabel>Kvaliteter</SidebarLabel>
+                <ToggleSet<CareQuality>
+                  keys={QUALITY_KEYS}
+                  labelOf={(k) => QUALITIES[k].label}
+                  colorOf={(k) => QUALITIES[k].color}
+                  selected={filters.qualities}
+                  onChange={(next) => setFilters({ ...filters, qualities: next })}
+                />
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: space.s8 }}>
+                <SidebarLabel>Arbeidspakke</SidebarLabel>
+                <ToggleSet<WorkPackage>
+                  keys={WP_OPTIONS}
+                  labelOf={(k) => k}
+                  selected={filters.workPackages}
+                  onChange={(next) => setFilters({ ...filters, workPackages: next })}
+                />
+              </div>
+
+              <div style={{ display: "flex", gap: space.s8, flexWrap: "wrap" }}>
+                <button
+                  type="button"
+                  onClick={onZoomToFit}
+                  style={{
+                    ...typography.sizes.t12,
+                    padding: `${space.s4} ${space.s12}`,
+                    background: colors.bgSubtle,
+                    color: colors.textBody,
+                    border: `1px solid ${colors.borderSubtle}`,
+                    cursor: "pointer",
+                    fontFamily: FONT_STACK,
+                    fontWeight: typography.weights.medium,
+                  }}
+                >
+                  Zoom to fit
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setFilters({
+                      type: "all",
+                      frictions: new Set(),
+                      qualities: new Set(),
+                      workPackages: new Set(),
+                    })
+                  }
+                  style={{
+                    ...typography.sizes.t12,
+                    padding: `${space.s4} ${space.s12}`,
+                    background: "transparent",
+                    color: colors.textMuted,
+                    border: `1px solid ${colors.borderSubtle}`,
+                    cursor: "pointer",
+                    fontFamily: FONT_STACK,
+                  }}
+                >
+                  Nullstill filtre
+                </button>
+              </div>
+
+              <div
+                style={{
+                  padding: space.s12,
+                  background: colors.bgSubtle,
+                  border: `1px solid ${colors.borderSubtle}`,
+                  ...typography.sizes.t12,
+                  color: colors.textMuted,
+                }}
+              >
+                <p style={{ marginBottom: 2 }}>
+                  <span style={{ display: "inline-block", width: 10, height: 10, background: NOTE_COLOR, marginRight: 6, borderRadius: "50%" }} />
+                  Quick note
+                </p>
+                <p>
+                  <span style={{ display: "inline-block", width: 10, height: 10, background: INSIGHT_COLOR, marginRight: 6, borderRadius: "50%" }} />
+                  Innsikt
+                </p>
+                <p style={{ marginTop: space.s8, lineHeight: 1.5 }}>
+                  Linjer kobler noder som deler en tag — friksjonsfargen brukes når koblingen
+                  går via en friksjon, ellers nøytralgrå.
+                </p>
+              </div>
+            </div>
+          </details>
+        </>
       )}
     </aside>
   );

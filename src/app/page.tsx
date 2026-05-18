@@ -132,11 +132,8 @@ export default function HomePage() {
               kan gjøre tjenestene mer treffsikre.
             </p>
             <div style={{ display: "flex", gap: space.s12, flexWrap: "wrap" }}>
-              <Link href="/explore" style={{ textDecoration: "none" }}>
-                <Button variant="primary" size="lg">Utforsk prosjektet</Button>
-              </Link>
               <Link href="/about" style={{ textDecoration: "none" }}>
-                <Button variant="secondary" size="lg">Les mer om SAFE@HOME</Button>
+                <Button variant="primary" size="lg">Les mer om SAFE@HOME</Button>
               </Link>
             </div>
           </div>

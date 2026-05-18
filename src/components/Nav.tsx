@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { colors, motion, space, typography } from "@/lib/design-tokens";
@@ -11,20 +11,17 @@ export type NavVariant = "default" | "minimal";
 export type NavMode = "public" | "internal";
 
 const PUBLIC_LINKS: { href: string; label: string }[] = [
-  { href: "/explore", label: "Utforsk" },
-  { href: "/frictions", label: "Friksjoner" },
-  { href: "/qualities", label: "Kvaliteter" },
   { href: "/about", label: "Om" },
   { href: "/reading-room", label: "Lesesal" },
 ];
 
 const INTERNAL_LINKS: { href: string; label: string }[] = [
-  { href: "/admin?tab=notes", label: "Quick notes" },
-  { href: "/admin?tab=stories", label: "Insights" },
+  { href: "/admin", label: "Content editor" },
+  { href: "/welfare-tech", label: "Velferdsteknologi" },
   { href: "/internal/nodes", label: "Node map" },
-  { href: "/admin?tab=challenges", label: "Utfordringer" },
-  { href: "/admin?tab=resources", label: "Ressurser" },
-  { href: "/admin?tab=wp", label: "WP-rapporter" },
+  { href: "/explore", label: "Utforsk" },
+  { href: "/frictions", label: "Friksjoner" },
+  { href: "/qualities", label: "Kvaliteter" },
 ];
 
 function useAuthState() {
@@ -94,6 +91,8 @@ export default function Nav({
     setMenuOpen(false);
   }, [pathname]);
 
+  const homeHref = signedIn ? "/admin" : "/";
+
   if (variant === "minimal") {
     return (
       <header
@@ -112,7 +111,7 @@ export default function Nav({
         }}
       >
         <Link
-          href="/"
+          href={homeHref}
           style={{
             pointerEvents: "auto",
             display: "inline-flex",
@@ -193,7 +192,7 @@ export default function Nav({
         }}
       >
         <Link
-          href="/"
+          href={homeHref}
           style={{
             fontSize: "22px",
             lineHeight: "34px",
@@ -206,17 +205,17 @@ export default function Nav({
           safe@home
         </Link>
 
-        {mode === "public" ? (
-          <PublicNavRow pathname={pathname} signedIn={signedIn} />
-        ) : (
+        {mode === "internal" || signedIn ? (
           <InternalNavRow
             menuOpen={menuOpen}
             setMenuOpen={setMenuOpen}
             toggleRef={toggleRef}
           />
+        ) : (
+          <PublicNavRow pathname={pathname} signedIn={signedIn} />
         )}
 
-        {mode === "internal" && menuOpen && (
+        {(mode === "internal" || signedIn) && menuOpen && (
           <DropdownMenu menuRef={menuRef} pathname={pathname} />
         )}
       </div>
@@ -396,6 +395,11 @@ function DropdownMenu({
   menuRef: React.RefObject<HTMLDivElement | null>;
   pathname: string | null;
 }) {
+  const router = useRouter();
+  async function signOut() {
+    await supabase.auth.signOut();
+    router.replace("/login");
+  }
   return (
     <div
       ref={menuRef}
@@ -419,6 +423,27 @@ function DropdownMenu({
       <MenuSection title="Internt" links={INTERNAL_LINKS} pathname={pathname} accent={colors.brandWarmBlue} />
       <div style={{ height: 1, background: colors.borderSubtle }} />
       <MenuSection title="Offentlige sider" links={PUBLIC_LINKS} pathname={pathname} accent={colors.brandDarkBlue} />
+      <div style={{ height: 1, background: colors.borderSubtle }} />
+      <button
+        type="button"
+        role="menuitem"
+        onClick={signOut}
+        style={{
+          width: "100%",
+          textAlign: "left",
+          padding: `${space.s8} ${space.s12}`,
+          ...typography.sizes.t14,
+          fontWeight: typography.weights.medium,
+          color: colors.brandWarmBlue,
+          background: "transparent",
+          border: "none",
+          borderLeft: `2px solid transparent`,
+          cursor: "pointer",
+          fontFamily: "var(--pkt-font-family)",
+        }}
+      >
+        Logg ut
+      </button>
     </div>
   );
 }
