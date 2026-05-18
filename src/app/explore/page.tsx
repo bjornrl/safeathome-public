@@ -7,7 +7,13 @@ import type { PublicStory, PublicConnection, CareFriction, CareQuality, MapScale
 import { MAP_CONFIG, MAP_STYLE, FRICTIONS, QUALITIES, SCALES, DISTRICTS } from "@/lib/constants";
 import { getMapStories, getConnections } from "@/lib/queries";
 import Nav from "@/components/Nav";
-const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
+const FONT_STACK = "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+const CLAY_CANVAS = "#fffaf0";
+const CLAY_INK = "#0a0a0a";
+const CLAY_BODY = "#3a3a3a";
+const CLAY_MUTED = "#6a6a6a";
+const CLAY_HAIRLINE = "#e5e0d0";
+const CLAY_SURFACE_SOFT = "#faf5e8";
 
 // ─── Helpers ───
 
@@ -18,7 +24,7 @@ function getScale(zoom: number): MapScale {
 }
 function primaryFrictionColor(story: PublicStory): string {
   const first = story.frictions?.[0];
-  return first ? FRICTIONS[first]?.color ?? "#2a2859" : "#2a2859";
+  return first ? FRICTIONS[first]?.color ?? CLAY_INK : CLAY_INK;
 }
 
 // ─── Main Component ───
@@ -284,8 +290,16 @@ export default function ExplorePage() {
         const d = DISTRICTS[e.target.value];
         if (d) flyTo(d.center, d.zoom);
       }} defaultValue="" style={{
-        fontFamily: FONT_STACK
-      }} className="[padding:8px_16px] [border-radius:8px] [border:1px_solid_#e6e6e6] [background:#ffffff] [font-size:13px] [color:#2c2c2c] [cursor:pointer]">
+        fontFamily: FONT_STACK,
+        padding: "10px 16px",
+        borderRadius: "12px",
+        border: `1px solid ${CLAY_HAIRLINE}`,
+        background: CLAY_CANVAS,
+        fontSize: "13px",
+        fontWeight: 500,
+        color: CLAY_INK,
+        cursor: "pointer",
+      }}>
           <option value="" disabled>
             Jump to district
           </option>
@@ -303,21 +317,25 @@ export default function ExplorePage() {
 
       {/* ─── Zoom indicator / scale jumper (bottom-left) ─── */}
       <div style={{
-      fontFamily: FONT_STACK
-    }} className="[position:absolute] [bottom:32px] [left:16px] [z-index:20] [background:#ffffff] [padding:8px] [border-radius:8px] [border:1px_solid_#e6e6e6] [display:flex] [flex-direction:column] [gap:2px]">
+      fontFamily: FONT_STACK,
+      background: CLAY_CANVAS,
+      border: `1px solid ${CLAY_HAIRLINE}`,
+      borderRadius: "12px",
+    }} className="[position:absolute] [bottom:32px] [left:16px] [z-index:20] [padding:8px] [display:flex] [flex-direction:column] [gap:2px]">
         {(["macro", "meso", "micro"] as MapScale[]).map(s => {
           const active = currentScale === s;
           return <button key={s} type="button" onClick={() => zoomToScale(s)} style={{
             fontFamily: FONT_STACK,
-            background: active ? "#f5f4f0" : "transparent",
-            cursor: "pointer"
-          }} className="[display:flex] [align-items:center] [gap:8px] [padding:6px_10px] [border-radius:4px] [border:none] [text-align:left] [transition:background_.15s] hover:[background:#f5f4f0]">
+            background: active ? CLAY_SURFACE_SOFT : "transparent",
+            cursor: "pointer",
+            borderRadius: "8px",
+          }} className="[display:flex] [align-items:center] [gap:8px] [padding:6px_12px] [border:none] [text-align:left] [transition:background_.15s]">
               <span style={{
-                background: active ? "#2a2859" : "#e6e6e6"
+                background: active ? CLAY_INK : CLAY_HAIRLINE
               }} className="[width:8px] [height:8px] [border-radius:50%] [flex-shrink:0]" />
               <span style={{
-                fontWeight: active ? 600 : 400,
-                color: active ? "#2a2859" : "#9a9a9a"
+                fontWeight: active ? 600 : 500,
+                color: active ? CLAY_INK : CLAY_MUTED
               }} className="[font-size:12px]">
                 {SCALES[s].label}
               </span>
@@ -352,15 +370,28 @@ function FilterPanel({
   return <div style={{
     fontFamily: FONT_STACK
   }} className="[position:absolute] [top:64px] [left:16px] [z-index:20] [max-width:320px]">
-      <button type="button" onClick={() => setOpen(!open)} className="[display:flex] [align-items:center] [gap:8px] [padding:8px_16px] [background:#ffffff] [border-radius:8px] [border:1px_solid_#e6e6e6] [font-size:13px] [font-weight:500] [color:#2c2c2c] [cursor:pointer]">
+      <button type="button" onClick={() => setOpen(!open)} style={{
+        background: CLAY_CANVAS,
+        border: `1px solid ${CLAY_HAIRLINE}`,
+        borderRadius: "12px",
+        color: CLAY_INK,
+        cursor: "pointer",
+      }} className="[display:flex] [align-items:center] [gap:8px] [padding:10px_16px] [font-size:13px] [font-weight:600]">
         Filters
-        {count > 0 && <span className="[width:20px] [height:20px] [border-radius:50%] [background:#2a2859] [color:#ffffff] [font-size:11px] [display:flex] [align-items:center] [justify-content:center] [font-weight:600]">
+        {count > 0 && <span style={{ background: CLAY_INK, color: CLAY_CANVAS }} className="[width:20px] [height:20px] [border-radius:50%] [font-size:11px] [display:flex] [align-items:center] [justify-content:center] [font-weight:600]">
             {count}
           </span>}
       </button>
 
-      {open && <div className="[margin-top:8px] [padding:16px] [background:#ffffff] [border-radius:8px] [border:1px_solid_#e6e6e6] [max-height:70vh] [overflow-y:auto]">
-          <p className="[font-size:11px] [font-weight:600] [color:#808080] [text-transform:uppercase] [letter-spacing:0.12em] [margin-bottom:8px]">
+      {open && <div style={{
+        background: CLAY_CANVAS,
+        border: `1px solid ${CLAY_HAIRLINE}`,
+        borderRadius: "16px",
+      }} className="[margin-top:8px] [padding:20px] [max-height:70vh] [overflow-y:auto]">
+          <p style={{
+            color: CLAY_MUTED,
+            letterSpacing: "1.5px",
+          }} className="[font-size:11px] [font-weight:600] [text-transform:uppercase] [margin-bottom:10px]">
             Care Frictions
           </p>
           <div className="[display:flex] [flex-wrap:wrap] [gap:8px] [margin-bottom:16px]">
@@ -378,11 +409,14 @@ function FilterPanel({
                   </button>;
         })}
           </div>
-          {selectedFrictions.length === 1 && <p className="[font-size:12px] [color:#808080] [margin-bottom:16px] [line-height:1.5]">
+          {selectedFrictions.length === 1 && <p style={{ color: CLAY_MUTED }} className="[font-size:12px] [margin-bottom:16px] [line-height:1.5]">
               {FRICTIONS[selectedFrictions[0]].description}
             </p>}
 
-          <p className="[font-size:11px] [font-weight:600] [color:#808080] [text-transform:uppercase] [letter-spacing:0.12em] [margin-bottom:8px]">
+          <p style={{
+            color: CLAY_MUTED,
+            letterSpacing: "1.5px",
+          }} className="[font-size:11px] [font-weight:600] [text-transform:uppercase] [margin-bottom:10px]">
             Care Qualities
           </p>
           <div className="[display:flex] [flex-wrap:wrap] [gap:8px] [margin-bottom:16px]">
@@ -398,7 +432,7 @@ function FilterPanel({
         })}
           </div>
 
-          {count > 0 && <button type="button" onClick={onClear} className="[font-size:12px] [color:#1f42aa] [font-weight:600] [cursor:pointer] [background:none] [border:none] [padding:0px]">
+          {count > 0 && <button type="button" onClick={onClear} style={{ color: CLAY_INK }} className="[font-size:12px] [font-weight:600] [cursor:pointer] [background:none] [border:none] [padding:0px] [text-decoration:underline] [text-underline-offset:4px]">
               Clear all filters
             </button>}
         </div>}
@@ -431,7 +465,7 @@ function StoryPanel({
       opacity: 1
     }} exit={{
       opacity: 0
-    }} onClick={onClose} className="[position:fixed] [inset:0px] [background:rgba(42,40,89,.2)] [z-index:30]" />
+    }} onClick={onClose} className="[position:fixed] [inset:0px] [background:rgba(10,10,10,.18)] [z-index:30]" />
       <motion.div initial={{
       x: "100%"
     }} animate={{
@@ -443,19 +477,32 @@ function StoryPanel({
       damping: 30,
       stiffness: 300
     }} style={{
-      fontFamily: FONT_STACK
-    }} className="[position:fixed] [right:0px] [top:0px] [height:100%] [width:440px] [max-width:90vw] [background:#ffffff] [z-index:40] [display:flex] [flex-direction:column] [border-left:1px_solid_#e6e6e6]">
-        <div className="[display:flex] [align-items:center] [justify-content:space-between] [padding:16px_24px] [border-bottom:1px_solid_#e6e6e6]">
-          <span className="[font-size:12px] [font-weight:600] [padding:4px_12px] [border-radius:4px] [background:#f2f2f2] [color:#666666] [text-transform:uppercase] [letter-spacing:0.08em]">
+      fontFamily: FONT_STACK,
+      background: CLAY_CANVAS,
+      borderLeft: `1px solid ${CLAY_HAIRLINE}`,
+    }} className="[position:fixed] [right:0px] [top:0px] [height:100%] [width:480px] [max-width:90vw] [z-index:40] [display:flex] [flex-direction:column]">
+        <div style={{ borderBottom: `1px solid ${CLAY_HAIRLINE}` }} className="[display:flex] [align-items:center] [justify-content:space-between] [padding:20px_28px]">
+          <span style={{
+            background: CLAY_SURFACE_SOFT,
+            color: CLAY_MUTED,
+            letterSpacing: "1.5px",
+            borderRadius: "9999px",
+          }} className="[font-size:11px] [font-weight:600] [padding:4px_12px] [text-transform:uppercase]">
             {SCALES[story.map_scale]?.label ?? story.map_scale}
           </span>
-          <button type="button" onClick={onClose} className="[background:none] [border:none] [font-size:24px] [cursor:pointer] [color:#808080] [line-height:1]">
+          <button type="button" onClick={onClose} style={{ color: CLAY_MUTED }} className="[background:none] [border:none] [font-size:28px] [cursor:pointer] [line-height:1]">
             &times;
           </button>
         </div>
 
-        <div className="[flex:1px] [overflow-y:auto] [padding:24px]">
-          <h2 className="[font-size:26px] [font-weight:700] [margin-bottom:16px] [line-height:1.2] [letter-spacing:-0.01em] [color:#2a2859]">
+        <div className="[flex:1px] [overflow-y:auto] [padding:28px]">
+          <h2 style={{
+            fontSize: "32px",
+            fontWeight: 500,
+            color: CLAY_INK,
+            letterSpacing: "-0.8px",
+            lineHeight: 1.1,
+          }} className="[margin-bottom:20px]">
             {story.title}
           </h2>
 
@@ -476,35 +523,42 @@ function StoryPanel({
                 </span>)}
             </div>}
 
-          {story.body.split("\n\n").map((p, i) => <p key={i} className="[font-size:16px] [line-height:1.7] [margin-bottom:16px] [color:#2c2c2c]">
+          {story.body.split("\n\n").map((p, i) => <p key={i} style={{ color: CLAY_BODY }} className="[font-size:16px] [line-height:1.65] [margin-bottom:16px]">
               {p}
             </p>)}
 
-          {story.author_credit && <p className="[font-size:12px] [color:#9a9a9a] [margin-top:24px]">
+          {story.author_credit && <p style={{ color: CLAY_MUTED }} className="[font-size:12px] [margin-top:24px]">
               {story.author_credit}
               {story.field_site && <> &middot; {story.field_site}</>}
             </p>}
 
-          {linked.length > 0 && <div className="[margin-top:32px] [padding-top:24px] [border-top:1px_solid_#e6e6e6]">
-              <p className="[font-size:11px] [font-weight:600] [color:#808080] [text-transform:uppercase] [letter-spacing:0.12em] [margin-bottom:16px]">
+          {linked.length > 0 && <div style={{ borderTop: `1px solid ${CLAY_HAIRLINE}` }} className="[margin-top:32px] [padding-top:24px]">
+              <p style={{
+                color: CLAY_MUTED,
+                letterSpacing: "1.5px",
+              }} className="[font-size:11px] [font-weight:600] [text-transform:uppercase] [margin-bottom:16px]">
                 Connected stories
               </p>
               {linked.map(({
             conn,
             other
           }) => <button key={conn.id} type="button" onClick={() => onNavigate(other!.id)} style={{
-            fontFamily: FONT_STACK
-          }} className="[display:block] [width:100%] [text-align:left] [padding:16px] [margin-bottom:8px] [border-radius:8px] [border:1px_solid_#e6e6e6] [background:#ffffff] [cursor:pointer]">
+            fontFamily: FONT_STACK,
+            background: CLAY_SURFACE_SOFT,
+            border: `1px solid ${CLAY_HAIRLINE}`,
+            borderRadius: "12px",
+            cursor: "pointer",
+          }} className="[display:block] [width:100%] [text-align:left] [padding:16px] [margin-bottom:8px]">
                   <span style={{
               color: FRICTIONS[conn.friction]?.color
-            }} className="[font-size:11px] [font-weight:600]">
+            }} className="[font-size:11px] [font-weight:600] [letter-spacing:1px] [text-transform:uppercase]">
                     {FRICTIONS[conn.friction]?.label} ({conn.connection_type})
                   </span>
                   <br />
-                  <span className="[font-size:14px] [font-weight:600] [color:#2a2859]">
+                  <span style={{ color: CLAY_INK }} className="[font-size:15px] [font-weight:600]">
                     {other!.title}
                   </span>
-                  {conn.description && <p className="[font-size:12px] [color:#9a9a9a] [margin-top:4px]">
+                  {conn.description && <p style={{ color: CLAY_MUTED }} className="[font-size:12px] [margin-top:4px] [line-height:1.5]">
                       {conn.description}
                     </p>}
                 </button>)}
