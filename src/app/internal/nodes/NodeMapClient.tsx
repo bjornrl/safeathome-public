@@ -1,28 +1,11 @@
 "use client";
 
 import {
-  useCallback,
   useEffect,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
 } from "react";
-import {
-  forceCenter,
-  forceCollide,
-  forceLink,
-  forceManyBody,
-  forceSimulation,
-  drag as d3drag,
-  select as d3select,
-} from "d3";
-import type {
-  Simulation,
-  SimulationNodeDatum,
-  SimulationLinkDatum,
-  D3DragEvent,
-} from "d3";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { colors, space, typography } from "@/lib/design-tokens";
@@ -42,10 +25,14 @@ const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
 const INSIGHT_COLOR = "#C45D3E";
 const NOTE_COLOR = "#5B6AAF";
 const NEUTRAL_EDGE = "#A09A8E";
+// Manual links the editor created via "Koble til andre" in the note editor.
+// Rendered thicker + fully opaque so they stand out from the weaker
+// auto-derived shared-category edges.
+const MANUAL_EDGE = "#2a2859";
 
 type NodeKind = "quick_note" | "insight";
 
-interface GraphNode extends SimulationNodeDatum {
+interface GraphNode {
   id: string;
   kind: NodeKind;
   title: string;
@@ -64,13 +51,100 @@ type EdgeCategory =
   | { kind: "quality"; key: CareQuality }
   | { kind: "work_package"; key: WorkPackage }
   | { kind: "field_site"; key: FieldSite }
-  | { kind: "house_theme"; key: HouseTheme };
+  | { kind: "house_theme"; key: HouseTheme }
+  | { kind: "manual"; key: "manual" };
 
-interface GraphEdge extends SimulationLinkDatum<GraphNode> {
+interface GraphEdge {
   id: string;
-  source: GraphNode | string;
-  target: GraphNode | string;
+  source: string;
+  target: string;
   category: EdgeCategory;
+}
+
+// ─── Layout: seeded RNG + Poisson-disk scatter ───
+// Stable across renders so the constellation doesn't reshuffle every time the
+// graph re-mounts. Lifted from the project-cluster recipe in
+// .claude/node_cluster.md.
+
+function seededRandom(seed: string): () => number {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < seed.length; i++) {
+    h ^= seed.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return () => {
+    h += 0x6d2b79f5;
+    let t = h;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+const SCATTER_SEED = "safeathome-node-graph";
+const MAX_DEGREE = 4;
+
+function poissonScatter(
+  count: number,
+  width: number,
+  height: number,
+  pad: { x: number; top: number; bottom: number },
+  seed: string,
+): { x: number; y: number }[] {
+  if (count === 0 || width <= 0 || height <= 0) return [];
+  const rand = seededRandom(seed);
+  const usableW = Math.max(1, width - pad.x * 2);
+  const usableH = Math.max(1, height - pad.top - pad.bottom);
+  const area = usableW * usableH;
+  const minDist = Math.sqrt(area / count) * 0.65;
+  const minDistSq = minDist * minDist;
+  const MAX_ATTEMPTS = 200;
+  const placed: { x: number; y: number }[] = [];
+  for (let i = 0; i < count; i++) {
+    let candidate = { x: 0, y: 0 };
+    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+      candidate = {
+        x: pad.x + rand() * usableW,
+        y: pad.top + rand() * usableH,
+      };
+      let ok = true;
+      for (const p of placed) {
+        const dx = p.x - candidate.x;
+        const dy = p.y - candidate.y;
+        if (dx * dx + dy * dy < minDistSq) {
+          ok = false;
+          break;
+        }
+      }
+      if (ok) break;
+    }
+    placed.push(candidate);
+  }
+  return placed;
+}
+
+// ─── Drift + snap animation constants ───
+const DRIFT_AMP = 6; // px peak drift on each axis
+const SNAP_RADIUS = 110; // px — only one dot at a time can be "grabbed"
+const SNAP_RAMP = 0.35; // per-frame easing toward snap factor target
+
+interface AnimState {
+  px: number; // phase x
+  py: number; // phase y
+  fx: number; // freq x (Hz)
+  fy: number; // freq y (Hz)
+  snapFactor: number; // 0 = pure drift, 1 = locked to cursor
+}
+
+function makeAnimState(id: string): AnimState {
+  const rand = seededRandom(`drift:${id}`);
+  return {
+    px: rand() * Math.PI * 2,
+    py: rand() * Math.PI * 2,
+    fx: 0.07 + rand() * 0.06,
+    fy: 0.07 + rand() * 0.06,
+    snapFactor: 0,
+  };
 }
 
 interface FilterState {
@@ -148,6 +222,7 @@ function findShared(a: GraphNode, b: GraphNode): EdgeCategory | null {
 function edgeColor(category: EdgeCategory): string {
   if (category.kind === "friction") return FRICTIONS[category.key].color;
   if (category.kind === "quality") return QUALITIES[category.key].color;
+  if (category.kind === "manual") return MANUAL_EDGE;
   return NEUTRAL_EDGE;
 }
 
@@ -156,13 +231,23 @@ function edgeLabel(category: EdgeCategory): string {
   if (category.kind === "quality") return QUALITIES[category.key].label;
   if (category.kind === "work_package") return category.key;
   if (category.kind === "field_site") return category.key;
+  if (category.kind === "manual") return "Manuell kobling";
   return category.key.replace(/_/g, " ");
 }
 
 export default function NodeMapClient() {
   const svgRef = useRef<SVGSVGElement | null>(null);
-  const simulationRef = useRef<Simulation<GraphNode, GraphEdge> | null>(null);
-  const [size, setSize] = useState({ width: 1200, height: 800 });
+  const canvasRef = useRef<HTMLDivElement | null>(null);
+  // Refs to each node group + each edge line so the rAF loop can update
+  // transforms / endpoints without a React re-render per frame.
+  const nodeElsRef = useRef<Map<string, SVGGElement>>(new Map());
+  const lineElsRef = useRef<Map<string, { el: SVGLineElement; source: string; target: string }>>(new Map());
+  // Per-node drift state (phase + frequency + snap factor).
+  const animStateRef = useRef<Map<string, AnimState>>(new Map());
+  // Native pointer coords, relative to the canvas. Parked off-screen until
+  // the cursor enters so nothing is snapped on first render.
+  const mouseRef = useRef({ x: -10000, y: -10000 });
+  const [size, setSize] = useState({ width: 0, height: 0 });
   const [nodes, setNodes] = useState<GraphNode[]>([]);
   const [edges, setEdges] = useState<GraphEdge[]>([]);
   const [filters, setFilters] = useState<FilterState>(EMPTY_FILTERS);
@@ -171,28 +256,33 @@ export default function NodeMapClient() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [transform, setTransform] = useState({ x: 0, y: 0, k: 1 });
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  // tick counter forces re-render on each simulation step.
-  const [, setTick] = useState(0);
 
-  // ── Resize SVG to container ──
+  // ── Resize canvas to container ──
   useEffect(() => {
     function update() {
-      setSize({ width: window.innerWidth, height: Math.max(window.innerHeight - 120, 600) });
+      const el = canvasRef.current;
+      if (!el) return;
+      setSize({ width: el.clientWidth, height: el.clientHeight });
     }
     update();
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
-  }, []);
+  }, [sidebarOpen]);
 
   // ── Load nodes + build edges ──
   useEffect(() => {
     let active = true;
     (async () => {
-      const [notesRes, insightsRes] = await Promise.all([
+      const [notesRes, insightsRes, connRes] = await Promise.all([
         supabase.from("quick_notes").select("*"),
         supabase.from("insights").select("*"),
+        // Manual links the editor created via "Koble til andre" in the note
+        // editor. Surface them as strong edges that don't get dimmed by the
+        // category filters.
+        supabase
+          .from("note_connections")
+          .select("from_note_id, from_insight_id, to_note_id, to_insight_id"),
       ]);
       if (!active) return;
       if (notesRes.error || insightsRes.error) {
@@ -203,11 +293,59 @@ export default function NodeMapClient() {
       const noteNodes = ((notesRes.data as QuickNote[] | null) ?? []).map(noteToNode);
       const insightNodes = ((insightsRes.data as Insight[] | null) ?? []).map(insightToNode);
       const all = [...noteNodes, ...insightNodes];
+      const byId = new Map(all.map((n) => [n.id, n] as const));
 
       const builtEdges: GraphEdge[] = [];
       const degree: Record<string, number> = {};
+
+      // 1) Manual links first — these take precedence over auto-derived edges
+      //    between the same two nodes (we de-dupe below).
+      const manualPairs = new Set<string>();
+      type ConnRow = {
+        from_note_id: string | null;
+        from_insight_id: string | null;
+        to_note_id: string | null;
+        to_insight_id: string | null;
+      };
+      const rawConns = ((connRes.data as ConnRow[] | null) ?? []).filter(
+        () => !connRes.error,
+      );
+      if (connRes.error) {
+        console.warn("[NodeMap] note_connections failed:", connRes.error.message);
+      }
+      for (const c of rawConns) {
+        const sourceId = c.from_note_id
+          ? `note:${c.from_note_id}`
+          : c.from_insight_id
+            ? `insight:${c.from_insight_id}`
+            : null;
+        const targetId = c.to_note_id
+          ? `note:${c.to_note_id}`
+          : c.to_insight_id
+            ? `insight:${c.to_insight_id}`
+            : null;
+        if (!sourceId || !targetId || sourceId === targetId) continue;
+        if (!byId.has(sourceId) || !byId.has(targetId)) continue;
+        // Normalise the pair key so A→B and B→A collapse.
+        const pairKey = [sourceId, targetId].sort().join("|");
+        if (manualPairs.has(pairKey)) continue;
+        manualPairs.add(pairKey);
+        builtEdges.push({
+          id: `${pairKey}--manual`,
+          source: sourceId,
+          target: targetId,
+          category: { kind: "manual", key: "manual" },
+        });
+        degree[sourceId] = (degree[sourceId] ?? 0) + 1;
+        degree[targetId] = (degree[targetId] ?? 0) + 1;
+      }
+
+      // 2) Auto-derived shared-category edges, skipping any pair that already
+      //    has a manual link.
       for (let i = 0; i < all.length; i++) {
         for (let j = i + 1; j < all.length; j++) {
+          const pairKey = [all[i].id, all[j].id].sort().join("|");
+          if (manualPairs.has(pairKey)) continue;
           const cat = findShared(all[i], all[j]);
           if (!cat) continue;
           builtEdges.push({
@@ -245,11 +383,7 @@ export default function NodeMapClient() {
   }, [nodes, filters]);
 
   const visibleEdges = useMemo(() => {
-    return edges.filter((e) => {
-      const sId = typeof e.source === "string" ? e.source : e.source.id;
-      const tId = typeof e.target === "string" ? e.target : e.target.id;
-      return visibleNodeIds.has(sId) && visibleNodeIds.has(tId);
-    });
+    return edges.filter((e) => visibleNodeIds.has(e.source) && visibleNodeIds.has(e.target));
   }, [edges, visibleNodeIds]);
 
   const searchHits = useMemo(() => {
@@ -262,101 +396,124 @@ export default function NodeMapClient() {
     );
   }, [nodes, search]);
 
-  // ── D3 force simulation ──
-  // useLayoutEffect so the synchronous pre-warm + setTick happens before
-  // the browser paints — otherwise the user briefly sees every node piled
-  // at (0, 0) before the layout snaps to its settled positions.
-  useLayoutEffect(() => {
-    if (nodes.length === 0) return;
-    // Seed nodes around the canvas centre so the first paint isn't a pile in
-    // the top-left corner. Existing positions (e.g. after a drag) are kept.
-    const cx = size.width / 2;
-    const cy = size.height / 2;
-    const radius = Math.min(size.width, size.height) * 0.32;
-    nodes.forEach((n, i) => {
-      if (n.x == null || n.y == null) {
-        const angle = (i / nodes.length) * Math.PI * 2;
-        const jitter = 0.6 + Math.random() * 0.4;
-        n.x = cx + Math.cos(angle) * radius * jitter;
-        n.y = cy + Math.sin(angle) * radius * jitter;
-      }
-    });
-
-    const sim = forceSimulation<GraphNode>(nodes)
-      .force(
-        "link",
-        forceLink<GraphNode, GraphEdge>(edges)
-          .id((d) => d.id)
-          .distance(80)
-          .strength(0.4),
-      )
-      .force("charge", forceManyBody().strength(-200))
-      .force("center", forceCenter(cx, cy))
-      .force("collide", forceCollide<GraphNode>().radius(20))
-      .alphaDecay(0.04)
-      .stop();
-
-    // Pre-warm synchronously so the first render shows a settled layout
-    // instead of nodes animating outwards from (0, 0).
-    for (let i = 0; i < 300; i++) sim.tick();
-
-    simulationRef.current = sim;
-    sim.on("tick", () => setTick((v) => v + 1));
-    setTick((v) => v + 1);
-
-    return () => {
-      sim.stop();
-      simulationRef.current = null;
-    };
-  }, [nodes, edges, size.width, size.height]);
-
-  // ── Drag handler ──
-  useEffect(() => {
-    if (!svgRef.current || !simulationRef.current) return;
-    const sim = simulationRef.current;
-    const sel = d3select(svgRef.current).selectAll<SVGGElement, GraphNode>("g.node");
-    sel.call(
-      d3drag<SVGGElement, GraphNode>()
-        .on("start", function (event: D3DragEvent<SVGGElement, GraphNode, GraphNode>) {
-          if (!event.active) sim.alphaTarget(0.3).restart();
-          const d = event.subject;
-          d.fx = d.x;
-          d.fy = d.y;
-        })
-        .on("drag", function (event: D3DragEvent<SVGGElement, GraphNode, GraphNode>) {
-          const d = event.subject;
-          d.fx = event.x;
-          d.fy = event.y;
-        })
-        .on("end", function (event: D3DragEvent<SVGGElement, GraphNode, GraphNode>) {
-          if (!event.active) sim.alphaTarget(0);
-          const d = event.subject;
-          d.fx = null;
-          d.fy = null;
-        }),
+  // ── Stable Poisson-disk scatter of anchor positions ──
+  // Recomputed only when the node set or canvas size changes; the seed keeps
+  // the constellation stable across renders so it doesn't reshuffle on every
+  // mount or filter toggle.
+  const positions = useMemo(() => {
+    const map = new Map<string, { x: number; y: number }>();
+    if (nodes.length === 0 || size.width <= 0 || size.height <= 0) return map;
+    const padX = 64;
+    const padTop = 32;
+    const padBottom = 32;
+    const scattered = poissonScatter(
+      nodes.length,
+      size.width,
+      size.height,
+      { x: padX, top: padTop, bottom: padBottom },
+      `${SCATTER_SEED}:${nodes.length}`,
     );
-  }, [nodes, size]);
+    nodes.forEach((n, i) => map.set(n.id, scattered[i]));
+    return map;
+  }, [nodes, size.width, size.height]);
 
-  const zoomToFit = useCallback(() => {
-    if (nodes.length === 0) return;
-    const xs = nodes.map((n) => n.x ?? 0);
-    const ys = nodes.map((n) => n.y ?? 0);
-    const minX = Math.min(...xs);
-    const maxX = Math.max(...xs);
-    const minY = Math.min(...ys);
-    const maxY = Math.max(...ys);
-    const padding = 60;
-    const w = maxX - minX + padding * 2;
-    const h = maxY - minY + padding * 2;
-    const k = Math.min(size.width / Math.max(w, 1), size.height / Math.max(h, 1), 1.5);
-    const cx = (minX + maxX) / 2;
-    const cy = (minY + maxY) / 2;
-    setTransform({
-      k,
-      x: size.width / 2 - cx * k,
-      y: size.height / 2 - cy * k,
-    });
-  }, [nodes, size]);
+  // ── Anim state seeded per node id ──
+  useEffect(() => {
+    const next = new Map<string, AnimState>();
+    for (const n of nodes) {
+      next.set(n.id, animStateRef.current.get(n.id) ?? makeAnimState(n.id));
+    }
+    animStateRef.current = next;
+  }, [nodes]);
+
+  // ── Pointer tracking (native events, ref-only — no re-renders) ──
+  useEffect(() => {
+    const el = canvasRef.current;
+    if (!el) return;
+    function onMove(e: PointerEvent) {
+      const rect = el!.getBoundingClientRect();
+      mouseRef.current.x = e.clientX - rect.left;
+      mouseRef.current.y = e.clientY - rect.top;
+    }
+    function onLeave() {
+      mouseRef.current.x = -10000;
+      mouseRef.current.y = -10000;
+    }
+    el.addEventListener("pointermove", onMove);
+    el.addEventListener("pointerleave", onLeave);
+    return () => {
+      el.removeEventListener("pointermove", onMove);
+      el.removeEventListener("pointerleave", onLeave);
+    };
+  }, []);
+
+  // ── rAF drift + cursor-snap loop ──
+  // Per-frame: pick the single nearest dot inside SNAP_RADIUS, ramp its snap
+  // factor toward 1, ramp every other dot's toward 0. Drift is a sine wave
+  // per axis that fades out when snapped. All position writes are direct
+  // setAttribute calls so React never re-renders for animation.
+  useEffect(() => {
+    if (positions.size === 0) return;
+    let raf = 0;
+    let lastHoverEmitted: string | null = null;
+    const start = performance.now();
+    function tick(now: number) {
+      const t = (now - start) / 1000;
+      const mouse = mouseRef.current;
+      // 1) Find the single closest dot within SNAP_RADIUS.
+      let nearestId: string | null = null;
+      let nearestDistSq = SNAP_RADIUS * SNAP_RADIUS;
+      positions.forEach((p, id) => {
+        const dx = mouse.x - p.x;
+        const dy = mouse.y - p.y;
+        const d2 = dx * dx + dy * dy;
+        if (d2 < nearestDistSq) {
+          nearestDistSq = d2;
+          nearestId = id;
+        }
+      });
+
+      // 2) Update each dot's transform.
+      const offsets = new Map<string, { x: number; y: number }>();
+      positions.forEach((p, id) => {
+        const state = animStateRef.current.get(id);
+        if (!state) return;
+        const target = id === nearestId ? 1 : 0;
+        state.snapFactor += (target - state.snapFactor) * SNAP_RAMP;
+        const drift = 1 - state.snapFactor;
+        const dx = Math.sin(2 * Math.PI * state.fx * t + state.px) * DRIFT_AMP * drift;
+        const dy = Math.cos(2 * Math.PI * state.fy * t + state.py) * DRIFT_AMP * drift;
+        const snapX = (mouse.x - p.x) * state.snapFactor;
+        const snapY = (mouse.y - p.y) * state.snapFactor;
+        const x = p.x + dx + snapX;
+        const y = p.y + dy + snapY;
+        offsets.set(id, { x, y });
+        const el = nodeElsRef.current.get(id);
+        if (el) el.setAttribute("transform", `translate(${x}, ${y})`);
+      });
+
+      // 3) Update each line's endpoints.
+      lineElsRef.current.forEach(({ el, source, target }) => {
+        const s = offsets.get(source);
+        const e2 = offsets.get(target);
+        if (!s || !e2) return;
+        el.setAttribute("x1", String(s.x));
+        el.setAttribute("y1", String(s.y));
+        el.setAttribute("x2", String(e2.x));
+        el.setAttribute("y2", String(e2.y));
+      });
+
+      // 4) Emit hover state to React only on transitions.
+      if (nearestId !== lastHoverEmitted) {
+        lastHoverEmitted = nearestId;
+        setHoveredId(nearestId);
+      }
+
+      raf = requestAnimationFrame(tick);
+    }
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [positions]);
 
   function radiusFor(n: GraphNode): number {
     return Math.max(8, Math.min(16, 8 + n.degree * 0.8));
@@ -390,7 +547,6 @@ export default function NodeMapClient() {
           setFilters={setFilters}
           search={search}
           setSearch={setSearch}
-          onZoomToFit={zoomToFit}
           totalNodes={nodes.length}
           visibleNodes={visibleNodeIds.size}
           edgesCount={visibleEdges.length}
@@ -400,7 +556,10 @@ export default function NodeMapClient() {
           onSelect={setSelectedId}
         />
 
-        <div style={{ position: "relative", overflow: "hidden", background: colors.bgSubtle }}>
+        <div
+          ref={canvasRef}
+          style={{ position: "relative", overflow: "hidden", background: colors.bgSubtle }}
+        >
           {loading && (
             <p
               style={{
@@ -434,31 +593,45 @@ export default function NodeMapClient() {
           )}
           <svg
             ref={svgRef}
-            width={size.width - (sidebarOpen ? 420 : 0)}
+            width={size.width}
             height={size.height}
-            style={{ display: "block", cursor: "grab" }}
+            style={{ display: "block" }}
             role="img"
-            aria-label="Force-directed graph of quick notes and insights"
+            aria-label="Konstellasjonsgraf over hurtignotater og innsikter"
           >
-            <g transform={`translate(${transform.x}, ${transform.y}) scale(${transform.k})`}>
+            <g>
               {visibleEdges.map((e) => {
-                const sId = typeof e.source === "string" ? e.source : e.source.id;
-                const tId = typeof e.target === "string" ? e.target : e.target.id;
-                const sNode = nodes.find((n) => n.id === sId);
-                const tNode = nodes.find((n) => n.id === tId);
+                const sNode = nodes.find((n) => n.id === e.source);
+                const tNode = nodes.find((n) => n.id === e.target);
                 if (!sNode || !tNode) return null;
-                const isHighlighted = hoveredId === sId || hoveredId === tId;
+                const sPos = positions.get(e.source);
+                const tPos = positions.get(e.target);
+                if (!sPos || !tPos) return null;
+                const isHighlighted = hoveredId === e.source || hoveredId === e.target;
+                const isManual = e.category.kind === "manual";
+                const strokeOpacity = isManual ? (isHighlighted ? 1 : 0.85) : isHighlighted ? 0.9 : 0.4;
+                const strokeWidth = isManual ? (isHighlighted ? 3.5 : 2.5) : isHighlighted ? 2 : 1;
                 return (
                   <line
                     key={e.id}
-                    x1={sNode.x ?? 0}
-                    y1={sNode.y ?? 0}
-                    x2={tNode.x ?? 0}
-                    y2={tNode.y ?? 0}
+                    ref={(el) => {
+                      if (el) lineElsRef.current.set(e.id, { el, source: e.source, target: e.target });
+                      else lineElsRef.current.delete(e.id);
+                    }}
+                    x1={sPos.x}
+                    y1={sPos.y}
+                    x2={tPos.x}
+                    y2={tPos.y}
                     stroke={edgeColor(e.category)}
-                    strokeOpacity={isHighlighted ? 0.9 : 0.4}
-                    strokeWidth={isHighlighted ? 2 : 1}
-                  />
+                    strokeOpacity={strokeOpacity}
+                    strokeWidth={strokeWidth}
+                  >
+                    <title>
+                      {isManual
+                        ? "Manuell kobling (laget i notatredigereren)"
+                        : edgeLabel(e.category)}
+                    </title>
+                  </line>
                 );
               })}
               {nodes
@@ -467,13 +640,17 @@ export default function NodeMapClient() {
                   const dim = searchHits ? !searchHits.has(n.id) : false;
                   const r = radiusFor(n);
                   const fill = n.kind === "insight" ? INSIGHT_COLOR : NOTE_COLOR;
+                  const pos = positions.get(n.id);
+                  if (!pos) return null;
                   return (
                     <g
                       key={n.id}
                       className="node"
-                      transform={`translate(${n.x ?? 0}, ${n.y ?? 0})`}
-                      onMouseEnter={() => setHoveredId(n.id)}
-                      onMouseLeave={() => setHoveredId(null)}
+                      ref={(el) => {
+                        if (el) nodeElsRef.current.set(n.id, el);
+                        else nodeElsRef.current.delete(n.id);
+                      }}
+                      transform={`translate(${pos.x}, ${pos.y})`}
                       onClick={() => setSelectedId(n.id)}
                       style={{ cursor: "pointer", opacity: dim ? 0.2 : 1 }}
                     >
@@ -548,7 +725,7 @@ function HoverTooltip({ node }: { node: GraphNode | null }) {
           color: node.kind === "insight" ? INSIGHT_COLOR : NOTE_COLOR,
         }}
       >
-        {node.kind === "insight" ? "Innsikt" : "Quick note"}
+        {node.kind === "insight" ? "Innsikt" : "Hurtignotat"}
       </p>
       <p
         style={{
@@ -561,7 +738,7 @@ function HoverTooltip({ node }: { node: GraphNode | null }) {
         {node.title}
       </p>
       <p style={{ ...typography.sizes.t12, color: colors.textMuted, marginTop: 4 }}>
-        {tagCount} {tagCount === 1 ? "tag" : "tags"} · {node.degree} {node.degree === 1 ? "kobling" : "koblinger"}
+        {tagCount} {tagCount === 1 ? "tagg" : "tagger"} · {node.degree} {node.degree === 1 ? "kobling" : "koblinger"}
       </p>
     </div>
   );
@@ -630,7 +807,7 @@ function DetailPanel({ node, onClose }: { node: GraphNode; onClose: () => void }
               borderRadius: 4,
             }}
           >
-            {node.kind === "insight" ? "Innsikt" : "Quick note"}
+            {node.kind === "insight" ? "Innsikt" : "Hurtignotat"}
           </span>
           <button
             type="button"
@@ -737,7 +914,6 @@ function FilterSidebar({
   setFilters,
   search,
   setSearch,
-  onZoomToFit,
   totalNodes,
   visibleNodes,
   edgesCount,
@@ -752,7 +928,6 @@ function FilterSidebar({
   setFilters: (next: FilterState) => void;
   search: string;
   setSearch: (next: string) => void;
-  onZoomToFit: () => void;
   totalNodes: number;
   visibleNodes: number;
   edgesCount: number;
@@ -833,6 +1008,46 @@ function FilterSidebar({
               >
                 {visibleNodes} av {totalNodes} noder · {edgesCount} koblinger.
               </p>
+              <div
+                style={{
+                  marginTop: space.s8,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 4,
+                  fontSize: 11,
+                  color: colors.textMuted,
+                  lineHeight: 1.5,
+                }}
+                aria-label="Forklaring av kantene"
+              >
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  <span
+                    aria-hidden
+                    style={{
+                      display: "inline-block",
+                      width: 18,
+                      height: 3,
+                      background: MANUAL_EDGE,
+                      borderRadius: 2,
+                    }}
+                  />
+                  Sterk kobling — manuelt opprettet
+                </span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                  <span
+                    aria-hidden
+                    style={{
+                      display: "inline-block",
+                      width: 18,
+                      height: 1,
+                      background: NEUTRAL_EDGE,
+                      opacity: 0.5,
+                      borderRadius: 2,
+                    }}
+                  />
+                  Svak kobling — felles kategori
+                </span>
+              </div>
             </div>
 
             <input
@@ -1021,22 +1236,6 @@ function FilterSidebar({
               </div>
 
               <div style={{ display: "flex", gap: space.s8, flexWrap: "wrap" }}>
-                <button
-                  type="button"
-                  onClick={onZoomToFit}
-                  style={{
-                    ...typography.sizes.t12,
-                    padding: `${space.s4} ${space.s12}`,
-                    background: colors.bgSubtle,
-                    color: colors.textBody,
-                    border: `1px solid ${colors.borderSubtle}`,
-                    cursor: "pointer",
-                    fontFamily: FONT_STACK,
-                    fontWeight: typography.weights.medium,
-                  }}
-                >
-                  Zoom to fit
-                </button>
                 <button
                   type="button"
                   onClick={() =>

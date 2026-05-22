@@ -10,11 +10,11 @@ export type SolutionStage =
 // Stage colors use Oslo kommune tones. Pipeline reads left-to-right:
 // dark blue → warm blue → teal accent → yellow (attention) → green (shipped).
 export const STAGES: { key: SolutionStage; label: string; color: string }[] = [
-  { key: "mapping",      label: "Mapping",      color: "#2a2859" },
-  { key: "ideation",     label: "Ideation",     color: "#1f42aa" },
+  { key: "mapping",      label: "Kartlegging",  color: "#2a2859" },
+  { key: "ideation",     label: "Idéutvikling", color: "#1f42aa" },
   { key: "prototyping",  label: "Prototyping",  color: "#4a8a83" },
   { key: "testing",      label: "Testing",      color: "#f9c66b" },
-  { key: "implementing", label: "Implementing", color: "#034b45" },
+  { key: "implementing", label: "Implementering", color: "#034b45" },
 ];
 
 export interface SeedSolution extends Pick<PublicDesignResponse, "id" | "title" | "frictions" | "stage" | "outcome"> {
@@ -26,9 +26,9 @@ export interface SeedSolution extends Pick<PublicDesignResponse, "id" | "title" 
 export const SEED_SOLUTIONS: SeedSolution[] = [
   {
     id: "sol-1",
-    title: "Guest mode for security alarms",
+    title: "Gjestemodus for trygghetsalarmer",
     description:
-      "Prototyping a configurable setting that adjusts motion sensor sensitivity during family visits, without compromising safety protocols.",
+      "Prototyper en konfigurerbar innstilling som justerer bevegelsessensorenes følsomhet under familiebesøk, uten å gå på akkord med sikkerheten.",
     stage: "prototyping",
     frictions: ["script", "displace"],
     outcome: "",
@@ -36,9 +36,9 @@ export const SEED_SOLUTIONS: SeedSolution[] = [
   },
   {
     id: "sol-2",
-    title: "Extended dietary care profiles",
+    title: "Utvidede kostholdsbaserte omsorgsprofiler",
     description:
-      "Co-designing care profiles with families that go beyond medical categories — capturing cultural food practices, preferred preparations, and family cooking schedules.",
+      "Ko-design av omsorgsprofiler sammen med familier som strekker seg lenger enn medisinske kategorier — fanger opp kulturelle matpraksiser, foretrukne tilberedninger og familiens matlagingsrytmer.",
     stage: "ideation",
     frictions: ["reduce", "rotate"],
     outcome: "",
@@ -46,9 +46,9 @@ export const SEED_SOLUTIONS: SeedSolution[] = [
   },
   {
     id: "sol-3",
-    title: "Family care dashboard for transnational relatives",
+    title: "Familie-dashbord for transnasjonale pårørende",
     description:
-      "A lightweight interface giving remote family members appropriate visibility into care plans and the ability to contribute observations.",
+      "Et enkelt grensesnitt som gir pårørende på avstand passende innsyn i omsorgsplanen og mulighet til å bidra med observasjoner.",
     stage: "mapping",
     frictions: ["invisible", "exclude"],
     outcome: "",
@@ -56,9 +56,9 @@ export const SEED_SOLUTIONS: SeedSolution[] = [
   },
   {
     id: "sol-4",
-    title: "Night-shift dignity pilot",
+    title: "Verdighetspilot på nattevakt",
     description:
-      "Testing a small team of on-call night visits in Alna east, paired with passive sensors — lowering the threshold at which night support is provided without forcing residents into diapers or residential care.",
+      "Testing av et lite vaktteam på utrykning om natta i Alna øst, kombinert med passive sensorer — senker terskelen for å få natt-støtte uten å presse beboere over på bleier eller institusjon.",
     stage: "testing",
     frictions: ["isolate", "displace"],
     outcome: "",
@@ -66,9 +66,9 @@ export const SEED_SOLUTIONS: SeedSolution[] = [
   },
   {
     id: "sol-5",
-    title: "Interpreter-aware scheduling",
+    title: "Tolkebevisst timeplanlegging",
     description:
-      "Mapping how the municipal scheduling system can block-book interpreters alongside care reviews, preventing the mismatches that leave residents nodding through decisions they don't understand.",
+      "Kartlegger hvordan det kommunale timesystemet kan blokk-bestille tolk samtidig med omsorgsvurderinger, slik at vi unngår mismatchene som etterlater beboere nikkende til vedtak de ikke forstår.",
     stage: "mapping",
     frictions: ["exclude", "reduce"],
     outcome: "",

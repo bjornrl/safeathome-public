@@ -34,11 +34,11 @@ export default function ResetPasswordPage() {
     setError(null);
     setNotice(null);
     if (password.length < 8) {
-      setError("Password must be at least 8 characters.");
+      setError("Passordet må være minst 8 tegn.");
       return;
     }
     if (password !== confirm) {
-      setError("Passwords don't match.");
+      setError("Passordene er ikke like.");
       return;
     }
     setSubmitting(true);
@@ -52,7 +52,7 @@ export default function ResetPasswordPage() {
       setError(updateErr.message);
       return;
     }
-    setNotice("Password updated. Redirecting…");
+    setNotice("Passordet er oppdatert. Sender deg videre…");
     router.replace("/admin");
   }
   return <>
@@ -61,25 +61,25 @@ export default function ResetPasswordPage() {
       fontFamily: FONT_STACK
     }} className="[max-width:440px] [margin:0_auto] [padding:80px_24px_96px]">
         <p className="[font-size:12px] [font-weight:600] [text-transform:uppercase] [letter-spacing:0.18em] [color:#808080] [margin-bottom:16px]">
-          Reset password
+          Nullstill passord
         </p>
         <h1 className="[font-size:40px] [font-weight:700] [line-height:1.1] [letter-spacing:-0.02em] [color:#2a2859] [margin-bottom:16px]">
-          Choose a new password.
+          Velg et nytt passord.
         </h1>
         <p className="[font-size:17px] [line-height:1.6] [color:#666666] [margin-bottom:32px]">
-          {hasRecovery === false ? "This link has expired or is missing a recovery session. Request a new reset link from the sign-in page." : "Set a password you'll remember. You'll be signed in automatically once it's saved."}
+          {hasRecovery === false ? "Denne lenken er utløpt eller mangler en gjenopprettingsøkt. Be om en ny nullstillingslenke fra innloggingssiden." : "Velg et passord du husker. Du blir automatisk logget inn så snart det er lagret."}
         </p>
 
         {hasRecovery !== false && <form onSubmit={onSubmit} className="[display:flex] [flex-direction:column] [gap:16px] [padding:24px] [background:#ffffff] [border:1px_solid_#e6e6e6] [border-radius:8px]">
             <label className="[display:flex] [flex-direction:column] [gap:8px]">
               <span className="[font-size:12px] [font-weight:600] [color:#2c2c2c]">
-                New password
+                Nytt passord
               </span>
-              <input type="password" required minLength={8} value={password} onChange={e => setPassword(e.target.value)} placeholder="At least 8 characters" style={inputStyle} autoComplete="new-password" />
+              <input type="password" required minLength={8} value={password} onChange={e => setPassword(e.target.value)} placeholder="Minst 8 tegn" style={inputStyle} autoComplete="new-password" />
             </label>
             <label className="[display:flex] [flex-direction:column] [gap:8px]">
               <span className="[font-size:12px] [font-weight:600] [color:#2c2c2c]">
-                Confirm password
+                Bekreft passord
               </span>
               <input type="password" required value={confirm} onChange={e => setConfirm(e.target.value)} style={inputStyle} autoComplete="new-password" />
             </label>
@@ -97,13 +97,13 @@ export default function ResetPasswordPage() {
           opacity: submitting ? 0.7 : 1,
           fontFamily: FONT_STACK
         }} className="[padding:12px_16px] [background:#2a2859] [color:#ffffff] [border-radius:8px] [border:1px_solid_#2a2859] [font-size:15px] [font-weight:600]">
-              {submitting ? "Saving…" : "Save new password"}
+              {submitting ? "Lagrer…" : "Lagre nytt passord"}
             </button>
           </form>}
 
         <p className="[margin-top:24px] [font-size:13px] [color:#808080] [line-height:1.6]">
           <Link href="/auth" className="[color:#1f42aa] [font-weight:500]">
-            Back to sign in
+            Tilbake til innlogging
           </Link>
           .
         </p>

@@ -31,15 +31,15 @@ export default function SolutionsPage() {
       fontFamily: FONT_STACK
     }} className="[max-width:1120px] [margin:0_auto] [padding:72px_24px_96px]">
         <p className="[font-size:12px] [font-weight:600] [text-transform:uppercase] [letter-spacing:0.18em] [color:#808080] [margin-bottom:16px]">
-          Design responses
+          Designresponser
         </p>
         <h1 className="[font-size:clamp(38px,_6vw,_60px)] [font-weight:700] [line-height:1.05] [letter-spacing:-0.02em] [color:#2a2859] [margin-bottom:24px]">
-          From observation to intervention.
+          Fra observasjon til tiltak.
         </h1>
         <p className="[font-size:19px] [line-height:1.7] [color:#666666] [max-width:680px] [margin-bottom:48px]">
-          When the research reveals a friction, the design team responds. These
-          are the interventions being developed, tested, and refined &mdash;
-          tracing the journey from field observation to practical solution.
+          Når forskningen avdekker en friksjon, svarer designteamet. Dette er
+          tiltakene som utvikles, testes og foredles — fra observasjon i felt
+          til praktisk løsning.
         </p>
 
         {/* Pipeline */}
@@ -66,7 +66,7 @@ export default function SolutionsPage() {
                     {stage.label}
                   </span>
                   <span className="[font-size:13px] [color:#666666]">
-                    {count} {count === 1 ? "response" : "responses"}
+                    {count} {count === 1 ? "respons" : "responser"}
                   </span>
                 </button>;
           })}
@@ -74,18 +74,18 @@ export default function SolutionsPage() {
           {activeStage && <button type="button" onClick={() => setActiveStage(null)} style={{
           fontFamily: FONT_STACK
         }} className="[margin-top:16px] [font-size:12px] [color:#1f42aa] [font-weight:600] [background:none] [border:none] [cursor:pointer] [padding:0px]">
-              Clear stage filter
+              Nullstill fasefilter
             </button>}
         </section>
 
         {/* Cards */}
         <section>
           <h2 className="[font-size:26px] [font-weight:700] [color:#2a2859] [margin-bottom:24px] [letter-spacing:-0.01em]">
-            {activeStage ? STAGES.find(s => s.key === activeStage)?.label + " responses" : "All responses"}
+            {activeStage ? STAGES.find(s => s.key === activeStage)?.label + " — responser" : "Alle responser"}
           </h2>
 
           {filtered.length === 0 ? <p className="[color:#808080]">
-              No responses in this stage yet.
+              Ingen responser i denne fasen ennå.
             </p> : <div className="[display:grid] [grid-template-columns:repeat(auto-fill,_minmax(320px,_1fr))] [gap:16px]">
               {filtered.map(sol => <SolutionCard key={sol.id} solution={sol} sourceStories={sol.source_stories.map(id => storyById(id)).filter((s): s is PublicStory => Boolean(s))} />)}
             </div>}
@@ -129,7 +129,7 @@ function ProgressSection({ reports }: { reports: WpReport[] }) {
   return (
     <section className="[margin-top:96px] [padding-top:48px] [border-top:1px_solid_#e6e6e6]">
       <p className="[font-size:12px] [font-weight:600] [text-transform:uppercase] [letter-spacing:0.18em] [color:#808080] [margin-bottom:16px]">
-        Progress
+        Framdrift
       </p>
       <h2 className="[font-size:clamp(28px,_4vw,_40px)] [font-weight:700] [color:#2a2859] [margin-bottom:16px] [letter-spacing:-0.02em]">
         Månedlige rapporter fra arbeidspakkene.
@@ -324,7 +324,7 @@ function SolutionCard({
 
       {solution.frictions.length > 0 && <div>
           <p className="[font-size:11px] [font-weight:600] [text-transform:uppercase] [letter-spacing:0.12em] [color:#808080] [margin-bottom:8px]">
-            Addresses
+            Adresserer
           </p>
           <div className="[display:flex] [flex-wrap:wrap] [gap:5px]">
             {solution.frictions.map(f => <span key={f} style={{
@@ -342,7 +342,7 @@ function SolutionCard({
 
       {sourceStories.length > 0 && <div className="[margin-top:auto] [padding-top:16px] [border-top:1px_solid_#e6e6e6]">
           <p className="[font-size:11px] [font-weight:600] [text-transform:uppercase] [letter-spacing:0.12em] [color:#808080] [margin-bottom:8px]">
-            Based on
+            Basert på
           </p>
           {sourceStories.map(s => <Link key={s.id} href={`/story/${s.id}`} className="[display:block] [font-size:14px] [color:#1f42aa] [text-decoration:none] [padding:4px_0] [font-weight:500]">
               {s.title} →

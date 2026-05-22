@@ -72,16 +72,16 @@ export default function FrictionsPage() {
       fontFamily: FONT_STACK
     }} className="[max-width:1120px] [margin:0_auto] [padding:72px_24px_96px]">
         <p className="[font-size:12px] [font-weight:600] [text-transform:uppercase] [letter-spacing:0.18em] [color:#808080] [margin-bottom:16px]">
-          Care frictions
+          Omsorgsfriksjoner
         </p>
         <h1 className="[font-size:clamp(38px,_6vw,_60px)] [font-weight:700] [line-height:1.05] [letter-spacing:-0.02em] [color:#2a2859] [margin-bottom:24px]">
-          Seven ways the system collides with reality.
+          Syv måter systemet kolliderer med virkeligheten på.
         </h1>
         <p className="[font-size:19px] [line-height:1.7] [color:#666666] [max-width:680px] [margin-bottom:48px]">
-          Frictions name the recurring mechanisms by which well-intentioned care
-          produces harm. This chord diagram shows how they braid together across
-          stories &mdash; the thicker the ribbon, the more lives share that
-          particular collision.
+          Friksjoner navngir de gjentakende mekanismene der velmenende omsorg
+          likevel skader. Dette akkord-diagrammet viser hvordan de fletter
+          seg sammen på tvers av historier — jo tykkere bånd, jo flere liv
+          deler den samme kollisjonen.
         </p>
 
         <div className="[display:grid] [grid-template-columns:minmax(280px,_1fr)_minmax(260px,_320px)] [gap:48px] [align-items:start]">
@@ -89,7 +89,7 @@ export default function FrictionsPage() {
 
           <aside>
             <p className="[font-size:11px] [font-weight:600] [text-transform:uppercase] [letter-spacing:0.14em] [color:#808080] [margin-bottom:16px]">
-              Legend
+              Tegnforklaring
             </p>
             <ul className="[list-style:none] [padding:0px] [margin:0px]">
               {FRICTION_KEYS.map(k => <li key={k} className="[margin-bottom:8px]">
@@ -129,7 +129,7 @@ export default function FrictionsPage() {
           })} style={{
             fontFamily: FONT_STACK
           }} className="[font-size:13px] [color:#1f42aa] [font-weight:600] [background:none] [border:none] [cursor:pointer] [padding:0px]">
-                Clear selection
+                Nullstill valg
               </button>}
           </div>
 
@@ -205,7 +205,7 @@ function ChordDiagram({
             }
           }} className="[cursor:pointer] [transition:fill-opacity_.15s,_stroke-opacity_.15s]">
                 <title>
-                  {a === b ? `${FRICTIONS[a].label} — ${c.source.value} stories` : `${FRICTIONS[a].label} + ${FRICTIONS[b].label} — ${c.source.value} stories share both`}
+                  {a === b ? `${FRICTIONS[a].label} — ${c.source.value} historier` : `${FRICTIONS[a].label} + ${FRICTIONS[b].label} — ${c.source.value} historier deler begge`}
                 </title>
               </path>;
         })}
@@ -271,8 +271,8 @@ function ChordDiagram({
       </svg>
 
       <p className="[font-size:12px] [color:#9a9a9a] [text-align:center] [margin-top:8px]">
-        Hover a segment to highlight. Click to lock. Click a ribbon for the
-        pair.
+        Hold musen over et segment for å fremheve. Klikk for å låse. Klikk
+        på et bånd for å se paret.
       </p>
     </div>;
 }
@@ -287,7 +287,7 @@ function SelectionHeading({
   count: number;
 }) {
   if (selection.kind === "none") {
-    return <>All stories grouped by friction</>;
+    return <>Alle historier gruppert etter friksjon</>;
   }
   if (selection.kind === "friction") {
     return <>
@@ -298,7 +298,7 @@ function SelectionHeading({
         </span>{" "}
         &middot;{" "}
         <span className="[color:#808080] [font-weight:400] [font-size:18px]">
-          {count} {count === 1 ? "story" : "stories"}
+          {count} {count === 1 ? "historie" : "historier"}
         </span>
       </>;
   }
@@ -316,7 +316,7 @@ function SelectionHeading({
       </span>{" "}
       &middot;{" "}
       <span className="[color:#808080] [font-weight:400] [font-size:18px]">
-        {count} {count === 1 ? "story shares both" : "stories share both"}
+        {count} {count === 1 ? "historie deler begge" : "historier deler begge"}
       </span>
     </>;
 }
@@ -330,7 +330,7 @@ function StoryGrid({
 }) {
   if (stories.length === 0) {
     return <p className="[font-size:17px] [color:#808080] [padding:24px_0]">
-        No stories share this combination yet.
+        Ingen historier deler denne kombinasjonen ennå.
       </p>;
   }
   return <div className="[display:grid] [grid-template-columns:repeat(auto-fill,_minmax(300px,_1fr))] [gap:16px]">
@@ -357,7 +357,7 @@ function GroupedByFriction({
                 {FRICTIONS[k].label}
               </h3>
               <span className="[font-size:13px] [color:#9a9a9a]">
-                {bucket.length} {bucket.length === 1 ? "story" : "stories"}
+                {bucket.length} {bucket.length === 1 ? "historie" : "historier"}
               </span>
             </div>
             <div className="[display:grid] [grid-template-columns:repeat(auto-fill,_minmax(300px,_1fr))] [gap:16px]">

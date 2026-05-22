@@ -153,17 +153,6 @@ export default function HomePage() {
                 <p
                   style={{
                     ...typography.sizes.t18,
-                    color: clay.colors.muted,
-                    maxWidth: "44ch",
-                    marginBottom: space.s32,
-                    fontStyle: "italic",
-                  }}
-                >
-                  Adapting municipal homecare for aging immigrants.
-                </p>
-                <p
-                  style={{
-                    ...typography.sizes.t18,
                     color: clay.colors.body,
                     maxWidth: "52ch",
                     marginBottom: space.s32,
@@ -318,21 +307,11 @@ export default function HomePage() {
                       letterSpacing: "-0.5px",
                       fontSize: "26px",
                       lineHeight: 1.15,
-                      marginBottom: space.s8,
-                    }}
-                  >
-                    {wp.title}
-                  </h3>
-                  <p
-                    style={{
-                      ...typography.sizes.t14,
-                      color: wp.muted,
                       marginBottom: space.s16,
-                      fontStyle: "italic",
                     }}
                   >
                     {wp.titleNo}
-                  </p>
+                  </h3>
                   <p
                     style={{
                       ...typography.sizes.t16,
@@ -576,7 +555,7 @@ export default function HomePage() {
                   paddingBottom: "2px",
                 }}
               >
-                Team login →
+                Innlogging for teamet →
               </Link>
             </div>
           </div>

@@ -82,10 +82,10 @@ export default function ResourceList({
                     letterSpacing: "-0.01em",
                   }}
                 >
-                  {RESOURCE_TYPE_LABELS[t]}s
+                  {RESOURCE_TYPE_LABELS[t]}
                 </h2>
                 <span style={{ fontSize: 13, color: "#9a9a9a" }}>
-                  {bucket.length} {bucket.length === 1 ? "entry" : "entries"}
+                  {bucket.length} {bucket.length === 1 ? "oppføring" : "oppføringer"}
                 </span>
               </header>
               <div
@@ -264,7 +264,7 @@ function ResourceCard({
               fontWeight: 600,
             }}
           >
-            Linked insights · {linkedStories.length} {storiesOpen ? "−" : "+"}
+            Tilknyttede innsikter · {linkedStories.length} {storiesOpen ? "−" : "+"}
           </button>
           {storiesOpen && (
             <ul style={{ listStyle: "none", margin: "8px 0 0", padding: 0, display: "flex", flexDirection: "column", gap: 4 }}>
@@ -289,8 +289,12 @@ function ResourceCard({
           {resource.authors && resource.field_site && " · "}
           {resource.field_site}
         </span>
-        {resource.url && (
-          <span style={{ fontSize: 13, fontWeight: 600, color: accent }}>Open →</span>
+        {resource.url ? (
+          <span style={{ fontSize: 13, fontWeight: 600, color: accent }}>Åpne →</span>
+        ) : (
+          <span style={{ fontSize: 12, fontStyle: "italic", color: "#9a9a9a" }}>
+            Kommer snart
+          </span>
         )}
       </div>
     </>

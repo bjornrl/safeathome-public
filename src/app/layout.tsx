@@ -12,9 +12,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "safe@home — Aging, migration, and the meaning of home",
+  title: "safe@home — Aldring, migrasjon og betydningen av hjem",
   description:
-    "Explore how aging immigrants in Norway navigate care, technology, and belonging through an interactive map of stories.",
+    "Utforsk hvordan eldre innvandrere i Norge navigerer omsorg, teknologi og tilhørighet — gjennom et interaktivt kart av historier.",
 };
 
 export default function RootLayout({

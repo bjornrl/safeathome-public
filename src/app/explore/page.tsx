@@ -86,12 +86,23 @@ export default function ExplorePage() {
       const from = storyMap.get(conn.from_story_id);
       const to = storyMap.get(conn.to_story_id);
       if (!from?.latitude || !from?.longitude || !to?.latitude || !to?.longitude) return null;
+      // Pick the colour from whichever category the connection belongs to —
+      // friction-kind connections colour by friction, quality-kind by quality.
+      // Without this, quality-kind links (which carry friction === null) all
+      // rendered as grey and ignored the active filter.
+      const isQuality = conn.category_kind === "quality";
+      const categoryKey = conn.category_key ?? conn.friction ?? "";
+      const color = isQuality
+        ? QUALITIES[categoryKey as CareQuality]?.color ?? "#999"
+        : FRICTIONS[(conn.friction ?? categoryKey) as CareFriction]?.color ?? "#999";
       return {
         type: "Feature" as const,
         properties: {
-          friction: conn.friction,
+          friction: conn.friction ?? "",
+          category_kind: conn.category_kind,
+          category_key: categoryKey,
           connection_type: conn.connection_type,
-          color: FRICTIONS[conn.friction]?.color ?? "#999"
+          color,
         },
         geometry: {
           type: "LineString" as const,
@@ -200,17 +211,30 @@ export default function ExplorePage() {
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !mapReady || !map.getLayer("conn-solid")) return;
-    if (selectedFrictions.length > 0) {
-      const expr: maplibregl.ExpressionSpecification = ["case", ["in", ["get", "friction"], ["literal", selectedFrictions]], 0.9, 0.1];
-      map.setPaintProperty("conn-solid", "line-opacity", expr);
-      map.setPaintProperty("conn-dashed", "line-opacity", expr);
-      map.setPaintProperty("conn-solid", "line-width", ["case", ["in", ["get", "friction"], ["literal", selectedFrictions]], 4, 1]);
+    // Highlight a connection if EITHER its friction is in the selected
+    // frictions OR its category_key matches a selected quality. Lines that
+    // don't match the active filter dim out.
+    const hasFilter = selectedFrictions.length > 0 || selectedQualities.length > 0;
+    if (hasFilter) {
+      const matchExpr: maplibregl.ExpressionSpecification = [
+        "any",
+        ["in", ["get", "friction"], ["literal", selectedFrictions]],
+        ["all",
+          ["==", ["get", "category_kind"], "quality"],
+          ["in", ["get", "category_key"], ["literal", selectedQualities]],
+        ],
+      ];
+      const opacityExpr: maplibregl.ExpressionSpecification = ["case", matchExpr, 0.9, 0.1];
+      const widthExpr: maplibregl.ExpressionSpecification = ["case", matchExpr, 4, 1];
+      map.setPaintProperty("conn-solid", "line-opacity", opacityExpr);
+      map.setPaintProperty("conn-dashed", "line-opacity", opacityExpr);
+      map.setPaintProperty("conn-solid", "line-width", widthExpr);
     } else {
       map.setPaintProperty("conn-solid", "line-opacity", 0.7);
       map.setPaintProperty("conn-dashed", "line-opacity", 0.5);
       map.setPaintProperty("conn-solid", "line-width", 2.5);
     }
-  }, [mapReady, selectedFrictions]);
+  }, [mapReady, selectedFrictions, selectedQualities]);
 
   // ─── Actions ───
   const flyTo = useCallback((center: [number, number], z: number) => {
@@ -284,28 +308,36 @@ export default function ExplorePage() {
         )}
       </AnimatePresence>
 
-      {/* ─── District selector (top-right, below nav control) ─── */}
-      <div className="[position:absolute] [top:64px] [right:16px] [z-index:20]">
-        <select onChange={e => {
-        const d = DISTRICTS[e.target.value];
-        if (d) flyTo(d.center, d.zoom);
-      }} defaultValue="" style={{
-        fontFamily: FONT_STACK,
-        padding: "10px 16px",
-        borderRadius: "12px",
-        border: `1px solid ${CLAY_HAIRLINE}`,
-        background: CLAY_CANVAS,
-        fontSize: "13px",
-        fontWeight: 500,
-        color: CLAY_INK,
-        cursor: "pointer",
-      }}>
-          <option value="" disabled>
-            Jump to district
-          </option>
-          {Object.entries(DISTRICTS).map(([k, d]) => <option key={k} value={k}>
+      {/* ─── District selector (top-right desktop, below filter button on mobile) ─── */}
+      {/* Controlled with value="" so picking the same bydel a second time still
+          fires onChange and re-flies. Below ~520 px we drop it to the second
+          row so it doesn't overlap the MapLibre zoom controls. */}
+      <div className="explore-district-select [position:absolute] [top:64px] [right:16px] [z-index:20]">
+        <select
+          aria-label="Hopp til bydel"
+          value=""
+          onChange={(e) => {
+            const d = DISTRICTS[e.target.value];
+            if (d) flyTo(d.center, d.zoom);
+          }}
+          style={{
+            fontFamily: FONT_STACK,
+            padding: "10px 16px",
+            borderRadius: "12px",
+            border: `1px solid ${CLAY_HAIRLINE}`,
+            background: CLAY_CANVAS,
+            fontSize: "13px",
+            fontWeight: 500,
+            color: CLAY_INK,
+            cursor: "pointer",
+          }}
+        >
+          <option value="">Hopp til bydel…</option>
+          {Object.entries(DISTRICTS).map(([k, d]) => (
+            <option key={k} value={k}>
               {d.label}
-            </option>)}
+            </option>
+          ))}
         </select>
       </div>
 
@@ -347,6 +379,17 @@ export default function ExplorePage() {
       <AnimatePresence>
         {selectedStory && <StoryPanel story={selectedStory} connections={relatedConnections} allStories={stories} onClose={() => setSelectedStory(null)} onNavigate={openStory} />}
       </AnimatePresence>
+
+      <style>{`
+        @media (max-width: 520px) {
+          /* Drop the bydel-dropdown to the second row on small screens so it
+             doesn't overlap with the MapLibre zoom controls or the filter
+             panel when expanded. */
+          .explore-district-select {
+            top: 116px !important;
+          }
+        }
+      `}</style>
     </div>;
 }
 
@@ -377,7 +420,7 @@ function FilterPanel({
         color: CLAY_INK,
         cursor: "pointer",
       }} className="[display:flex] [align-items:center] [gap:8px] [padding:10px_16px] [font-size:13px] [font-weight:600]">
-        Filters
+        Filtre
         {count > 0 && <span style={{ background: CLAY_INK, color: CLAY_CANVAS }} className="[width:20px] [height:20px] [border-radius:50%] [font-size:11px] [display:flex] [align-items:center] [justify-content:center] [font-weight:600]">
             {count}
           </span>}
@@ -392,7 +435,7 @@ function FilterPanel({
             color: CLAY_MUTED,
             letterSpacing: "1.5px",
           }} className="[font-size:11px] [font-weight:600] [text-transform:uppercase] [margin-bottom:10px]">
-            Care Frictions
+            Omsorgsfriksjoner
           </p>
           <div className="[display:flex] [flex-wrap:wrap] [gap:8px] [margin-bottom:16px]">
             {(Object.entries(FRICTIONS) as [CareFriction, (typeof FRICTIONS)[CareFriction]][]).map(([k, v]) => {
@@ -417,7 +460,7 @@ function FilterPanel({
             color: CLAY_MUTED,
             letterSpacing: "1.5px",
           }} className="[font-size:11px] [font-weight:600] [text-transform:uppercase] [margin-bottom:10px]">
-            Care Qualities
+            Omsorgskvaliteter
           </p>
           <div className="[display:flex] [flex-wrap:wrap] [gap:8px] [margin-bottom:16px]">
             {(Object.entries(QUALITIES) as [CareQuality, (typeof QUALITIES)[CareQuality]][]).map(([k, v]) => {
@@ -433,7 +476,7 @@ function FilterPanel({
           </div>
 
           {count > 0 && <button type="button" onClick={onClear} style={{ color: CLAY_INK }} className="[font-size:12px] [font-weight:600] [cursor:pointer] [background:none] [border:none] [padding:0px] [text-decoration:underline] [text-underline-offset:4px]">
-              Clear all filters
+              Nullstill alle filtre
             </button>}
         </div>}
     </div>;
@@ -458,6 +501,18 @@ function StoryPanel({
       other: allStories.find(s => s.id === otherId)
     };
   }).filter(x => x.other);
+
+  // Close on Escape + move focus to the close button on mount for a11y.
+  const closeBtnRef = useRef<HTMLButtonElement | null>(null);
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    closeBtnRef.current?.focus();
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
   return <>
       <motion.div initial={{
       opacity: 0
@@ -466,7 +521,11 @@ function StoryPanel({
     }} exit={{
       opacity: 0
     }} onClick={onClose} className="[position:fixed] [inset:0px] [background:rgba(10,10,10,.18)] [z-index:30]" />
-      <motion.div initial={{
+      <motion.div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="story-panel-title"
+        initial={{
       x: "100%"
     }} animate={{
       x: 0
@@ -490,13 +549,20 @@ function StoryPanel({
           }} className="[font-size:11px] [font-weight:600] [padding:4px_12px] [text-transform:uppercase]">
             {SCALES[story.map_scale]?.label ?? story.map_scale}
           </span>
-          <button type="button" onClick={onClose} style={{ color: CLAY_MUTED }} className="[background:none] [border:none] [font-size:28px] [cursor:pointer] [line-height:1]">
-            &times;
+          <button
+            ref={closeBtnRef}
+            type="button"
+            onClick={onClose}
+            aria-label="Lukk historie"
+            style={{ color: CLAY_MUTED }}
+            className="[background:none] [border:none] [font-size:28px] [cursor:pointer] [line-height:1]"
+          >
+            <span aria-hidden>&times;</span>
           </button>
         </div>
 
         <div className="[flex:1px] [overflow-y:auto] [padding:28px]">
-          <h2 style={{
+          <h2 id="story-panel-title" style={{
             fontSize: "32px",
             fontWeight: 500,
             color: CLAY_INK,
@@ -537,7 +603,7 @@ function StoryPanel({
                 color: CLAY_MUTED,
                 letterSpacing: "1.5px",
               }} className="[font-size:11px] [font-weight:600] [text-transform:uppercase] [margin-bottom:16px]">
-                Connected stories
+                Tilkoblede historier
               </p>
               {linked.map(({
             conn,

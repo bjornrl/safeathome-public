@@ -1,30 +1,47 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { FRICTIONS, QUALITIES, SCALES, WP_LABELS, type WpId } from "@/lib/constants";
+import { FRICTIONS, HOUSE_HOTSPOTS, QUALITIES, SCALES, WP_LABELS, type WpId } from "@/lib/constants";
 import { RESOURCE_TYPE_LABELS } from "@/lib/seed-resources";
 import { STAGES } from "@/lib/seed-solutions";
 import type { CareFriction, CareQuality, FieldSite, HouseTheme, MapScale, ResourceType, WorkPackage } from "@/lib/types";
 import { QuickNotesPanel } from "@/components/admin/QuickNotesPanel";
 import { WelfareTechPanel } from "@/components/admin/WelfareTechPanel";
+import {
+  FormHeader,
+  GhostBadge,
+  GhostBadgeRow,
+  PillGroup,
+  PrimarySubmit,
+  SUGGEST_DEBOUNCE_MS,
+  StatusBanner,
+  SuggestBar,
+  inputStyle as sharedInputStyle,
+  labelStyle as sharedLabelStyle,
+} from "@/components/admin/FormPrimitives";
+import { CategoryHelp, InlineConfirm, Toast } from "@/components/ui";
+import {
+  getSuggestionAvailability,
+  requestSuggestions,
+} from "@/app/actions/suggest";
 const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
 type Tab = "notes" | "stories" | "challenges" | "resources" | "wp" | "welfare-tech";
 const TAB_VALUES: Tab[] = ["notes", "stories", "challenges", "resources", "wp", "welfare-tech"];
 
 const TAB_DESCRIPTIONS: Record<Tab, string> = {
   notes:
-    "Scratchpad for in-progress observations, ideas, and questions from the field. Tag with work package, friction, quality, theme, or scale so notes surface in the node map and AI suggestions.",
+    "Kladdebok for pågående observasjoner, ideer og spørsmål fra feltet. Merk med arbeidspakke, friksjon, kvalitet, tema eller skala slik at notatene dukker opp i nodekartet og i AI-forslagene.",
   stories:
-    "Polished, published findings — what becomes the public-facing story map. Pair an insight with the work package it came from, the field site, and the frictions/qualities it illustrates. Use the connection form below to draw typed edges between two published insights.",
+    "Ferdige, publiserte funn — det som blir det offentlige historiekartet. Knytt en innsikt til arbeidspakken den kommer fra, feltstedet og friksjonene/kvalitetene den illustrerer. Bruk koblingsskjemaet under for å trekke typede linjer mellom to publiserte innsikter.",
   challenges:
-    "Open problems the design team is working on, drawn from one or more insights and tagged by the frictions or qualities they address. Each challenge moves through stages: framing → exploring → testing → adopted.",
+    "Åpne problemer designteamet jobber med, basert på én eller flere innsikter og merket med friksjonene eller kvalitetene de adresserer. Hver utfordring beveger seg gjennom fasene: rammer inn → utforsker → tester → tatt i bruk.",
   resources:
-    "Reading-room and municipal-resource entries — publications, toolkits, policy briefs, teaching guides. Link to the insights they relate to and tag with frictions/qualities so they appear on the matching public pages.",
-  wp: "Monthly status reports, one row per work package per month. Captures the interview, the highlights, and the next steps. Sets the cadence for the WP progress overview.",
+    "Oppføringer for lesesalen og kommunale ressurser — publikasjoner, verktøykasser, policy-notater, undervisningsguider. Koble til innsiktene de hører sammen med og merk med friksjoner/kvaliteter slik at de dukker opp på de matchende offentlige sidene.",
+  wp: "Månedlige statusrapporter, én rad per arbeidspakke per måned. Fanger opp intervjuet, høydepunktene og neste steg. Setter rytmen for WP-framdriftsoversikten.",
   "welfare-tech":
-    "Technology entries with manufacturer, country availability, and a description. Surface on the public welfare-tech page once published.",
+    "Teknologi-oppføringer med produsent, tilgjengelighet per land og beskrivelse. Vises på den offentlige velferdsteknologi-siden når de publiseres.",
 };
 const WP_IDS = Object.keys(WP_LABELS) as WpId[];
 const FRICTION_KEYS = Object.keys(FRICTIONS) as CareFriction[];
@@ -34,13 +51,169 @@ const FIELD_SITES: FieldSite[] = ["Alna", "Søndre Nordstrand"];
 const SCALE_KEYS = Object.keys(SCALES) as MapScale[];
 const RESOURCE_TYPES = Object.keys(RESOURCE_TYPE_LABELS) as ResourceType[];
 
+// Norwegian labels for the eleven house themes (dropdown shows these instead
+// of the raw underscore-separated enum keys). HOUSE_HOTSPOTS already labels
+// the eight rooms used on the public house overlay; we extend it here with
+// the three admin-only themes (prayer_space, bathroom, hallway).
+const HOUSE_HOTSPOT_LABELS = Object.fromEntries(
+  HOUSE_HOTSPOTS.map((h) => [h.theme, h.label]),
+) as Record<HouseTheme, string>;
+const THEME_LABELS: Record<HouseTheme, string> = {
+  ...HOUSE_HOTSPOT_LABELS,
+  prayer_space: "Bønnerom",
+  bathroom: "Bad",
+  hallway: "Gang",
+};
+
+// ─── Toast context (avoids prop-drilling) ───
+type ToastFn = (message: string, kind?: "ok" | "err") => void;
+const ToastContext = createContext<ToastFn>(() => { });
+function useToast(): ToastFn {
+  return useContext(ToastContext);
+}
+
 // DB enum is uppercase WP1..WP4 — same shape as quick_notes.work_package.
 const WORK_PACKAGES: { value: WorkPackage; label: string }[] = [
-  { value: "WP1", label: "WP1 · Homes & Communities" },
-  { value: "WP2", label: "WP2 · Health & Care Institutions" },
-  { value: "WP3", label: "WP3 · Transnational Contexts" },
-  { value: "WP4", label: "WP4 · Innovation & Design" },
+  { value: "WP1", label: "WP1 · Hjem og fellesskap" },
+  { value: "WP2", label: "WP2 · Helse- og omsorgsinstitusjoner" },
+  { value: "WP3", label: "WP3 · Transnasjonale kontekster" },
+  { value: "WP4", label: "WP4 · Innovasjon og design" },
 ];
+
+// ─── Shared form styling (QuickNotes look) ───
+const qnForm: React.CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 24,
+};
+const qnFieldStack: React.CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 4,
+};
+const qnHeadlineInput: React.CSSProperties = {
+  ...sharedInputStyle,
+  fontSize: 20,
+  fontWeight: 500,
+  padding: "12px 16px",
+};
+
+// ─── Shared AI suggestion hook ───
+// Mirrors the integration in QuickNotesPanel: availability check, debounce,
+// per-category accept/dismiss handlers. Used by both StoryForm (insights) and
+// ChallengeForm.
+function useAiSuggest({
+  title,
+  body,
+  currentFrictions,
+  currentQualities,
+  currentWorkPackage,
+}: {
+  title: string;
+  body: string;
+  currentFrictions: CareFriction[];
+  currentQualities: CareQuality[];
+  currentWorkPackage?: WorkPackage | "";
+}) {
+  const [availability, setAvailability] = useState<"checking" | "ready" | "limit_reached" | "unavailable">("checking");
+  const [loading, setLoading] = useState(false);
+  const [coolingDown, setCoolingDown] = useState(false);
+  const [cleared, setCleared] = useState(false);
+  const [frictions, setFrictions] = useState<CareFriction[]>([]);
+  const [qualities, setQualities] = useState<CareQuality[]>([]);
+  const [workPackage, setWorkPackage] = useState<WorkPackage | null>(null);
+  const hadSuggestionsRef = useRef(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    getSuggestionAvailability().then((res) => {
+      if (cancelled) return;
+      if (res.status === "ready") setAvailability("ready");
+      else if (res.status === "limit_reached") setAvailability("limit_reached");
+      else setAvailability("unavailable");
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const hasSuggestions = frictions.length > 0 || qualities.length > 0 || workPackage !== null;
+  useEffect(() => {
+    if (hasSuggestions) {
+      hadSuggestionsRef.current = true;
+      if (cleared) setCleared(false);
+      return;
+    }
+    if (!hadSuggestionsRef.current) return;
+    hadSuggestionsRef.current = false;
+    setCleared(true);
+    const t = setTimeout(() => setCleared(false), 2000);
+    return () => clearTimeout(t);
+  }, [hasSuggestions, cleared]);
+
+  const run = useCallback(async () => {
+    if (availability !== "ready" || loading || coolingDown) return;
+    setLoading(true);
+    setCoolingDown(true);
+    const cooldownTimer = setTimeout(() => setCoolingDown(false), SUGGEST_DEBOUNCE_MS);
+    try {
+      const res = await requestSuggestions({
+        noteHeadline: title,
+        noteBody: body,
+        currentFrictions,
+        currentQualities,
+      });
+      if (res.status === "ok") {
+        setFrictions(res.suggestions.frictions.filter((f) => !currentFrictions.includes(f)));
+        setQualities(res.suggestions.qualities.filter((q) => !currentQualities.includes(q)));
+        setWorkPackage(
+          res.suggestions.work_package && res.suggestions.work_package !== currentWorkPackage
+            ? res.suggestions.work_package
+            : null,
+        );
+        if (res.remaining === 0) setAvailability("limit_reached");
+      } else if (res.status === "limit_reached") {
+        setAvailability("limit_reached");
+      } else if (res.status === "unavailable" || res.status === "unauthenticated") {
+        setAvailability("unavailable");
+      }
+      // "error" is silent — the form keeps existing state.
+    } catch (err) {
+      console.warn("[ai-suggest] failed:", err);
+    } finally {
+      setLoading(false);
+      void cooldownTimer;
+    }
+  }, [
+    availability,
+    loading,
+    coolingDown,
+    title,
+    body,
+    currentFrictions,
+    currentQualities,
+    currentWorkPackage,
+  ]);
+
+  return {
+    availability,
+    loading,
+    coolingDown,
+    cleared,
+    frictions,
+    qualities,
+    workPackage,
+    run,
+    dismissFriction: (k: CareFriction) => setFrictions((prev) => prev.filter((x) => x !== k)),
+    dismissQuality: (k: CareQuality) => setQualities((prev) => prev.filter((x) => x !== k)),
+    dismissWorkPackage: () => setWorkPackage(null),
+    reset: () => {
+      setFrictions([]);
+      setQualities([]);
+      setWorkPackage(null);
+    },
+  };
+}
 
 // ─── Page ───
 
@@ -53,6 +226,10 @@ export default function AdminPage() {
   const [tab, setTab] = useState<Tab>(initialTab);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [toast, setToastState] = useState<{ message: string; kind: "ok" | "err"; nonce: number } | null>(null);
+  const showToast = useCallback<ToastFn>((message, kind = "ok") => {
+    setToastState({ message, kind, nonce: Date.now() });
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -95,41 +272,45 @@ export default function AdminPage() {
     }
   }
 
-  return <main style={{
-    fontFamily: FONT_STACK
-  }} className="[max-width:1200px] [margin:0_auto] [padding:40px_24px_96px]">
-      <h1 className="[font-size:40px] [font-weight:700] [letter-spacing:-0.02em] [color:#2a2859] [margin-bottom:8px]">
-        Content editor
-      </h1>
-      <p className="[font-size:15px] [color:#666666] [margin-bottom:24px] [line-height:1.6]">
-        Quick notes, insights, design challenges, and reading-room entries —
-        everything written here lands in the matching Supabase table.
-      </p>
+  return <ToastContext.Provider value={showToast}>
+    <main style={{
+      fontFamily: FONT_STACK
+    }} className="[max-width:1200px] [margin:0_auto] [padding:40px_24px_96px]">
+      <header className="[margin-bottom:40px]">
+        <h1 className="[font-size:40px] [font-weight:700] [letter-spacing:-0.02em] [color:#2a2859] [margin:0_0_12px]">
+          Innholdsredigering
+        </h1>
+        <br />
+        <p className="[font-size:15px] [color:#666666] [margin:0] [line-height:1.6] [max-width:720px]">
+          Hurtignotater, innsikter, designutfordringer og lesesal-oppføringer —
+          alt som skrives her havner i den tilsvarende Supabase-tabellen.
+        </p>
+      </header>
 
-      <nav className="[display:flex] [gap:8px] [margin-bottom:32px] [flex-wrap:wrap]">
+      <nav className="[display:flex] [gap:8px] [margin-bottom:20px] [flex-wrap:wrap]">
         <TabButton active={tab === "notes"} onClick={() => selectTab("notes")}>
-          Quick notes
+          Hurtignotater
         </TabButton>
         <TabButton active={tab === "stories"} onClick={() => selectTab("stories")}>
-          Insights
+          Innsikter
         </TabButton>
         <TabButton active={tab === "challenges"} onClick={() => selectTab("challenges")}>
-          Design challenges
+          Designutfordringer
         </TabButton>
         <TabButton active={tab === "resources"} onClick={() => selectTab("resources")}>
-          Resources
+          Ressurser
         </TabButton>
         <TabButton active={tab === "wp"} onClick={() => selectTab("wp")}>
-          WP progress
+          WP-framdrift
         </TabButton>
         {isAdmin && (
           <TabButton active={tab === "welfare-tech"} onClick={() => selectTab("welfare-tech")}>
-            Welfare tech
+            Velferdsteknologi
           </TabButton>
         )}
       </nav>
 
-      <p className="[font-size:14px] [color:#4d4d4d] [line-height:1.65] [max-width:760px] [margin-bottom:24px] [padding:14px_18px] [background:#f7f6f0] [border:1px_solid_#e6e6e6] [border-radius:8px]">
+      <p className="[font-size:14px] [color:#4d4d4d] [line-height:1.65] [max-width:760px] [margin:0_0_40px] [padding:14px_18px] [background:#f7f6f0] [border:1px_solid_#e6e6e6] [border-radius:8px]">
         {TAB_DESCRIPTIONS[tab]}
       </p>
 
@@ -145,7 +326,16 @@ export default function AdminPage() {
           Du må være administrator for å redigere velferdsteknologi.
         </p>
       ))}
-    </main>;
+    </main>
+    {toast && (
+      <Toast
+        key={toast.nonce}
+        message={toast.message}
+        kind={toast.kind}
+        onDismiss={() => setToastState(null)}
+      />
+    )}
+  </ToastContext.Provider>;
 }
 function TabButton({
   active,
@@ -162,8 +352,8 @@ function TabButton({
     color: active ? "#ffffff" : "#2c2c2c",
     fontFamily: FONT_STACK
   }} className="[padding:8px_16px] [font-size:14px] [font-weight:600] [border-radius:8px] [cursor:pointer]">
-      {children}
-    </button>;
+    {children}
+  </button>;
 }
 
 // ─── Stories (Insights) ───
@@ -186,6 +376,7 @@ interface StoryRow {
   sort_order?: number;
 }
 function StoriesPanel() {
+  const showToast = useToast();
   const [rows, setRows] = useState<StoryRow[]>([]);
   const [loading, setLoading] = useState(false);
   const load = useCallback(async () => {
@@ -209,15 +400,15 @@ function StoriesPanel() {
     load();
   }, [load]);
   return <div className="[display:flex] [flex-direction:column] [gap:48px]">
-      <div className="[display:grid] [grid-template-columns:minmax(320px,_1fr)_minmax(320px,_1.2fr)] [gap:32px]">
-        <section>
-          <SectionHeading>New insight</SectionHeading>
-          <StoryForm onCreated={load} />
-        </section>
+    <div className="[display:grid] [grid-template-columns:repeat(auto-fit,_minmax(320px,_1fr))] [gap:32px]">
+      <section>
+        <SectionHeading>Ny innsikt</SectionHeading>
+        <StoryForm onCreated={load} />
+      </section>
 
-        <section>
-          <SectionHeading>Recent insights</SectionHeading>
-          <ItemList loading={loading} rows={rows.map(r => ({
+      <section>
+        <SectionHeading>Siste innsikter</SectionHeading>
+        <ItemList loading={loading} rows={rows.map(r => ({
           id: r.id,
           title: r.title,
           subtitle: `${SCALES[r.map_scale]?.label ?? r.map_scale}${r.field_site ? ` · ${r.field_site}` : ""}${r.work_package ? ` · ${r.work_package}` : ""}`,
@@ -230,19 +421,28 @@ function StoriesPanel() {
             published: next,
             published_at: next ? new Date().toISOString() : null
           }).eq("id", id);
-          if (error) alert(error.message);else load();
+          if (error) {
+            showToast(error.message, "err");
+          } else {
+            showToast(next ? "Innsikt publisert." : "Innsikt satt som utkast.");
+            load();
+          }
         }} onDelete={async id => {
-          if (!confirm("Delete this insight?")) return;
           const {
             error
           } = await supabase.from("public_stories").delete().eq("id", id);
-          if (error) alert(error.message);else load();
+          if (error) {
+            showToast(error.message, "err");
+          } else {
+            showToast("Innsikt slettet.");
+            load();
+          }
         }} />
-        </section>
-      </div>
+      </section>
+    </div>
 
-      <ConnectionsSection stories={rows.map(r => ({ id: r.id, title: r.title }))} />
-    </div>;
+    <ConnectionsSection stories={rows.map(r => ({ id: r.id, title: r.title }))} />
+  </div>;
 }
 
 // ─── Connections (between insights) ───
@@ -259,6 +459,7 @@ interface ConnectionRow {
   published: boolean;
 }
 function ConnectionsSection({ stories }: { stories: { id: string; title: string }[] }) {
+  const showToast = useToast();
   const [rows, setRows] = useState<ConnectionRow[]>([]);
   const [loading, setLoading] = useState(false);
   const load = useCallback(async () => {
@@ -273,33 +474,32 @@ function ConnectionsSection({ stories }: { stories: { id: string; title: string 
     load();
   }, [load]);
   const titleFor = useCallback((id: string) => stories.find(s => s.id === id)?.title ?? id, [stories]);
-  return <div className="[display:grid] [grid-template-columns:minmax(320px,_1fr)_minmax(320px,_1.2fr)] [gap:32px]">
-      <section>
-        <SectionHeading>New connection</SectionHeading>
-        <ConnectionForm stories={stories} onCreated={load} />
-      </section>
-      <section>
-        <SectionHeading>Recent connections</SectionHeading>
-        <ItemList loading={loading} rows={rows.map(r => {
-          const labelSet = r.category_kind === "friction" ? FRICTIONS : QUALITIES;
-          const label = (labelSet as Record<string, { label: string }>)[r.category_key]?.label ?? r.category_key;
-          return {
-            id: r.id,
-            title: `${titleFor(r.from_story_id)} → ${titleFor(r.to_story_id)}`,
-            subtitle: `${r.category_kind === "friction" ? "Friction" : "Quality"} · ${label} · ${r.connection_type}`,
-            published: r.published,
-            tags: r.description ? [r.description.slice(0, 60)] : []
-          };
-        })} onTogglePublish={async (id, next) => {
-          const { error } = await supabase.from("public_connections").update({ published: next }).eq("id", id);
-          if (error) alert(error.message);else load();
-        }} onDelete={async id => {
-          if (!confirm("Delete this connection?")) return;
-          const { error } = await supabase.from("public_connections").delete().eq("id", id);
-          if (error) alert(error.message);else load();
-        }} />
-      </section>
-    </div>;
+  return <div className="[display:grid] [grid-template-columns:repeat(auto-fit,_minmax(320px,_1fr))] [gap:32px]">
+    <section>
+      <SectionHeading>Ny kobling</SectionHeading>
+      <ConnectionForm stories={stories} onCreated={load} />
+    </section>
+    <section>
+      <SectionHeading>Siste koblinger</SectionHeading>
+      <ItemList loading={loading} rows={rows.map(r => {
+        const labelSet = r.category_kind === "friction" ? FRICTIONS : QUALITIES;
+        const label = (labelSet as Record<string, { label: string }>)[r.category_key]?.label ?? r.category_key;
+        return {
+          id: r.id,
+          title: `${titleFor(r.from_story_id)} → ${titleFor(r.to_story_id)}`,
+          subtitle: `${r.category_kind === "friction" ? "Friksjon" : "Kvalitet"} · ${label} · ${r.connection_type}`,
+          published: r.published,
+          tags: r.description ? [r.description.slice(0, 60)] : []
+        };
+      })} onTogglePublish={async (id, next) => {
+        const { error } = await supabase.from("public_connections").update({ published: next }).eq("id", id);
+        if (error) { showToast(error.message, "err"); } else { showToast(next ? "Kobling publisert." : "Kobling skjult."); load(); }
+      }} onDelete={async id => {
+        const { error } = await supabase.from("public_connections").delete().eq("id", id);
+        if (error) { showToast(error.message, "err"); } else { showToast("Kobling slettet."); load(); }
+      }} />
+    </section>
+  </div>;
 }
 
 function ConnectionForm({ stories, onCreated }: { stories: { id: string; title: string }[]; onCreated: () => void }) {
@@ -316,11 +516,11 @@ function ConnectionForm({ stories, onCreated }: { stories: { id: string; title: 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!fromId || !toId) {
-      setStatus({ kind: "err", msg: "Pick both a from and a to insight." });
+      setStatus({ kind: "err", msg: "Velg både en fra- og til-innsikt." });
       return;
     }
     if (fromId === toId) {
-      setStatus({ kind: "err", msg: "From and to must be different insights." });
+      setStatus({ kind: "err", msg: "Fra og til må være forskjellige innsikter." });
       return;
     }
     setSubmitting(true);
@@ -343,63 +543,59 @@ function ConnectionForm({ stories, onCreated }: { stories: { id: string; title: 
       setStatus({ kind: "err", msg: error.message });
       return;
     }
-    setStatus({ kind: "ok", msg: "Connection saved." });
+    setStatus({ kind: "ok", msg: "Kobling lagret." });
     setDescription("");
     onCreated();
   }
   return <Form onSubmit={submit}>
-      <FormRow>
-        <FormField label="From insight">
-          <select style={inputStyle} value={fromId} onChange={e => setFromId(e.target.value)} required>
-            <option value="">Select…</option>
-            {stories.map(s => <option key={s.id} value={s.id}>{s.title}</option>)}
-          </select>
-        </FormField>
-        <FormField label="To insight">
-          <select style={inputStyle} value={toId} onChange={e => setToId(e.target.value)} required>
-            <option value="">Select…</option>
-            {stories.map(s => <option key={s.id} value={s.id}>{s.title}</option>)}
-          </select>
-        </FormField>
-      </FormRow>
-
-      <FormRow>
-        <FormField label="Category">
-          <select style={inputStyle} value={categoryKind} onChange={e => setCategoryKind(e.target.value as "friction" | "quality")}>
-            <option value="friction">Friction</option>
-            <option value="quality">Quality</option>
-          </select>
-        </FormField>
-        {categoryKind === "friction" ? <FormField label="Friction">
-            <select style={inputStyle} value={frictionKey} onChange={e => setFrictionKey(e.target.value as CareFriction)}>
-              {FRICTION_KEYS.map(k => <option key={k} value={k}>{FRICTIONS[k].label}</option>)}
-            </select>
-          </FormField> : <FormField label="Quality">
-            <select style={inputStyle} value={qualityKey} onChange={e => setQualityKey(e.target.value as CareQuality)}>
-              {QUALITY_KEYS.map(k => <option key={k} value={k}>{QUALITIES[k].label}</option>)}
-            </select>
-          </FormField>}
-        <FormField label="Line">
-          <select style={inputStyle} value={connectionType} onChange={e => setConnectionType(e.target.value as "direct" | "indirect")}>
-            <option value="direct">Direct (solid)</option>
-            <option value="indirect">Indirect (dashed)</option>
-          </select>
-        </FormField>
-      </FormRow>
-
-      <FormField label="Description (optional)">
-        <textarea style={inputStyle} value={description} onChange={e => setDescription(e.target.value)} className="[min-height:80px]" placeholder="One sentence describing why these are connected." />
+    <FormRow>
+      <FormField label="Fra innsikt">
+        <select style={inputStyle} value={fromId} onChange={e => setFromId(e.target.value)} required>
+          <option value="">Velg…</option>
+          {stories.map(s => <option key={s.id} value={s.id}>{s.title}</option>)}
+        </select>
       </FormField>
+      <FormField label="Til innsikt">
+        <select style={inputStyle} value={toId} onChange={e => setToId(e.target.value)} required>
+          <option value="">Velg…</option>
+          {stories.map(s => <option key={s.id} value={s.id}>{s.title}</option>)}
+        </select>
+      </FormField>
+    </FormRow>
 
-      <PublishToggle value={published} onChange={setPublished} />
-      <SubmitBar status={status} submitting={submitting} label="Save connection" />
-    </Form>;
+    <FormRow>
+      <FormField label="Kategori">
+        <select style={inputStyle} value={categoryKind} onChange={e => setCategoryKind(e.target.value as "friction" | "quality")}>
+          <option value="friction">Friksjon</option>
+          <option value="quality">Kvalitet</option>
+        </select>
+      </FormField>
+      {categoryKind === "friction" ? <FormField label="Friksjon">
+        <select style={inputStyle} value={frictionKey} onChange={e => setFrictionKey(e.target.value as CareFriction)}>
+          {FRICTION_KEYS.map(k => <option key={k} value={k}>{FRICTIONS[k].label}</option>)}
+        </select>
+      </FormField> : <FormField label="Kvalitet">
+        <select style={inputStyle} value={qualityKey} onChange={e => setQualityKey(e.target.value as CareQuality)}>
+          {QUALITY_KEYS.map(k => <option key={k} value={k}>{QUALITIES[k].label}</option>)}
+        </select>
+      </FormField>}
+      <FormField label="Linje">
+        <select style={inputStyle} value={connectionType} onChange={e => setConnectionType(e.target.value as "direct" | "indirect")}>
+          <option value="direct">Direkte (heltrukken)</option>
+          <option value="indirect">Indirekte (stiplet)</option>
+        </select>
+      </FormField>
+    </FormRow>
+
+    <FormField label="Beskrivelse (valgfritt)">
+      <textarea style={inputStyle} value={description} onChange={e => setDescription(e.target.value)} className="[min-height:80px]" placeholder="Én setning som beskriver hvorfor disse er koblet." />
+    </FormField>
+
+    <PublishToggle value={published} onChange={setPublished} />
+    <SubmitBar status={status} submitting={submitting} label="Lagre kobling" />
+  </Form>;
 }
-function StoryForm({
-  onCreated
-}: {
-  onCreated: () => void;
-}) {
+function StoryForm({ onCreated }: { onCreated: () => void }) {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [mapScale, setMapScale] = useState<MapScale>("meso");
@@ -413,10 +609,31 @@ function StoryForm({
   const [author, setAuthor] = useState("safe@home fieldwork team");
   const [published, setPublished] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [status, setStatus] = useState<{
-    kind: "ok" | "err";
-    msg: string;
-  } | null>(null);
+  const [status, setStatus] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
+
+  const ai = useAiSuggest({
+    title,
+    body,
+    currentFrictions: frictions,
+    currentQualities: qualities,
+    currentWorkPackage: workPackage,
+  });
+
+  function acceptFriction(k: CareFriction) {
+    setFrictions((prev) => (prev.includes(k) ? prev : [...prev, k]));
+    ai.dismissFriction(k);
+  }
+  function acceptQuality(k: CareQuality) {
+    setQualities((prev) => (prev.includes(k) ? prev : [...prev, k]));
+    ai.dismissQuality(k);
+  }
+  function acceptWorkPackage() {
+    if (ai.workPackage) {
+      setWorkPackage(ai.workPackage);
+      ai.dismissWorkPackage();
+    }
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim() || !body.trim()) return;
@@ -438,23 +655,15 @@ function StoryForm({
       published,
       published_at: published ? new Date().toISOString() : null,
       sort_order: 0,
-      media_urls: []
+      media_urls: [],
     };
-    const {
-      error
-    } = await supabase.from("public_stories").insert(row);
+    const { error } = await supabase.from("public_stories").insert(row);
     setSubmitting(false);
     if (error) {
-      setStatus({
-        kind: "err",
-        msg: error.message
-      });
+      setStatus({ kind: "err", msg: error.message });
       return;
     }
-    setStatus({
-      kind: "ok",
-      msg: "Insight saved."
-    });
+    setStatus({ kind: "ok", msg: "Innsikt lagret." });
     setTitle("");
     setBody("");
     setFrictions([]);
@@ -462,84 +671,213 @@ function StoryForm({
     setLatitude("");
     setLongitude("");
     setWorkPackage("");
+    ai.reset();
     onCreated();
   }
-  return <Form onSubmit={submit}>
-      <FormField label="Title">
-        <input style={inputStyle} value={title} onChange={e => setTitle(e.target.value)} required />
-      </FormField>
-      <FormField label="Body">
-        <textarea style={{
-        ...inputStyle
-      }} value={body} onChange={e => setBody(e.target.value)} placeholder="Use blank lines to separate paragraphs." required className="[min-height:140px]" />
-      </FormField>
 
-      <FormRow>
-        <FormField label="Scale">
-          <select style={inputStyle} value={mapScale} onChange={e => setMapScale(e.target.value as MapScale)}>
-            {SCALE_KEYS.map(s => <option key={s} value={s}>
-                {SCALES[s].label}
-              </option>)}
-          </select>
-        </FormField>
-        <FormField label="Theme / room">
-          <select style={inputStyle} value={theme} onChange={e => setTheme(e.target.value as HouseTheme)}>
-            {THEMES.map(t => <option key={t} value={t}>
-                {t.replace(/_/g, " ")}
-              </option>)}
-          </select>
-        </FormField>
-        <FormField label="Field site">
-          <select style={inputStyle} value={fieldSite} onChange={e => setFieldSite(e.target.value as FieldSite | "")}>
+  return (
+    <form onSubmit={submit} style={qnForm}>
+      <FormHeader title="Ny innsikt" />
+
+      <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Tittel"
+          required
+          style={qnHeadlineInput}
+        />
+        <textarea
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          placeholder="Skriv innsikten — bakgrunn, observasjon, hva som står på spill. Bruk blanke linjer for å skille avsnitt."
+          required
+          style={{ ...sharedInputStyle, minHeight: 220, lineHeight: 1.55 }}
+        />
+      </div>
+
+      <SuggestBar
+        availability={ai.availability}
+        bodyLength={body.length}
+        loading={ai.loading}
+        coolingDown={ai.coolingDown}
+        cleared={ai.cleared}
+        onClick={ai.run}
+      />
+
+      {/* Tag selectors */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+        <label style={qnFieldStack}>
+          <span style={sharedLabelStyle}>Arbeidspakke</span>
+          <select
+            value={workPackage}
+            onChange={(e) => setWorkPackage(e.target.value as WorkPackage | "")}
+            style={sharedInputStyle}
+          >
             <option value="">—</option>
-            {FIELD_SITES.map(f => <option key={f} value={f}>
-                {f}
-              </option>)}
-          </select>
-        </FormField>
-        <FormField label="Work package">
-          <select style={inputStyle} value={workPackage} onChange={e => setWorkPackage(e.target.value as WorkPackage | "")}>
-            <option value="">—</option>
-            {WORK_PACKAGES.map(wp => <option key={wp.value} value={wp.value}>
+            {WORK_PACKAGES.map((wp) => (
+              <option key={wp.value} value={wp.value}>
                 {wp.label}
-              </option>)}
+              </option>
+            ))}
           </select>
-        </FormField>
-      </FormRow>
+          {ai.workPackage && (
+            <GhostBadgeRow label="✦ AI-forslag — klikk for å godta">
+              <GhostBadge
+                color="#C45D3E"
+                onAccept={acceptWorkPackage}
+                onDismiss={ai.dismissWorkPackage}
+              >
+                {ai.workPackage}
+              </GhostBadge>
+            </GhostBadgeRow>
+          )}
+        </label>
 
-      <FormField label="Frictions">
-        <CheckboxGroup options={FRICTION_KEYS.map(k => ({
-        value: k,
-        label: FRICTIONS[k].label,
-        color: FRICTIONS[k].color
-      }))} value={frictions} onChange={next => setFrictions(next as CareFriction[])} />
-      </FormField>
+        <label style={qnFieldStack}>
+          <span style={sharedLabelStyle}>Feltsted</span>
+          <select
+            value={fieldSite}
+            onChange={(e) => setFieldSite(e.target.value as FieldSite | "")}
+            style={sharedInputStyle}
+          >
+            <option value="">—</option>
+            {FIELD_SITES.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </select>
+        </label>
 
-      <FormField label="Qualities">
-        <CheckboxGroup options={QUALITY_KEYS.map(k => ({
-        value: k,
-        label: QUALITIES[k].label,
-        color: QUALITIES[k].color
-      }))} value={qualities} onChange={next => setQualities(next as CareQuality[])} />
-      </FormField>
+        <label style={qnFieldStack}>
+          <span style={sharedLabelStyle}>Skala</span>
+          <select
+            value={mapScale}
+            onChange={(e) => setMapScale(e.target.value as MapScale)}
+            style={sharedInputStyle}
+          >
+            {SCALE_KEYS.map((s) => (
+              <option key={s} value={s}>
+                {SCALES[s].label}
+              </option>
+            ))}
+          </select>
+        </label>
 
-      <FormRow>
-        <FormField label="Latitude">
-          <input style={inputStyle} type="number" step="any" value={latitude} onChange={e => setLatitude(e.target.value)} placeholder="59.8976" />
-        </FormField>
-        <FormField label="Longitude">
-          <input style={inputStyle} type="number" step="any" value={longitude} onChange={e => setLongitude(e.target.value)} placeholder="10.8155" />
-        </FormField>
-      </FormRow>
+        <label style={qnFieldStack}>
+          <span style={sharedLabelStyle}>Tema / rom</span>
+          <select
+            value={theme}
+            onChange={(e) => setTheme(e.target.value as HouseTheme)}
+            style={sharedInputStyle}
+          >
+            {THEMES.map((t) => (
+              <option key={t} value={t}>
+                {THEME_LABELS[t]}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
 
-      <FormField label="Author credit">
-        <input style={inputStyle} value={author} onChange={e => setAuthor(e.target.value)} />
-      </FormField>
+      <div style={qnFieldStack}>
+        <span style={sharedLabelStyle}>Friksjoner</span>
+        <CategoryHelp kind="friction" compact />
+        <PillGroup
+          options={FRICTION_KEYS.map((k) => ({
+            value: k,
+            label: FRICTIONS[k].label,
+            color: FRICTIONS[k].color,
+          }))}
+          value={frictions}
+          onChange={(next) => setFrictions(next as CareFriction[])}
+        />
+        {ai.frictions.length > 0 && (
+          <GhostBadgeRow label="✦ AI-forslag — klikk for å godta">
+            {ai.frictions.map((k) => (
+              <GhostBadge
+                key={k}
+                color={FRICTIONS[k].color}
+                onAccept={() => acceptFriction(k)}
+                onDismiss={() => ai.dismissFriction(k)}
+              >
+                {FRICTIONS[k].label}
+              </GhostBadge>
+            ))}
+          </GhostBadgeRow>
+        )}
+      </div>
+
+      <div style={qnFieldStack}>
+        <span style={sharedLabelStyle}>Kvaliteter</span>
+        <CategoryHelp kind="quality" compact />
+        <PillGroup
+          options={QUALITY_KEYS.map((k) => ({
+            value: k,
+            label: QUALITIES[k].label,
+            color: QUALITIES[k].color,
+          }))}
+          value={qualities}
+          onChange={(next) => setQualities(next as CareQuality[])}
+        />
+        {ai.qualities.length > 0 && (
+          <GhostBadgeRow label="✦ AI-forslag — klikk for å godta">
+            {ai.qualities.map((k) => (
+              <GhostBadge
+                key={k}
+                color={QUALITIES[k].color}
+                onAccept={() => acceptQuality(k)}
+                onDismiss={() => ai.dismissQuality(k)}
+              >
+                {QUALITIES[k].label}
+              </GhostBadge>
+            ))}
+          </GhostBadgeRow>
+        )}
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+        <label style={qnFieldStack}>
+          <span style={sharedLabelStyle}>Breddegrad</span>
+          <input
+            type="number"
+            step="any"
+            value={latitude}
+            onChange={(e) => setLatitude(e.target.value)}
+            placeholder="59.8976"
+            style={sharedInputStyle}
+          />
+        </label>
+        <label style={qnFieldStack}>
+          <span style={sharedLabelStyle}>Lengdegrad</span>
+          <input
+            type="number"
+            step="any"
+            value={longitude}
+            onChange={(e) => setLongitude(e.target.value)}
+            placeholder="10.8155"
+            style={sharedInputStyle}
+          />
+        </label>
+      </div>
+
+      <label style={qnFieldStack}>
+        <span style={sharedLabelStyle}>Forfatterkreditering</span>
+        <input
+          type="text"
+          value={author}
+          onChange={(e) => setAuthor(e.target.value)}
+          style={sharedInputStyle}
+        />
+      </label>
 
       <PublishToggle value={published} onChange={setPublished} />
-
-      <SubmitBar status={status} submitting={submitting} label="Save insight" />
-    </Form>;
+      <StatusBanner status={status} />
+      <PrimarySubmit submitting={submitting} label="Publiser innsikt" />
+    </form>
+  );
 }
 
 // ─── Design challenges (responses) ───
@@ -558,6 +896,7 @@ interface ResponseRow {
   created_at?: string;
 }
 function ChallengesPanel() {
+  const showToast = useToast();
   const [rows, setRows] = useState<ResponseRow[]>([]);
   const [stories, setStories] = useState<{ id: string; title: string }[]>([]);
   const [loading, setLoading] = useState(false);
@@ -577,15 +916,15 @@ function ChallengesPanel() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
   }, [load]);
-  return <div className="[display:grid] [grid-template-columns:minmax(320px,_1fr)_minmax(320px,_1.2fr)] [gap:32px]">
-      <section>
-        <SectionHeading>New design challenge</SectionHeading>
-        <ChallengeForm stories={stories} onCreated={load} />
-      </section>
+  return <div className="[display:grid] [grid-template-columns:repeat(auto-fit,_minmax(320px,_1fr))] [gap:32px]">
+    <section>
+      <SectionHeading>Ny designutfordring</SectionHeading>
+      <ChallengeForm stories={stories} onCreated={load} />
+    </section>
 
-      <section>
-        <SectionHeading>Recent challenges</SectionHeading>
-        <ItemList loading={loading} rows={rows.map(r => ({
+    <section>
+      <SectionHeading>Siste utfordringer</SectionHeading>
+      <ItemList loading={loading} rows={rows.map(r => ({
         id: r.id,
         title: r.title,
         subtitle: STAGES.find(s => s.key === r.stage)?.label ?? r.stage,
@@ -597,20 +936,19 @@ function ChallengesPanel() {
         } = await supabase.from("public_design_responses").update({
           published: next
         }).eq("id", id);
-        if (error) alert(error.message);else load();
+        if (error) { showToast(error.message, "err"); } else { showToast(next ? "Utfordring publisert." : "Utfordring satt som utkast."); load(); }
       }} onDelete={async id => {
-        if (!confirm("Delete this challenge?")) return;
         const {
           error
         } = await supabase.from("public_design_responses").delete().eq("id", id);
-        if (error) alert(error.message);else load();
+        if (error) { showToast(error.message, "err"); } else { showToast("Utfordring slettet."); load(); }
       }} />
-      </section>
-    </div>;
+    </section>
+  </div>;
 }
 function ChallengeForm({
   stories,
-  onCreated
+  onCreated,
 }: {
   stories: { id: string; title: string }[];
   onCreated: () => void;
@@ -625,10 +963,26 @@ function ChallengeForm({
   const [outcome, setOutcome] = useState("");
   const [published, setPublished] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [status, setStatus] = useState<{
-    kind: "ok" | "err";
-    msg: string;
-  } | null>(null);
+  const [status, setStatus] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
+
+  // Design challenges don't carry a work_package, so we don't pass one to
+  // the suggest hook. AI still proposes friction + quality tags.
+  const ai = useAiSuggest({
+    title,
+    body,
+    currentFrictions: frictions,
+    currentQualities: qualities,
+  });
+
+  function acceptFriction(k: CareFriction) {
+    setFrictions((prev) => (prev.includes(k) ? prev : [...prev, k]));
+    ai.dismissFriction(k);
+  }
+  function acceptQuality(k: CareQuality) {
+    setQualities((prev) => (prev.includes(k) ? prev : [...prev, k]));
+    ai.dismissQuality(k);
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim() || !body.trim()) return;
@@ -646,82 +1000,164 @@ function ChallengeForm({
       outcome: outcome.trim() || null,
       published,
       published_at: published ? new Date().toISOString() : null,
-      sort_order: 0
+      sort_order: 0,
     };
-    const {
-      error
-    } = await supabase.from("public_design_responses").insert(row);
+    const { error } = await supabase.from("public_design_responses").insert(row);
     setSubmitting(false);
     if (error) {
-      setStatus({
-        kind: "err",
-        msg: error.message
-      });
+      setStatus({ kind: "err", msg: error.message });
       return;
     }
-    setStatus({
-      kind: "ok",
-      msg: "Challenge saved."
-    });
+    setStatus({ kind: "ok", msg: "Utfordring lagret." });
     setTitle("");
     setBody("");
     setOutcome("");
     setFrictions([]);
     setQualities([]);
     setSourceStories([]);
+    ai.reset();
     onCreated();
   }
-  return <Form onSubmit={submit}>
-      <FormField label="Title">
-        <input style={inputStyle} value={title} onChange={e => setTitle(e.target.value)} required />
-      </FormField>
-      <FormField label="Description">
-        <textarea style={{
-        ...inputStyle
-      }} value={body} onChange={e => setBody(e.target.value)} required className="[min-height:120px]" />
-      </FormField>
-      <FormRow>
-        <FormField label="Stage">
-          <select style={inputStyle} value={stage} onChange={e => setStage(e.target.value as typeof stage)}>
-            {STAGES.map(s => <option key={s.key} value={s.key}>
+
+  return (
+    <form onSubmit={submit} style={qnForm}>
+      <FormHeader title="Ny designutfordring" />
+
+      <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          placeholder="Tittel"
+          required
+          style={qnHeadlineInput}
+        />
+        <textarea
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          placeholder="Beskriv utfordringen — hva er problemet, hvem rammes, hvilken vri trengs?"
+          required
+          style={{ ...sharedInputStyle, minHeight: 180, lineHeight: 1.55 }}
+        />
+      </div>
+
+      <SuggestBar
+        availability={ai.availability}
+        bodyLength={body.length}
+        loading={ai.loading}
+        coolingDown={ai.coolingDown}
+        cleared={ai.cleared}
+        onClick={ai.run}
+      />
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+        <label style={qnFieldStack}>
+          <span style={sharedLabelStyle}>Fase</span>
+          <select
+            value={stage}
+            onChange={(e) => setStage(e.target.value as typeof stage)}
+            style={sharedInputStyle}
+          >
+            {STAGES.map((s) => (
+              <option key={s.key} value={s.key}>
                 {s.label}
-              </option>)}
+              </option>
+            ))}
           </select>
-        </FormField>
-        <FormField label="Theme / room">
-          <select style={inputStyle} value={theme} onChange={e => setTheme(e.target.value as HouseTheme)}>
-            {THEMES.map(t => <option key={t} value={t}>
-                {t.replace(/_/g, " ")}
-              </option>)}
+        </label>
+        <label style={qnFieldStack}>
+          <span style={sharedLabelStyle}>Tema / rom</span>
+          <select
+            value={theme}
+            onChange={(e) => setTheme(e.target.value as HouseTheme)}
+            style={sharedInputStyle}
+          >
+            {THEMES.map((t) => (
+              <option key={t} value={t}>
+                {THEME_LABELS[t]}
+              </option>
+            ))}
           </select>
-        </FormField>
-      </FormRow>
-      <FormField label="Frictions addressed">
-        <CheckboxGroup options={FRICTION_KEYS.map(k => ({
-        value: k,
-        label: FRICTIONS[k].label,
-        color: FRICTIONS[k].color
-      }))} value={frictions} onChange={next => setFrictions(next as CareFriction[])} />
-      </FormField>
-      <FormField label="Qualities addressed">
-        <CheckboxGroup options={QUALITY_KEYS.map(k => ({
-        value: k,
-        label: QUALITIES[k].label,
-        color: QUALITIES[k].color
-      }))} value={qualities} onChange={next => setQualities(next as CareQuality[])} />
-      </FormField>
-      <FormField label="Source insights (optional — challenges link primarily to categories)">
+        </label>
+      </div>
+
+      <div style={qnFieldStack}>
+        <span style={sharedLabelStyle}>Friksjoner som adresseres</span>
+        <CategoryHelp kind="friction" compact />
+        <PillGroup
+          options={FRICTION_KEYS.map((k) => ({
+            value: k,
+            label: FRICTIONS[k].label,
+            color: FRICTIONS[k].color,
+          }))}
+          value={frictions}
+          onChange={(next) => setFrictions(next as CareFriction[])}
+        />
+        {ai.frictions.length > 0 && (
+          <GhostBadgeRow label="✦ AI-forslag — klikk for å godta">
+            {ai.frictions.map((k) => (
+              <GhostBadge
+                key={k}
+                color={FRICTIONS[k].color}
+                onAccept={() => acceptFriction(k)}
+                onDismiss={() => ai.dismissFriction(k)}
+              >
+                {FRICTIONS[k].label}
+              </GhostBadge>
+            ))}
+          </GhostBadgeRow>
+        )}
+      </div>
+
+      <div style={qnFieldStack}>
+        <span style={sharedLabelStyle}>Kvaliteter som adresseres</span>
+        <CategoryHelp kind="quality" compact />
+        <PillGroup
+          options={QUALITY_KEYS.map((k) => ({
+            value: k,
+            label: QUALITIES[k].label,
+            color: QUALITIES[k].color,
+          }))}
+          value={qualities}
+          onChange={(next) => setQualities(next as CareQuality[])}
+        />
+        {ai.qualities.length > 0 && (
+          <GhostBadgeRow label="✦ AI-forslag — klikk for å godta">
+            {ai.qualities.map((k) => (
+              <GhostBadge
+                key={k}
+                color={QUALITIES[k].color}
+                onAccept={() => acceptQuality(k)}
+                onDismiss={() => ai.dismissQuality(k)}
+              >
+                {QUALITIES[k].label}
+              </GhostBadge>
+            ))}
+          </GhostBadgeRow>
+        )}
+      </div>
+
+      <label style={qnFieldStack}>
+        <span style={sharedLabelStyle}>
+          Kilde-innsikter (valgfritt — utfordringer kobles primært til kategorier)
+        </span>
         <StoryMultiSelect stories={stories} value={sourceStories} onChange={setSourceStories} />
-      </FormField>
-      <FormField label="Outcome (optional)">
-        <textarea style={{
-        ...inputStyle
-      }} value={outcome} onChange={e => setOutcome(e.target.value)} className="[min-height:80px]" />
-      </FormField>
+      </label>
+
+      <label style={qnFieldStack}>
+        <span style={sharedLabelStyle}>Resultat (valgfritt)</span>
+        <textarea
+          value={outcome}
+          onChange={(e) => setOutcome(e.target.value)}
+          style={{ ...sharedInputStyle, minHeight: 80, lineHeight: 1.55 }}
+        />
+      </label>
 
       <PublishToggle value={published} onChange={setPublished} />
-      <SubmitBar status={status} submitting={submitting} label="Save challenge" />
-    </Form>;
+      <StatusBanner status={status} />
+      <PrimarySubmit submitting={submitting} label="Publiser utfordring" />
+    </form>
+  );
 }
 
 function StoryMultiSelect({
@@ -734,17 +1170,17 @@ function StoryMultiSelect({
   onChange: (next: string[]) => void;
 }) {
   if (stories.length === 0) {
-    return <p className="[font-size:12px] [color:#9a9a9a] [font-style:italic]">No insights yet — leave empty to skip.</p>;
+    return <p className="[font-size:12px] [color:#9a9a9a] [font-style:italic]">Ingen innsikter ennå — la stå tom for å hoppe over.</p>;
   }
   return <div className="[max-height:180px] [overflow-y:auto] [border:1px_solid_#e6e6e6] [border-radius:8px] [padding:8px] [background:#fafafa]">
-      {stories.map(s => {
-        const on = value.includes(s.id);
-        return <label key={s.id} className="[display:flex] [align-items:center] [gap:8px] [padding:4px_8px] [cursor:pointer] [font-size:13px] [color:#2c2c2c]">
-            <input type="checkbox" checked={on} onChange={() => onChange(on ? value.filter(x => x !== s.id) : [...value, s.id])} className="[accent-color:#2a2859]" />
-            <span className="[line-height:1.3]">{s.title}</span>
-          </label>;
-      })}
-    </div>;
+    {stories.map(s => {
+      const on = value.includes(s.id);
+      return <label key={s.id} className="[display:flex] [align-items:center] [gap:8px] [padding:4px_8px] [cursor:pointer] [font-size:13px] [color:#2c2c2c]">
+        <input type="checkbox" checked={on} onChange={() => onChange(on ? value.filter(x => x !== s.id) : [...value, s.id])} className="[accent-color:#2a2859]" />
+        <span className="[line-height:1.3]">{s.title}</span>
+      </label>;
+    })}
+  </div>;
 }
 
 // ─── Resources (reading room + municipal) ───
@@ -759,6 +1195,7 @@ interface ResourceRow {
   created_at?: string;
 }
 function ResourcesPanel() {
+  const showToast = useToast();
   const [rows, setRows] = useState<ResourceRow[]>([]);
   const [stories, setStories] = useState<{ id: string; title: string }[]>([]);
   const [loading, setLoading] = useState(false);
@@ -779,15 +1216,15 @@ function ResourcesPanel() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
   }, [load]);
-  return <div className="[display:grid] [grid-template-columns:minmax(320px,_1fr)_minmax(320px,_1.2fr)] [gap:32px]">
-      <section>
-        <SectionHeading>{editId ? "Edit resource" : "New resource"}</SectionHeading>
-        <ResourceForm key={editId ?? "new"} editId={editId} stories={stories} onSaved={() => { setEditId(null); load(); }} onCancel={() => setEditId(null)} />
-      </section>
+  return <div className="[display:grid] [grid-template-columns:repeat(auto-fit,_minmax(320px,_1fr))] [gap:32px]">
+    <section>
+      <SectionHeading>{editId ? "Rediger ressurs" : "Ny ressurs"}</SectionHeading>
+      <ResourceForm key={editId ?? "new"} editId={editId} stories={stories} onSaved={() => { setEditId(null); load(); }} onCancel={() => setEditId(null)} />
+    </section>
 
-      <section>
-        <SectionHeading>Recent resources</SectionHeading>
-        <ItemList loading={loading} rows={rows.map(r => ({
+    <section>
+      <SectionHeading>Siste ressurser</SectionHeading>
+      <ItemList loading={loading} rows={rows.map(r => ({
         id: r.id,
         title: r.title,
         subtitle: RESOURCE_TYPE_LABELS[r.type],
@@ -799,16 +1236,15 @@ function ResourcesPanel() {
         } = await supabase.from("public_resources").update({
           published: next
         }).eq("id", id);
-        if (error) alert(error.message);else load();
+        if (error) { showToast(error.message, "err"); } else { showToast(next ? "Ressurs publisert." : "Ressurs satt som utkast."); load(); }
       }} onDelete={async id => {
-        if (!confirm("Delete this resource?")) return;
         const {
           error
         } = await supabase.from("public_resources").delete().eq("id", id);
-        if (error) alert(error.message);else load();
+        if (error) { showToast(error.message, "err"); } else { showToast("Ressurs slettet."); load(); }
       }} onEdit={id => setEditId(id)} />
-      </section>
-    </div>;
+    </section>
+  </div>;
 }
 function ResourceForm({
   editId,
@@ -847,7 +1283,7 @@ function ResourceForm({
       ]);
       if (cancelled) return;
       if (rRes.error || !rRes.data) {
-        setStatus({ kind: "err", msg: rRes.error?.message ?? "Resource not found." });
+        setStatus({ kind: "err", msg: rRes.error?.message ?? "Ressursen ble ikke funnet." });
         return;
       }
       const r = rRes.data as ResourceRow;
@@ -902,7 +1338,7 @@ function ResourceForm({
       setStatus({ kind: "err", msg: errors.map(e => e!.message).join(" · ") });
       return;
     }
-    setStatus({ kind: "ok", msg: editId ? "Resource updated." : "Resource saved." });
+    setStatus({ kind: "ok", msg: editId ? "Ressurs oppdatert." : "Ressurs lagret." });
     if (!editId) {
       setTitle("");
       setDescription("");
@@ -914,47 +1350,49 @@ function ResourceForm({
     onSaved();
   }
   return <Form onSubmit={submit}>
-      <FormField label="Title">
-        <input style={inputStyle} value={title} onChange={e => setTitle(e.target.value)} required />
-      </FormField>
-      <FormField label="Description">
-        <textarea style={{
+    <FormField label="Tittel">
+      <input style={inputStyle} value={title} onChange={e => setTitle(e.target.value)} required />
+    </FormField>
+    <FormField label="Beskrivelse">
+      <textarea style={{
         ...inputStyle
       }} value={description} onChange={e => setDescription(e.target.value)} className="[min-height:110px]" />
+    </FormField>
+    <FormRow>
+      <FormField label="Type">
+        <select style={inputStyle} value={type} onChange={e => setType(e.target.value as ResourceType)}>
+          {RESOURCE_TYPES.map(t => <option key={t} value={t}>
+            {RESOURCE_TYPE_LABELS[t]}
+          </option>)}
+        </select>
       </FormField>
-      <FormRow>
-        <FormField label="Type">
-          <select style={inputStyle} value={type} onChange={e => setType(e.target.value as ResourceType)}>
-            {RESOURCE_TYPES.map(t => <option key={t} value={t}>
-                {RESOURCE_TYPE_LABELS[t]}
-              </option>)}
-          </select>
-        </FormField>
-      </FormRow>
-      <FormField label="Link (URL)">
-        <input style={inputStyle} type="url" value={url} onChange={e => setUrl(e.target.value)} placeholder="https://…" />
-      </FormField>
-      <FormField label="Related frictions">
-        <CheckboxGroup options={FRICTION_KEYS.map(k => ({
+    </FormRow>
+    <FormField label="Lenke (URL)">
+      <input style={inputStyle} type="url" value={url} onChange={e => setUrl(e.target.value)} placeholder="https://…" />
+    </FormField>
+    <FormField label="Relaterte friksjoner">
+      <CategoryHelp kind="friction" compact />
+      <CheckboxGroup options={FRICTION_KEYS.map(k => ({
         value: k,
         label: FRICTIONS[k].label,
         color: FRICTIONS[k].color
       }))} value={frictions} onChange={next => setFrictions(next as CareFriction[])} />
-      </FormField>
-      <FormField label="Related qualities">
-        <CheckboxGroup options={QUALITY_KEYS.map(k => ({
+    </FormField>
+    <FormField label="Relaterte kvaliteter">
+      <CategoryHelp kind="quality" compact />
+      <CheckboxGroup options={QUALITY_KEYS.map(k => ({
         value: k,
         label: QUALITIES[k].label,
         color: QUALITIES[k].color
       }))} value={qualities} onChange={next => setQualities(next as CareQuality[])} />
-      </FormField>
-      <FormField label="Related insights (optional — leave empty to skip)">
-        <StoryMultiSelect stories={stories} value={linkedStories} onChange={setLinkedStories} />
-      </FormField>
-      <PublishToggle value={published} onChange={setPublished} />
-      <SubmitBar status={status} submitting={submitting} label={editId ? "Update resource" : "Save resource"} />
-      {editId && <button type="button" onClick={onCancel} className="[font-size:12px] [color:#666666] [background:transparent] [border:none] [cursor:pointer] [padding:0px] [align-self:flex-start]">Cancel edit</button>}
-    </Form>;
+    </FormField>
+    <FormField label="Relaterte innsikter (valgfritt — la stå tom for å hoppe over)">
+      <StoryMultiSelect stories={stories} value={linkedStories} onChange={setLinkedStories} />
+    </FormField>
+    <PublishToggle value={published} onChange={setPublished} />
+    <SubmitBar status={status} submitting={submitting} label={editId ? "Oppdater ressurs" : "Lagre ressurs"} />
+    {editId && <button type="button" onClick={onCancel} className="[font-size:12px] [color:#666666] [background:transparent] [border:none] [cursor:pointer] [padding:0px] [align-self:flex-start]">Avbryt redigering</button>}
+  </Form>;
 }
 
 // ─── WP monthly reports ───
@@ -974,6 +1412,7 @@ interface WpReportRow {
 }
 
 function WpPanel() {
+  const showToast = useToast();
   const [rows, setRows] = useState<WpReportRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -995,56 +1434,60 @@ function WpPanel() {
     });
     return groups;
   }, [rows]);
-  return <div className="[display:grid] [grid-template-columns:minmax(320px,_1fr)_minmax(320px,_1.4fr)] [gap:32px]">
-      <section>
-        <SectionHeading>{editId ? "Edit report" : "New report"}</SectionHeading>
-        <WpReportForm key={editId ?? "new"} editId={editId} onSaved={() => { setEditId(null); load(); }} onCancel={() => setEditId(null)} />
-      </section>
-      <section>
-        <SectionHeading>Existing reports</SectionHeading>
-        {loading && rows.length === 0 && <p className="[font-size:14px] [color:#9a9a9a]">Loading…</p>}
-        <div className="[display:flex] [flex-direction:column] [gap:24px]">
-          {WP_IDS.map(wp => <div key={wp}>
-              <p className="[font-size:13px] [font-weight:700] [color:#2a2859] [margin-bottom:4px]">{WP_LABELS[wp].label}</p>
-              <p className="[font-size:12px] [color:#9a9a9a] [margin-bottom:10px]">{WP_LABELS[wp].subtitle}</p>
-              {byWp[wp].length === 0 ? <p className="[font-size:12px] [color:#9a9a9a] [font-style:italic]">No reports yet.</p> : <ul className="[list-style:none] [padding:0px] [margin:0px] [display:grid] [gap:8px]">
-                  {byWp[wp].map(r => <li key={r.id} className="[display:flex] [align-items:flex-start] [justify-content:space-between] [gap:16px] [padding:12px_16px] [background:#ffffff] [border:1px_solid_#e6e6e6] [border-radius:8px]">
-                      <div>
-                        <p className="[font-size:14px] [font-weight:600] [color:#2a2859]">{formatMonth(r.month)}</p>
-                        <p className="[font-size:12px] [color:#666666] [margin-top:2px]">{r.interviewee ? `w/ ${r.interviewee}` : "—"} · {r.interviewer}</p>
-                        {r.summary && <p className="[font-size:12px] [color:#2c2c2c] [margin-top:6px] [line-height:1.5]">{r.summary.slice(0, 140)}{r.summary.length > 140 ? "…" : ""}</p>}
-                      </div>
-                      <div className="[display:flex] [flex-direction:column] [gap:6px] [align-items:flex-end]">
-                        <button type="button" onClick={async () => {
-                          const { error } = await supabase.from("public_wp_reports").update({ published: !r.published, updated_at: new Date().toISOString() }).eq("id", r.id);
-                          if (error) alert(error.message);else load();
-                        }} style={{
-                          border: `1px solid ${r.published ? "#034b45" : "#e6e6e6"}`,
-                          background: r.published ? "#034b45" : "#ffffff",
-                          color: r.published ? "#ffffff" : "#666666",
-                          fontFamily: FONT_STACK
-                        }} className="[font-size:11px] [padding:4px_10px] [border-radius:4px] [cursor:pointer] [font-weight:600]">
-                          {r.published ? "Published" : "Draft"}
-                        </button>
-                        <button type="button" onClick={() => setEditId(r.id)} className="[font-size:11px] [color:#1f42aa] [background:transparent] [border:none] [cursor:pointer] [padding:0px] [font-weight:500]">Edit</button>
-                        <button type="button" onClick={async () => {
-                          if (!confirm("Delete this report?")) return;
-                          const { error } = await supabase.from("public_wp_reports").delete().eq("id", r.id);
-                          if (error) alert(error.message);else load();
-                        }} className="[font-size:11px] [color:#a83f34] [background:transparent] [border:none] [cursor:pointer] [padding:0px]">Delete</button>
-                      </div>
-                    </li>)}
-                </ul>}
-            </div>)}
-        </div>
-      </section>
-    </div>;
+  return <div className="[display:grid] [grid-template-columns:repeat(auto-fit,_minmax(320px,_1fr))] [gap:32px]">
+    <section>
+      <SectionHeading>{editId ? "Rediger rapport" : "Ny rapport"}</SectionHeading>
+      <WpReportForm key={editId ?? "new"} editId={editId} onSaved={() => { setEditId(null); load(); }} onCancel={() => setEditId(null)} />
+    </section>
+    <section>
+      <SectionHeading>Eksisterende rapporter</SectionHeading>
+      {loading && rows.length === 0 && <p className="[font-size:14px] [color:#9a9a9a]">Laster…</p>}
+      <div className="[display:flex] [flex-direction:column] [gap:24px]">
+        {WP_IDS.map(wp => <div key={wp}>
+          <p className="[font-size:13px] [font-weight:700] [color:#2a2859] [margin-bottom:4px]">{WP_LABELS[wp].label}</p>
+          <p className="[font-size:12px] [color:#9a9a9a] [margin-bottom:10px]">{WP_LABELS[wp].subtitle}</p>
+          {byWp[wp].length === 0 ? <p className="[font-size:12px] [color:#9a9a9a] [font-style:italic]">Ingen rapporter ennå.</p> : <ul className="[list-style:none] [padding:0px] [margin:0px] [display:grid] [gap:8px]">
+            {byWp[wp].map(r => <li key={r.id} className="[display:flex] [align-items:flex-start] [justify-content:space-between] [gap:16px] [padding:12px_16px] [background:#ffffff] [border:1px_solid_#e6e6e6] [border-radius:8px]">
+              <div>
+                <p className="[font-size:14px] [font-weight:600] [color:#2a2859]">{formatMonth(r.month)}</p>
+                <p className="[font-size:12px] [color:#666666] [margin-top:2px]">{r.interviewee ? `med ${r.interviewee}` : "—"} · {r.interviewer}</p>
+                {r.summary && <p className="[font-size:12px] [color:#2c2c2c] [margin-top:6px] [line-height:1.5]">{r.summary.slice(0, 140)}{r.summary.length > 140 ? "…" : ""}</p>}
+              </div>
+              <div className="[display:flex] [flex-direction:column] [gap:6px] [align-items:flex-end]">
+                <button type="button" onClick={async () => {
+                  const next = !r.published;
+                  const { error } = await supabase.from("public_wp_reports").update({ published: next, updated_at: new Date().toISOString() }).eq("id", r.id);
+                  if (error) { showToast(error.message, "err"); } else { showToast(next ? "Rapport publisert." : "Rapport satt som utkast."); load(); }
+                }} style={{
+                  border: `1px solid ${r.published ? "#034b45" : "#e6e6e6"}`,
+                  background: r.published ? "#034b45" : "#ffffff",
+                  color: r.published ? "#ffffff" : "#666666",
+                  fontFamily: FONT_STACK
+                }} className="[font-size:11px] [padding:4px_10px] [border-radius:4px] [cursor:pointer] [font-weight:600]">
+                  {r.published ? "Publisert" : "Utkast"}
+                </button>
+                <button type="button" onClick={() => setEditId(r.id)} className="[font-size:11px] [color:#1f42aa] [background:transparent] [border:none] [cursor:pointer] [padding:0px] [font-weight:500]">Rediger</button>
+                <InlineConfirm
+                  label="Slett"
+                  confirmLabel="Bekreft sletting"
+                  onConfirm={async () => {
+                    const { error } = await supabase.from("public_wp_reports").delete().eq("id", r.id);
+                    if (error) { showToast(error.message, "err"); } else { showToast("Rapport slettet."); load(); }
+                  }}
+                />
+              </div>
+            </li>)}
+          </ul>}
+        </div>)}
+      </div>
+    </section>
+  </div>;
 }
 
 function formatMonth(isoDate: string): string {
-  // "2026-04-01" -> "April 2026"
+  // "2026-04-01" -> "april 2026"
   const d = new Date(isoDate);
-  return d.toLocaleDateString(undefined, { month: "long", year: "numeric" });
+  return d.toLocaleDateString("nb-NO", { month: "long", year: "numeric" });
 }
 
 function WpReportForm({
@@ -1074,7 +1517,7 @@ function WpReportForm({
       const { data, error } = await supabase.from("public_wp_reports").select("*").eq("id", editId).single();
       if (cancelled) return;
       if (error || !data) {
-        setStatus({ kind: "err", msg: error?.message ?? "Report not found." });
+        setStatus({ kind: "err", msg: error?.message ?? "Rapporten ble ikke funnet." });
         return;
       }
       const r = data as WpReportRow;
@@ -1093,7 +1536,7 @@ function WpReportForm({
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!monthStr) {
-      setStatus({ kind: "err", msg: "Pick a month." });
+      setStatus({ kind: "err", msg: "Velg en måned." });
       return;
     }
     setSubmitting(true);
@@ -1114,12 +1557,12 @@ function WpReportForm({
     setSubmitting(false);
     if (error) {
       const friendly = /duplicate key|unique/i.test(error.message)
-        ? `A report for ${WP_LABELS[wpId].label} in ${formatMonth(row.month)} already exists. Edit that one instead.`
+        ? `En rapport for ${WP_LABELS[wpId].label} i ${formatMonth(row.month)} finnes allerede. Rediger den i stedet.`
         : error.message;
       setStatus({ kind: "err", msg: friendly });
       return;
     }
-    setStatus({ kind: "ok", msg: editId ? "Report updated." : "Report saved." });
+    setStatus({ kind: "ok", msg: editId ? "Rapport oppdatert." : "Rapport lagret." });
     if (!editId) {
       setSummary("");
       setHighlights([]);
@@ -1131,43 +1574,43 @@ function WpReportForm({
   }
 
   return <Form onSubmit={submit}>
-      <FormRow>
-        <FormField label="Work package">
-          <select style={inputStyle} value={wpId} onChange={e => setWpId(e.target.value as WpId)}>
-            {WP_IDS.map(k => <option key={k} value={k}>{WP_LABELS[k].label}</option>)}
-          </select>
-        </FormField>
-        <FormField label="Month">
-          <input style={inputStyle} type="month" value={monthStr} onChange={e => setMonthStr(e.target.value)} required />
-        </FormField>
-      </FormRow>
-      <FormField label="Summary">
-        <textarea style={inputStyle} value={summary} onChange={e => setSummary(e.target.value)} className="[min-height:110px]" />
+    <FormRow>
+      <FormField label="Arbeidspakke">
+        <select style={inputStyle} value={wpId} onChange={e => setWpId(e.target.value as WpId)}>
+          {WP_IDS.map(k => <option key={k} value={k}>{WP_LABELS[k].label}</option>)}
+        </select>
       </FormField>
-      <FormField label="Highlights">
-        <div className="[display:flex] [flex-direction:column] [gap:8px]">
-          {highlights.map((h, i) => <div key={i} className="[display:flex] [gap:8px]">
-              <input style={inputStyle} value={h} onChange={e => setHighlights(highlights.map((x, j) => j === i ? e.target.value : x))} placeholder="One highlight…" />
-              <button type="button" onClick={() => setHighlights(highlights.filter((_, j) => j !== i))} className="[padding:8px_12px] [font-size:12px] [color:#a83f34] [background:transparent] [border:1px_solid_#e6e6e6] [border-radius:8px] [cursor:pointer]">Remove</button>
-            </div>)}
-          <button type="button" onClick={() => setHighlights([...highlights, ""])} className="[align-self:flex-start] [padding:6px_12px] [font-size:12px] [color:#1f42aa] [background:transparent] [border:1px_dashed_#1f42aa] [border-radius:8px] [cursor:pointer]">+ Add highlight</button>
-        </div>
+      <FormField label="Måned">
+        <input style={inputStyle} type="month" value={monthStr} onChange={e => setMonthStr(e.target.value)} required />
       </FormField>
-      <FormField label="Next steps">
-        <textarea style={inputStyle} value={nextSteps} onChange={e => setNextSteps(e.target.value)} className="[min-height:80px]" />
+    </FormRow>
+    <FormField label="Sammendrag">
+      <textarea style={inputStyle} value={summary} onChange={e => setSummary(e.target.value)} className="[min-height:110px]" />
+    </FormField>
+    <FormField label="Høydepunkter">
+      <div className="[display:flex] [flex-direction:column] [gap:8px]">
+        {highlights.map((h, i) => <div key={i} className="[display:flex] [gap:8px]">
+          <input style={inputStyle} value={h} onChange={e => setHighlights(highlights.map((x, j) => j === i ? e.target.value : x))} placeholder="Ett høydepunkt…" />
+          <button type="button" onClick={() => setHighlights(highlights.filter((_, j) => j !== i))} className="[padding:8px_12px] [font-size:12px] [color:#a83f34] [background:transparent] [border:1px_solid_#e6e6e6] [border-radius:8px] [cursor:pointer]">Fjern</button>
+        </div>)}
+        <button type="button" onClick={() => setHighlights([...highlights, ""])} className="[align-self:flex-start] [padding:6px_12px] [font-size:12px] [color:#1f42aa] [background:transparent] [border:1px_dashed_#1f42aa] [border-radius:8px] [cursor:pointer]">+ Legg til høydepunkt</button>
+      </div>
+    </FormField>
+    <FormField label="Neste steg">
+      <textarea style={inputStyle} value={nextSteps} onChange={e => setNextSteps(e.target.value)} className="[min-height:80px]" />
+    </FormField>
+    <FormRow>
+      <FormField label="Intervjuer">
+        <input style={inputStyle} value={interviewer} onChange={e => setInterviewer(e.target.value)} />
       </FormField>
-      <FormRow>
-        <FormField label="Interviewer">
-          <input style={inputStyle} value={interviewer} onChange={e => setInterviewer(e.target.value)} />
-        </FormField>
-        <FormField label="Interviewee">
-          <input style={inputStyle} value={interviewee} onChange={e => setInterviewee(e.target.value)} placeholder="Name (optional)" />
-        </FormField>
-      </FormRow>
-      <PublishToggle value={published} onChange={setPublished} />
-      <SubmitBar status={status} submitting={submitting} label={editId ? "Update report" : "Save report"} />
-      {editId && <button type="button" onClick={onCancel} className="[font-size:12px] [color:#666666] [background:transparent] [border:none] [cursor:pointer] [padding:0px] [align-self:flex-start]">Cancel edit</button>}
-    </Form>;
+      <FormField label="Intervjuobjekt">
+        <input style={inputStyle} value={interviewee} onChange={e => setInterviewee(e.target.value)} placeholder="Navn (valgfritt)" />
+      </FormField>
+    </FormRow>
+    <PublishToggle value={published} onChange={setPublished} />
+    <SubmitBar status={status} submitting={submitting} label={editId ? "Oppdater rapport" : "Lagre rapport"} />
+    {editId && <button type="button" onClick={onCancel} className="[font-size:12px] [color:#666666] [background:transparent] [border:none] [cursor:pointer] [padding:0px] [align-self:flex-start]">Avbryt redigering</button>}
+  </Form>;
 }
 
 // ─── Shared form pieces ───
@@ -1178,8 +1621,8 @@ function SectionHeading({
   children: React.ReactNode;
 }) {
   return <p className="[font-size:11px] [font-weight:700] [text-transform:uppercase] [letter-spacing:0.14em] [color:#808080] [margin-bottom:16px]">
-      {children}
-    </p>;
+    {children}
+  </p>;
 }
 function Form({
   children,
@@ -1189,8 +1632,8 @@ function Form({
   onSubmit: (e: React.FormEvent) => void;
 }) {
   return <form onSubmit={onSubmit} className="[display:flex] [flex-direction:column] [gap:16px] [padding:24px] [background:#ffffff] [border:1px_solid_#e6e6e6] [border-radius:8px]">
-      {children}
-    </form>;
+    {children}
+  </form>;
 }
 function FormField({
   label,
@@ -1200,9 +1643,9 @@ function FormField({
   children: React.ReactNode;
 }) {
   return <label className="[display:flex] [flex-direction:column] [gap:8px]">
-      <span className="[font-size:12px] [font-weight:600] [color:#2c2c2c]">{label}</span>
-      {children}
-    </label>;
+    <span className="[font-size:12px] [font-weight:600] [color:#2c2c2c]">{label}</span>
+    {children}
+  </label>;
 }
 function FormRow({
   children
@@ -1210,8 +1653,8 @@ function FormRow({
   children: React.ReactNode;
 }) {
   return <div className="[display:grid] [grid-template-columns:repeat(auto-fit,_minmax(120px,_1fr))] [gap:16px]">
-      {children}
-    </div>;
+    {children}
+  </div>;
 }
 function CheckboxGroup<T extends string>({
   options,
@@ -1227,7 +1670,7 @@ function CheckboxGroup<T extends string>({
   onChange: (next: T[]) => void;
 }) {
   return <div className="[display:flex] [flex-wrap:wrap] [gap:8px]">
-      {options.map(opt => {
+    {options.map(opt => {
       const on = value.includes(opt.value);
       return <button key={opt.value} type="button" onClick={() => onChange(on ? value.filter(x => x !== opt.value) : [...value, opt.value])} style={{
         border: `1px solid ${on ? opt.color : opt.color + "40"}`,
@@ -1235,10 +1678,10 @@ function CheckboxGroup<T extends string>({
         color: on ? "#ffffff" : opt.color,
         fontFamily: FONT_STACK
       }} className="[padding:5px_12px] [border-radius:4px] [font-size:12px] [font-weight:500] [cursor:pointer]">
-            {opt.label}
-          </button>;
+        {opt.label}
+      </button>;
     })}
-    </div>;
+  </div>;
 }
 function PublishToggle({
   value,
@@ -1251,11 +1694,11 @@ function PublishToggle({
     background: value ? "#c7fde9" : "#f2f2f2",
     border: `1px solid ${value ? "#43f8b6" : "#e6e6e6"}`
   }} className="[display:flex] [align-items:center] [gap:8px] [padding:8px_16px] [border-radius:8px] [cursor:pointer]">
-      <input type="checkbox" checked={value} onChange={e => onChange(e.target.checked)} className="[accent-color:#034b45]" />
-      <span className="[font-size:13px] [color:#2c2c2c]">
-        Publish immediately{value ? "" : " (save as draft)"}
-      </span>
-    </label>;
+    <input type="checkbox" checked={value} onChange={e => onChange(e.target.checked)} className="[accent-color:#034b45]" />
+    <span className="[font-size:13px] [color:#2c2c2c]">
+      Publiser umiddelbart{value ? "" : " (lagre som utkast)"}
+    </span>
+  </label>;
 }
 function SubmitBar({
   submitting,
@@ -1270,21 +1713,21 @@ function SubmitBar({
   label: string;
 }) {
   return <div className="[display:flex] [flex-direction:column] [gap:10px]">
-      {status && <p style={{
+    {status && <p style={{
       background: status.kind === "ok" ? "#c7fde9" : "#fff2f1",
       border: `1px solid ${status.kind === "ok" ? "#43f8b6" : "#ffdfdc"}`,
       color: status.kind === "ok" ? "#034b45" : "#a83f34"
     }} className="[font-size:13px] [padding:8px_16px] [border-radius:4px]">
-          {status.msg}
-        </p>}
-      <button type="submit" disabled={submitting} style={{
+      {status.msg}
+    </p>}
+    <button type="submit" disabled={submitting} style={{
       cursor: submitting ? "wait" : "pointer",
       opacity: submitting ? 0.7 : 1,
       fontFamily: FONT_STACK
     }} className="[padding:12px_16px] [background:#2a2859] [color:#ffffff] [border-radius:8px] [border:1px_solid_#2a2859] [font-size:15px] [font-weight:600] [align-self:flex-start]">
-        {submitting ? "Saving…" : label}
-      </button>
-    </div>;
+      {submitting ? "Lagrer…" : label}
+    </button>
+  </div>;
 }
 
 // ─── Shared list ───
@@ -1310,52 +1753,52 @@ function ItemList({
 }) {
   const sorted = useMemo(() => rows, [rows]);
   if (loading && rows.length === 0) {
-    return <p className="[font-size:14px] [color:#9a9a9a]">Loading…</p>;
+    return <p className="[font-size:14px] [color:#9a9a9a]">Laster…</p>;
   }
   if (rows.length === 0) {
     return <p className="[font-size:14px] [color:#666666] [padding:24px] [background:#ffffff] [border:1px_dashed_#e6e6e6] [border-radius:8px] [line-height:1.6]">
-        Nothing here yet. Use the form to create the first entry.
-        <br />
-        <span className="[font-size:12px] [color:#9a9a9a]">
-          If you expected existing rows, check that the Supabase table has row-level-security policies allowing SELECT for authenticated users.
-        </span>
-      </p>;
+      Ingenting her ennå. Bruk skjemaet for å opprette den første oppføringen.
+      <br />
+      <span className="[font-size:12px] [color:#9a9a9a]">
+        Hvis du forventet eksisterende rader, sjekk at Supabase-tabellen har row-level-security-policies som tillater SELECT for innloggede brukere.
+      </span>
+    </p>;
   }
   return <ul className="[list-style:none] [padding:0px] [margin:0px] [display:grid] [gap:8px]">
-      {sorted.map(r => <li key={r.id} className="[display:flex] [align-items:flex-start] [justify-content:space-between] [gap:16px] [padding:16px] [background:#ffffff] [border:1px_solid_#e6e6e6] [border-radius:8px]">
-          <div className="[min-width:0px] [flex:1px]">
-            <p className="[font-size:16px] [font-weight:600] [color:#2a2859] [margin-bottom:4px]">
-              {r.title}
-            </p>
-            <p className="[font-size:12px] [color:#666666] [margin-bottom:8px]">{r.subtitle}</p>
-            {r.tags.length > 0 && <div className="[display:flex] [flex-wrap:wrap] [gap:4px]">
-                {r.tags.slice(0, 4).map(t => <span key={t} className="[font-size:10px] [padding:2px_8px] [border-radius:4px] [background:#f2f2f2] [color:#666666]">
-                    {t}
-                  </span>)}
-              </div>}
-          </div>
-          <div className="[display:flex] [flex-direction:column] [gap:8px] [align-items:flex-end]">
-            <button type="button" onClick={() => onTogglePublish(r.id, !r.published)} style={{
+    {sorted.map(r => <li key={r.id} className="[display:flex] [align-items:flex-start] [justify-content:space-between] [gap:16px] [padding:16px] [background:#ffffff] [border:1px_solid_#e6e6e6] [border-radius:8px]">
+      <div className="[min-width:0px] [flex:1px]">
+        <p className="[font-size:16px] [font-weight:600] [color:#2a2859] [margin-bottom:4px]">
+          {r.title}
+        </p>
+        <p className="[font-size:12px] [color:#666666] [margin-bottom:8px]">{r.subtitle}</p>
+        {r.tags.length > 0 && <div className="[display:flex] [flex-wrap:wrap] [gap:4px]">
+          {r.tags.slice(0, 4).map(t => <span key={t} className="[font-size:10px] [padding:2px_8px] [border-radius:4px] [background:#f2f2f2] [color:#666666]">
+            {t}
+          </span>)}
+        </div>}
+      </div>
+      <div className="[display:flex] [flex-direction:column] [gap:8px] [align-items:flex-end]">
+        <button type="button" onClick={() => onTogglePublish(r.id, !r.published)} style={{
           border: `1px solid ${r.published ? "#034b45" : "#e6e6e6"}`,
           background: r.published ? "#034b45" : "#ffffff",
           color: r.published ? "#ffffff" : "#666666",
           fontFamily: FONT_STACK
         }} className="[font-size:11px] [padding:4px_10px] [border-radius:4px] [cursor:pointer] [font-weight:600]">
-              {r.published ? "Published" : "Draft"}
-            </button>
-            {onEdit && <button type="button" onClick={() => onEdit(r.id)} style={{
+          {r.published ? "Publisert" : "Utkast"}
+        </button>
+        {onEdit && <button type="button" onClick={() => onEdit(r.id)} style={{
           fontFamily: FONT_STACK
         }} className="[font-size:11px] [color:#1f42aa] [background:transparent] [border:none] [cursor:pointer] [padding:0px] [font-weight:500]">
-              Edit
-            </button>}
-            <button type="button" onClick={() => onDelete(r.id)} style={{
-          fontFamily: FONT_STACK
-        }} className="[font-size:11px] [color:#a83f34] [background:transparent] [border:none] [cursor:pointer] [padding:0px]">
-              Delete
-            </button>
-          </div>
-        </li>)}
-    </ul>;
+          Rediger
+        </button>}
+        <InlineConfirm
+          label="Slett"
+          confirmLabel="Bekreft sletting"
+          onConfirm={() => onDelete(r.id)}
+        />
+      </div>
+    </li>)}
+  </ul>;
 }
 const inputStyle: React.CSSProperties = {
   padding: "10px 16px",

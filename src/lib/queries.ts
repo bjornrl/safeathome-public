@@ -14,6 +14,17 @@ import { SEED_STORIES, SEED_CONNECTIONS } from "./seed-data";
 import { SEED_SOLUTIONS } from "./seed-solutions";
 import { SEED_RESOURCES } from "./seed-resources";
 
+// ──────────────────────────────────────────────────────────────
+// Seed-fallback policy
+// ──────────────────────────────────────────────────────────────
+// Seed data should only be shown when the database genuinely has no
+// published rows yet — never when a query errored. An editor who just
+// unpublished their last insight needs to see an empty state, not the
+// six fictional seed stories suddenly reappearing as if their save failed.
+// We therefore fall back on (no error AND empty data), and on error we
+// log + return [] so the page renders its empty-state copy.
+// ──────────────────────────────────────────────────────────────
+
 export async function getMapStories(): Promise<PublicStory[]> {
   const { data, error } = await supabase
     .from("public_stories")
@@ -22,7 +33,11 @@ export async function getMapStories(): Promise<PublicStory[]> {
     .not("latitude", "is", null)
     .order("sort_order", { ascending: true });
 
-  if (error || !data || data.length === 0) return SEED_STORIES;
+  if (error) {
+    console.warn("[queries] getMapStories failed:", error.message);
+    return [];
+  }
+  if (!data || data.length === 0) return SEED_STORIES;
   return data;
 }
 
@@ -33,7 +48,11 @@ export async function getAllStories(): Promise<PublicStory[]> {
     .eq("published", true)
     .order("sort_order", { ascending: true });
 
-  if (error || !data || data.length === 0) return SEED_STORIES;
+  if (error) {
+    console.warn("[queries] getAllStories failed:", error.message);
+    return [];
+  }
+  if (!data || data.length === 0) return SEED_STORIES;
   return data;
 }
 
@@ -43,7 +62,11 @@ export async function getConnections(): Promise<PublicConnection[]> {
     .select("*")
     .eq("published", true);
 
-  if (error || !data || data.length === 0) return SEED_CONNECTIONS;
+  if (error) {
+    console.warn("[queries] getConnections failed:", error.message);
+    return [];
+  }
+  if (!data || data.length === 0) return SEED_CONNECTIONS;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return data.map((r: any) => ({
     ...r,
@@ -70,7 +93,11 @@ export async function getDesignResponses(): Promise<SolutionItem[]> {
     .eq("published", true)
     .order("sort_order", { ascending: true });
 
-  if (error || !data || data.length === 0) {
+  if (error) {
+    console.warn("[queries] getDesignResponses failed:", error.message);
+    return [];
+  }
+  if (!data || data.length === 0) {
     return SEED_SOLUTIONS.map((s) => ({
       id: s.id,
       title: s.title,
@@ -109,7 +136,11 @@ export async function getResources(types?: ResourceType[]): Promise<PublicResour
 
   const { data, error } = await query;
 
-  if (error || !data || data.length === 0) {
+  if (error) {
+    console.warn("[queries] getResources failed:", error.message);
+    return [];
+  }
+  if (!data || data.length === 0) {
     const seed = SEED_RESOURCES.filter((r) => r.published);
     return types && types.length > 0
       ? seed.filter((r) => types.includes(r.type))

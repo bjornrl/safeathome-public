@@ -16,9 +16,9 @@ const PUBLIC_LINKS: { href: string; label: string }[] = [
 ];
 
 const INTERNAL_LINKS: { href: string; label: string }[] = [
-  { href: "/admin", label: "Content editor" },
+  { href: "/admin", label: "Innholdsredigering" },
   { href: "/welfare-tech", label: "Velferdsteknologi" },
-  { href: "/internal/nodes", label: "Node map" },
+  { href: "/internal/nodes", label: "Nodekart" },
   { href: "/explore", label: "Utforsk" },
   { href: "/frictions", label: "Friksjoner" },
   { href: "/qualities", label: "Kvaliteter" },
@@ -140,7 +140,7 @@ export default function Nav({
             </Link>
           ) : (
             <Link href="/login" style={{ textDecoration: "none" }}>
-              <Button variant="secondary" size="sm">Team login</Button>
+              <Button variant="secondary" size="sm">Innlogging</Button>
             </Link>
           )}
         </div>
@@ -303,7 +303,7 @@ function PublicNavRow({
             transition: `color ${motion.fast}, border-color ${motion.fast}`,
           }}
         >
-          Team login →
+          Innlogging for teamet →
         </Link>
       )}
     </nav>
