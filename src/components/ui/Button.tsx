@@ -1,33 +1,34 @@
 import type { CSSProperties, ReactNode } from "react";
-import { colors, motion, space } from "@/lib/design-tokens";
+import { clay, motion, space } from "@/lib/design-tokens";
 
 type Variant = "primary" | "secondary" | "tertiary";
 type Size = "sm" | "md" | "lg";
 
 const sizeMap: Record<Size, { padding: string; fontSize: string; minHeight: string }> = {
   sm: { padding: `${space.s8} ${space.s16}`,  fontSize: "14px", minHeight: "36px" },
-  md: { padding: `${space.s12} ${space.s24}`, fontSize: "16px", minHeight: "44px" },
-  lg: { padding: `${space.s16} ${space.s32}`, fontSize: "18px", minHeight: "52px" },
+  md: { padding: `${space.s12} ${space.s24}`, fontSize: "14px", minHeight: "44px" },
+  lg: { padding: `${space.s16} ${space.s32}`, fontSize: "16px", minHeight: "52px" },
 };
 
 function variantStyles(variant: Variant): CSSProperties {
   if (variant === "primary") {
+    // Clay primary: near-black ink on cream canvas page.
     return {
-      background: colors.brandWarmBlue,
-      color: colors.textLight,
-      border: `1px solid ${colors.brandWarmBlue}`,
+      background: clay.colors.ink,
+      color: clay.colors.onPrimary,
+      border: `1px solid ${clay.colors.ink}`,
     };
   }
   if (variant === "secondary") {
     return {
-      background: colors.bgCard,
-      color: colors.brandWarmBlue,
-      border: `1px solid ${colors.brandWarmBlue}`,
+      background: clay.colors.canvas,
+      color: clay.colors.ink,
+      border: `1px solid ${clay.colors.hairline}`,
     };
   }
   return {
     background: "transparent",
-    color: colors.brandWarmBlue,
+    color: clay.colors.ink,
     border: `1px solid transparent`,
   };
 }
@@ -72,10 +73,11 @@ export function Button({
         alignItems: "center",
         justifyContent: "center",
         gap: space.s8,
-        fontFamily: "var(--pkt-font-family)",
-        fontWeight: 500,
-        lineHeight: 1.2,
-        borderRadius: "var(--pkt-radius-none)",
+        fontFamily: clay.font.body,
+        fontWeight: 600,
+        lineHeight: 1.0,
+        letterSpacing: "-0.1px",
+        borderRadius: "var(--clay-radius-md)",
         cursor: isBlocked ? "not-allowed" : "pointer",
         opacity: isBlocked ? 0.6 : 1,
         transition: `background ${motion.fast}, color ${motion.fast}, border-color ${motion.fast}`,

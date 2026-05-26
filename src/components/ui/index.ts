@@ -10,3 +10,5 @@ export { Field, Input, Select, Textarea } from "./Field";
 export type { FieldProps } from "./Field";
 export { Footer } from "./Footer";
 export { SkipToContent } from "./SkipToContent";
+export { CategoryHelp } from "./CategoryHelp";
+export { InlineConfirm, Toast } from "./InlineConfirm";

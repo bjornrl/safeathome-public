@@ -1,10 +1,20 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
 
+// Inter is the working substitute for Clay's licensed Plain Black face.
+// Exposed as --font-inter for the Clay --clay-font-* tokens.
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
-  title: "safe@home — Aging, migration, and the meaning of home",
+  title: "safe@home — Aldring, migrasjon og betydningen av hjem",
   description:
-    "Explore how aging immigrants in Norway navigate care, technology, and belonging through an interactive map of stories.",
+    "Utforsk hvordan eldre innvandrere i Norge navigerer omsorg, teknologi og tilhørighet — gjennom et interaktivt kart av historier.",
 };
 
 export default function RootLayout({
@@ -13,7 +23,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="nb-NO" className="h-full antialiased">
+    <html lang="nb-NO" className={`${inter.variable} h-full antialiased`}>
       {/* suppressHydrationWarning: browser extensions (e.g. ColorZilla) add
           attributes to <body> before React mounts, causing a harmless
           hydration warning in dev. Only silences attribute-level diffs. */}

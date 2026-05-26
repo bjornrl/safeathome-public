@@ -21,16 +21,23 @@ import type {
 import { CategoryBadge } from "./CategoryBadge";
 import { SuggestedCategoryInput } from "./SuggestedCategoryInput";
 import {
+  FONT_STACK,
+  GhostBadge,
+  GhostBadgeRow,
+  PillGroup,
+  SUGGEST_ACCENT,
+  SUGGEST_DEBOUNCE_MS,
+  SUGGEST_MIN_CHARS,
+  SuggestBar,
+  inputStyle as sharedInputStyle,
+  labelStyle as sharedLabelStyle,
+} from "./FormPrimitives";
+import { CategoryHelp } from "@/components/ui";
+import {
   getSuggestionAvailability,
   requestSuggestions,
   type SuggestionRelated,
 } from "@/app/actions/suggest";
-
-const SUGGEST_MIN_CHARS = 80;
-const SUGGEST_DEBOUNCE_MS = 3000;
-const SUGGEST_ACCENT = "#C45D3E";
-
-const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
 
 const FRICTION_KEYS = Object.keys(FRICTIONS) as CareFriction[];
 const QUALITY_KEYS = Object.keys(QUALITIES) as CareQuality[];
@@ -39,10 +46,10 @@ const SCALE_KEYS = Object.keys(SCALES) as MapScale[];
 // DB enum is uppercase WP1..WP4 — distinct from the lowercase wp1..wp4
 // used by the legacy public_wp_reports table.
 const WORK_PACKAGES: { value: WorkPackage; label: string }[] = [
-  { value: "WP1", label: "WP1 · Homes & Communities" },
-  { value: "WP2", label: "WP2 · Health & Care Institutions" },
-  { value: "WP3", label: "WP3 · Transnational Contexts" },
-  { value: "WP4", label: "WP4 · Innovation & Design" },
+  { value: "WP1", label: "WP1 · Hjem og fellesskap" },
+  { value: "WP2", label: "WP2 · Helse- og omsorgsinstitusjoner" },
+  { value: "WP3", label: "WP3 · Transnasjonale kontekster" },
+  { value: "WP4", label: "WP4 · Innovasjon og design" },
 ];
 
 // Skien lives in the DB enum but is no longer a project partner; only
@@ -63,15 +70,7 @@ const HOUSE_THEMES: HouseTheme[] = [
   "hallway",
 ];
 
-const inputStyle: React.CSSProperties = {
-  padding: `${space.s8} ${space.s12}`,
-  border: `1px solid ${colors.borderSubtle}`,
-  fontSize: 14,
-  fontFamily: FONT_STACK,
-  background: colors.bgCard,
-  color: colors.textBody,
-  width: "100%",
-};
+const inputStyle = sharedInputStyle;
 
 type View =
   | { kind: "create" }
@@ -180,229 +179,8 @@ export function QuickNotesPanel() {
 
 // ─── Pill toggle ───
 
-function PillGroup<T extends string>({
-  options,
-  value,
-  onChange,
-}: {
-  options: { value: T; label: string; color?: string }[];
-  value: T[];
-  onChange: (next: T[]) => void;
-}) {
-  return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: space.s4 }}>
-      {options.map((opt) => {
-        const on = value.includes(opt.value);
-        const accent = opt.color ?? colors.brandWarmBlue;
-        return (
-          <button
-            key={opt.value}
-            type="button"
-            onClick={() => onChange(on ? value.filter((x) => x !== opt.value) : [...value, opt.value])}
-            style={{
-              ...typography.sizes.t12,
-              padding: `2px ${space.s8}`,
-              background: on ? accent : "transparent",
-              color: on ? colors.textLight : accent,
-              border: `1px solid ${accent}`,
-              cursor: "pointer",
-              fontFamily: FONT_STACK,
-              fontWeight: typography.weights.medium,
-              borderRadius: 4,
-            }}
-          >
-            {opt.label}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-// ─── AI suggestion UI helpers ───
-
-function SuggestBar({
-  availability,
-  bodyLength,
-  loading,
-  coolingDown,
-  cleared,
-  onClick,
-}: {
-  availability: "checking" | "ready" | "limit_reached" | "unavailable";
-  bodyLength: number;
-  loading: boolean;
-  coolingDown: boolean;
-  cleared: boolean;
-  onClick: () => void;
-}) {
-  if (availability === "unavailable") return null;
-
-  if (availability === "limit_reached") {
-    return (
-      <p
-        style={{
-          ...typography.sizes.t12,
-          color: colors.textMuted,
-          fontStyle: "italic",
-        }}
-      >
-        Forslagskvoten er brukt opp for i dag.
-      </p>
-    );
-  }
-
-  const tooShort = bodyLength < SUGGEST_MIN_CHARS;
-  const disabled = availability !== "ready" || tooShort || loading || coolingDown;
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: space.s4 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: space.s12, flexWrap: "wrap" }}>
-        <button
-          type="button"
-          onClick={onClick}
-          disabled={disabled}
-          style={{
-            ...typography.sizes.t14,
-            padding: `${space.s8} ${space.s16}`,
-            background: disabled ? colors.bgSubtle : SUGGEST_ACCENT,
-            color: disabled ? colors.textMuted : colors.textLight,
-            border: `1px solid ${disabled ? colors.borderSubtle : SUGGEST_ACCENT}`,
-            cursor: disabled ? "not-allowed" : "pointer",
-            fontFamily: FONT_STACK,
-            fontWeight: typography.weights.medium,
-            opacity: disabled ? 0.7 : 1,
-          }}
-        >
-          {loading ? (
-            <span style={{ display: "inline-flex", alignItems: "center", gap: space.s8 }}>
-              <Spinner /> Tenker…
-            </span>
-          ) : (
-            "✦ Foreslå kategorier og koblinger"
-          )}
-        </button>
-        {cleared && (
-          <span style={{ ...typography.sizes.t12, color: colors.textMuted, fontStyle: "italic" }}>
-            Forslag tømt
-          </span>
-        )}
-      </div>
-      {tooShort && availability === "ready" && (
-        <span style={{ ...typography.sizes.t12, color: colors.textMuted }}>
-          Skriv minst {SUGGEST_MIN_CHARS} tegn for å aktivere forslag ({bodyLength}/{SUGGEST_MIN_CHARS}).
-        </span>
-      )}
-    </div>
-  );
-}
-
-function Spinner() {
-  return (
-    <span
-      aria-hidden
-      style={{
-        display: "inline-block",
-        width: 12,
-        height: 12,
-        border: "2px solid currentColor",
-        borderRightColor: "transparent",
-        borderRadius: "50%",
-        animation: "qn-spin 0.7s linear infinite",
-      }}
-    >
-      <style jsx>{`
-        @keyframes qn-spin {
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
-    </span>
-  );
-}
-
-function GhostBadgeRow({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div style={{ marginTop: space.s8, display: "flex", flexDirection: "column", gap: space.s4 }}>
-      <span
-        style={{
-          ...typography.sizes.t12,
-          color: SUGGEST_ACCENT,
-          fontWeight: typography.weights.medium,
-        }}
-      >
-        {label}
-      </span>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: space.s4 }}>{children}</div>
-    </div>
-  );
-}
-
-function GhostBadge({
-  color,
-  onAccept,
-  onDismiss,
-  children,
-}: {
-  color: string;
-  onAccept: () => void;
-  onDismiss: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <span
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 4,
-        ...typography.sizes.t12,
-        padding: `2px ${space.s4} 2px ${space.s8}`,
-        background: `${color}10`,
-        color: color,
-        border: `1px dashed ${color}`,
-        borderRadius: 4,
-        fontWeight: typography.weights.medium,
-        opacity: 0.85,
-      }}
-    >
-      <button
-        type="button"
-        onClick={onAccept}
-        title="Godta forslag"
-        aria-label="Godta forslag"
-        style={{
-          background: "transparent",
-          border: "none",
-          color,
-          cursor: "pointer",
-          padding: 0,
-          fontFamily: FONT_STACK,
-          fontSize: "inherit",
-          fontWeight: typography.weights.medium,
-        }}
-      >
-        ✓ {children}
-      </button>
-      <button
-        type="button"
-        onClick={onDismiss}
-        title="Avvis forslag"
-        aria-label="Avvis forslag"
-        style={{
-          background: "transparent",
-          border: "none",
-          color,
-          cursor: "pointer",
-          padding: `0 ${space.s4}`,
-          fontFamily: FONT_STACK,
-          fontSize: "inherit",
-          opacity: 0.7,
-        }}
-      >
-        ×
-      </button>
-    </span>
-  );
-}
+// (PillGroup, SuggestBar, Spinner, GhostBadgeRow, GhostBadge are now shared
+//  primitives in ./FormPrimitives — imported above.)
 
 // ─── Form (create + edit) ───
 
@@ -745,13 +523,15 @@ function NoteForm({
         alignItems: "flex-start",
       }}
     >
-      <div style={{ display: "flex", flexDirection: "column", gap: space.s16 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: space.s24 }}>
         <header
           style={{
             display: "flex",
             justifyContent: "space-between",
-            alignItems: "center",
+            alignItems: "baseline",
             gap: space.s8,
+            paddingBottom: space.s12,
+            borderBottom: `1px solid ${colors.borderSubtle}`,
           }}
         >
           <h2
@@ -759,10 +539,15 @@ function NoteForm({
               ...typography.sizes.t22,
               fontWeight: typography.weights.bold,
               color: colors.textBody,
+              margin: 0,
+              paddingRight: space.s16, // add padding to separate from adjacent button
+              letterSpacing: "0.01em", // slight spacing for openness
+              lineHeight: 1.3, // make title breathe
             }}
           >
             {editing ? "Rediger notat" : "Nytt notat"}
           </h2>
+
           <button
             type="button"
             onClick={onCancel}
@@ -779,26 +564,28 @@ function NoteForm({
           </button>
         </header>
 
-        <input
-          type="text"
-          value={headline}
-          onChange={(e) => setHeadline(e.target.value)}
-          placeholder="Headline (valgfri)"
-          style={{
-            ...inputStyle,
-            ...typography.sizes.t20,
-            fontWeight: typography.weights.medium,
-            padding: `${space.s12} ${space.s16}`,
-          }}
-        />
+        <div style={{ display: "flex", flexDirection: "column", gap: space.s12 }}>
+          <input
+            type="text"
+            value={headline}
+            onChange={(e) => setHeadline(e.target.value)}
+            placeholder="Headline (valgfri)"
+            style={{
+              ...inputStyle,
+              ...typography.sizes.t20,
+              fontWeight: typography.weights.medium,
+              padding: `${space.s12} ${space.s16}`,
+            }}
+          />
 
-        <textarea
-          value={body}
-          onChange={(e) => setBody(e.target.value)}
-          placeholder="Skriv notatet — en idé, en lenke, en observasjon…"
-          required
-          style={{ ...inputStyle, minHeight: 220, lineHeight: 1.55 }}
-        />
+          <textarea
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            placeholder="Skriv notatet — en idé, en lenke, en observasjon…"
+            required
+            style={{ ...inputStyle, minHeight: 220, lineHeight: 1.55 }}
+          />
+        </div>
 
         <SuggestBar
           availability={aiAvailability}
@@ -826,7 +613,7 @@ function NoteForm({
               ))}
             </select>
             {aiWorkPackage && (
-              <GhostBadgeRow label="✦ AI suggestion — click to accept">
+              <GhostBadgeRow label="✦ AI-forslag — klikk for å godta">
                 <GhostBadge
                   color={SUGGEST_ACCENT}
                   onAccept={acceptWorkPackageSuggestion}
@@ -871,13 +658,14 @@ function NoteForm({
 
         <div style={{ display: "flex", flexDirection: "column", gap: space.s4 }}>
           <span style={labelStyle}>Friksjoner</span>
+          <CategoryHelp kind="friction" compact />
           <PillGroup
             options={FRICTION_KEYS.map((k) => ({ value: k, label: FRICTIONS[k].label, color: FRICTIONS[k].color }))}
             value={frictions}
             onChange={(next) => setFrictions(next as CareFriction[])}
           />
           {aiFrictions.length > 0 && (
-            <GhostBadgeRow label="✦ AI suggestions — click to accept">
+            <GhostBadgeRow label="✦ AI-forslag — klikk for å godta">
               {aiFrictions.map((k) => (
                 <GhostBadge
                   key={k}
@@ -894,13 +682,14 @@ function NoteForm({
 
         <div style={{ display: "flex", flexDirection: "column", gap: space.s4 }}>
           <span style={labelStyle}>Kvaliteter</span>
+          <CategoryHelp kind="quality" compact />
           <PillGroup
             options={QUALITY_KEYS.map((k) => ({ value: k, label: QUALITIES[k].label, color: QUALITIES[k].color }))}
             value={qualities}
             onChange={(next) => setQualities(next as CareQuality[])}
           />
           {aiQualities.length > 0 && (
-            <GhostBadgeRow label="✦ AI suggestions — click to accept">
+            <GhostBadgeRow label="✦ AI-forslag — klikk for å godta">
               {aiQualities.map((k) => (
                 <GhostBadge
                   key={k}
@@ -996,13 +785,7 @@ function NoteForm({
   );
 }
 
-const labelStyle: React.CSSProperties = {
-  fontSize: 12,
-  fontWeight: 600,
-  textTransform: "uppercase",
-  letterSpacing: "0.12em",
-  color: colors.textMuted,
-};
+const labelStyle = sharedLabelStyle;
 
 // ─── Connect sidebar ───
 
@@ -1156,13 +939,12 @@ function ConnectSidebar({
                         : suggested
                           ? `${SUGGEST_ACCENT}10`
                           : "transparent",
-                      border: `1px ${suggested && !on ? "dashed" : "solid"} ${
-                        on
+                      border: `1px ${suggested && !on ? "dashed" : "solid"} ${on
                           ? colors.brandWarmBlue
                           : suggested
                             ? SUGGEST_ACCENT
                             : "transparent"
-                      }`,
+                        }`,
                       position: "relative",
                     }}
                   >
@@ -1330,15 +1112,15 @@ function NoteDetail({
     const [otherNotesRes, otherInsightsRes] = await Promise.all([
       otherNoteIds.length > 0
         ? supabase
-            .from("quick_notes")
-            .select("id, headline, body, updated_at")
-            .in("id", otherNoteIds)
+          .from("quick_notes")
+          .select("id, headline, body, updated_at")
+          .in("id", otherNoteIds)
         : Promise.resolve({ data: [], error: null }),
       otherInsightIds.length > 0
         ? supabase
-            .from("insights")
-            .select("id, title, body, updated_at")
-            .in("id", otherInsightIds)
+          .from("insights")
+          .select("id, title, body, updated_at")
+          .in("id", otherInsightIds)
         : Promise.resolve({ data: [], error: null }),
     ]);
     const linked: LinkableEntity[] = [

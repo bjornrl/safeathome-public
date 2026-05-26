@@ -23,7 +23,7 @@ export async function generateMetadata({
   const story = stories.find(s => s.id === id);
   if (!story) {
     return {
-      title: "Story not found — safe@home"
+      title: "Historie ikke funnet — safe@home"
     };
   }
   return {
@@ -58,7 +58,7 @@ export default async function StoryPage({
       fontFamily: FONT_STACK
     }} className="[max-width:760px] [margin:0_auto] [padding:56px_24px_96px]">
         <Link href="/explore" className="[display:inline-flex] [align-items:center] [gap:6px] [font-size:13px] [color:#1f42aa] [text-decoration:none] [margin-bottom:32px] [font-weight:500]">
-          ← Back to the map
+          ← Tilbake til kartet
         </Link>
 
         <p className="[font-size:12px] [font-weight:600] [text-transform:uppercase] [letter-spacing:0.14em] [color:#808080] [margin-bottom:16px]">
@@ -99,10 +99,10 @@ export default async function StoryPage({
 
         {linkedResponses.length > 0 && <section className="[margin-top:56px] [padding:32px] [background:#f2f2f2] [border-radius:8px] [border:1px_solid_#e6e6e6]">
             <p className="[font-size:11px] [font-weight:600] [text-transform:uppercase] [letter-spacing:0.14em] [color:#808080] [margin-bottom:8px]">
-              Design response
+              Designrespons
             </p>
             <h2 className="[font-size:24px] [font-weight:700] [color:#2a2859] [margin-bottom:24px] [letter-spacing:-0.01em]">
-              How the design team is responding
+              Hvordan designteamet svarer
             </h2>
             <div className="[display:grid] [gap:8px]">
               {linkedResponses.map(r => {

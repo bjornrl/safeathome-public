@@ -71,16 +71,16 @@ export default function QualitiesPage() {
     }} className="[padding-top:72px] [padding-bottom:96px]">
         <header className="[max-width:1120px] [margin:0_auto] [padding:0_24px_48px]">
           <p className="[font-size:12px] [font-weight:600] [text-transform:uppercase] [letter-spacing:0.18em] [color:#808080] [margin-bottom:16px]">
-            Care qualities
+            Omsorgskvaliteter
           </p>
           <h1 className="[font-size:clamp(38px,_6vw,_60px)] [font-weight:700] [line-height:1.05] [letter-spacing:-0.02em] [color:#2a2859] [margin-bottom:24px]">
-            How people actually live and cope.
+            Hvordan folk faktisk lever og mestrer.
           </h1>
           <p className="[font-size:19px] [line-height:1.7] [color:#666666] [max-width:680px]">
-            These describe the realities, strategies, and strengths of aging
-            immigrants and their families. Stories appear in every column where
-            a quality is present &mdash; the repetition reveals how tightly
-            woven these experiences are.
+            Disse beskriver virkeligheten, strategiene og styrkene til eldre
+            innvandrere og deres familier. Historier dukker opp i hver kolonne
+            der en kvalitet er til stede — gjentakelsen viser hvor tett vevd
+            disse erfaringene er.
           </p>
         </header>
 
@@ -99,12 +99,19 @@ export default function QualitiesPage() {
                     <span style={{
                   color: q.color
                 }} className="[display:inline-block] [font-size:11px] [font-weight:600] [text-transform:uppercase] [letter-spacing:0.12em] [margin-bottom:8px]">
-                      {bucket.length} {bucket.length === 1 ? "story" : "stories"}
+                      {bucket.length} {bucket.length === 1 ? "historie" : "historier"}
                     </span>
                     <button
                       type="button"
                       onClick={() => hasDescription && setExpandedKey(isExpanded ? null : k)}
                       aria-expanded={isExpanded}
+                      aria-label={
+                        hasDescription
+                          ? isExpanded
+                            ? `Skjul beskrivelse for ${q.label}`
+                            : `Vis beskrivelse for ${q.label}`
+                          : `${q.label} — beskrivelse kommer snart`
+                      }
                       disabled={!hasDescription}
                       style={{
                         background: "transparent",
@@ -119,15 +126,30 @@ export default function QualitiesPage() {
                     >
                       <h2 className="[font-size:22px] [font-weight:700] [line-height:1.2] [color:#2a2859] [margin-bottom:8px]">
                         {q.label}
-                        {hasDescription && <span aria-hidden style={{ fontSize: 14, marginLeft: 8, color: "#9a9a9a", fontWeight: 500 }}>{isExpanded ? "−" : "+"}</span>}
+                        {hasDescription && (
+                          <span
+                            aria-hidden
+                            style={{
+                              fontSize: 14,
+                              marginLeft: 8,
+                              color: q.color,
+                              fontWeight: 700,
+                            }}
+                          >
+                            {isExpanded ? "−" : "+"}
+                          </span>
+                        )}
                       </h2>
+                      <p
+                        className="[font-size:14px] [line-height:1.55]"
+                        style={{ color: "#666666" }}
+                      >
+                        {QUALITY_COPY[k]}
+                      </p>
                     </button>
-                    <p className="[font-size:14px] [line-height:1.55] [color:#666666]">
-                      {QUALITY_COPY[k]}
-                    </p>
                     {!hasDescription && (
                       <p className="[font-size:11px] [color:#9a9a9a] [font-style:italic] [margin-top:8px]">
-                        Longer description coming soon.
+                        Lengre beskrivelse kommer snart.
                       </p>
                     )}
                     {isExpanded && hasDescription && (
@@ -145,7 +167,7 @@ export default function QualitiesPage() {
                         {(desc.examples?.length ?? 0) > 0 && (
                           <>
                             <p className="[font-size:11px] [font-weight:600] [text-transform:uppercase] [letter-spacing:0.12em] [color:#808080] [margin-bottom:6px]">
-                              Examples
+                              Eksempler
                             </p>
                             <ul className="[list-style:disc] [padding-left:20px] [margin:0]">
                               {desc.examples.map((ex, i) => (
@@ -162,7 +184,7 @@ export default function QualitiesPage() {
 
                   <div className="[display:flex] [flex-direction:column] [gap:8px]">
                     {bucket.length === 0 ? <p className="[font-size:14px] [color:#9a9a9a]">
-                        No stories yet.
+                        Ingen historier ennå.
                       </p> : bucket.map(s => {
                         const isHovered = hoveredStory?.id === s.id;
                         const shared = hoveredStory && !isHovered ? firstSharedCategory(hoveredStory, s) : null;
