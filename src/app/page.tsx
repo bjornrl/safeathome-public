@@ -431,9 +431,9 @@ export default function HomePage() {
                 />
                 <ContactCard
                   label="Plattform · WP4"
-                  name="Øystein Evensen"
-                  org="Comte Bureau"
-                  email="oystein@comte.no"
+                  name="Carolina Borges Rau Steuernagel"
+                  org="OsloMet"
+                  email="caste4774@oslomet.no"
                 />
               </div>
             </div>
