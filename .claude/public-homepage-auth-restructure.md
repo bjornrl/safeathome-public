@@ -43,7 +43,7 @@ Use the 11 provisioned users from the profiles table. Each card: name, instituti
 
 **Contact section:**
 - Project PI: Marit Haldar, OsloMet — mariha@oslomet.no
-- Platform/WP4: Øystein Evensen, Comte Bureau — oystein@comte.no
+- Platform/WP4: Steuernagel, Carolina Borges Rau Steuernagel, OsloMet — caste4774@oslomet.no.no
 
 **Footer:**
 - Links: About, Explore, For Municipalities, Reading Room
