@@ -9,9 +9,11 @@ import { STAGES } from "@/lib/seed-solutions";
 import type { CareFriction, CareQuality, FieldSite, HouseTheme, MapScale, ResourceType, WorkPackage } from "@/lib/types";
 import { QuickNotesPanel } from "@/components/admin/QuickNotesPanel";
 import { WelfareTechPanel } from "@/components/admin/WelfareTechPanel";
+import { EmbeddingsPanel } from "@/components/admin/EmbeddingsPanel";
+import { embedSource, removeEmbedding } from "@/app/actions/embed";
 const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
-type Tab = "notes" | "stories" | "challenges" | "resources" | "wp" | "welfare-tech";
-const TAB_VALUES: Tab[] = ["notes", "stories", "challenges", "resources", "wp", "welfare-tech"];
+type Tab = "notes" | "stories" | "challenges" | "resources" | "wp" | "welfare-tech" | "search-index";
+const TAB_VALUES: Tab[] = ["notes", "stories", "challenges", "resources", "wp", "welfare-tech", "search-index"];
 
 const TAB_DESCRIPTIONS: Record<Tab, string> = {
   notes:
@@ -25,6 +27,8 @@ const TAB_DESCRIPTIONS: Record<Tab, string> = {
   wp: "Monthly status reports, one row per work package per month. Captures the interview, the highlights, and the next steps. Sets the cadence for the WP progress overview.",
   "welfare-tech":
     "Technology entries with manufacturer, country availability, and a description. Surface on the public welfare-tech page once published.",
+  "search-index":
+    "Status for den semantiske søkeindeksen. Embeddings lages automatisk ved lagring; her ser du hva som mangler og kan fylle hullene manuelt.",
 };
 const WP_IDS = Object.keys(WP_LABELS) as WpId[];
 const FRICTION_KEYS = Object.keys(FRICTIONS) as CareFriction[];
@@ -127,6 +131,11 @@ export default function AdminPage() {
             Welfare tech
           </TabButton>
         )}
+        {isAdmin && (
+          <TabButton active={tab === "search-index"} onClick={() => selectTab("search-index")}>
+            Search index
+          </TabButton>
+        )}
       </nav>
 
       <p className="[font-size:14px] [color:#4d4d4d] [line-height:1.65] [max-width:760px] [margin-bottom:24px] [padding:14px_18px] [background:#f7f6f0] [border:1px_solid_#e6e6e6] [border-radius:8px]">
@@ -143,6 +152,13 @@ export default function AdminPage() {
       ) : (
         <p className="[font-size:14px] [color:#a83f34]">
           Du må være administrator for å redigere velferdsteknologi.
+        </p>
+      ))}
+      {tab === "search-index" && (isAdmin ? (
+        <EmbeddingsPanel />
+      ) : (
+        <p className="[font-size:14px] [color:#a83f34]">
+          Du må være administrator for å se søkeindeksen.
         </p>
       ))}
     </main>;
@@ -236,7 +252,7 @@ function StoriesPanel() {
           const {
             error
           } = await supabase.from("public_stories").delete().eq("id", id);
-          if (error) alert(error.message);else load();
+          if (error) alert(error.message);else { void removeEmbedding("story", id); load(); }
         }} />
         </section>
       </div>
@@ -451,6 +467,9 @@ function StoryForm({
       });
       return;
     }
+    // Inline (re)embed; failures leave a null vector that the admin
+    // "missing embeddings" panel / backfill repairs. Don't block the UI.
+    void embedSource("story", row.id);
     setStatus({
       kind: "ok",
       msg: "Insight saved."
@@ -805,7 +824,7 @@ function ResourcesPanel() {
         const {
           error
         } = await supabase.from("public_resources").delete().eq("id", id);
-        if (error) alert(error.message);else load();
+        if (error) alert(error.message);else { void removeEmbedding("resource", id); load(); }
       }} onEdit={id => setEditId(id)} />
       </section>
     </div>;
@@ -902,6 +921,7 @@ function ResourceForm({
       setStatus({ kind: "err", msg: errors.map(e => e!.message).join(" · ") });
       return;
     }
+    void embedSource("resource", id);
     setStatus({ kind: "ok", msg: editId ? "Resource updated." : "Resource saved." });
     if (!editId) {
       setTitle("");

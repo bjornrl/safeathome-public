@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { colors, space, typography } from "@/lib/design-tokens";
 import { FRICTIONS, QUALITIES, SCALES } from "@/lib/constants";
+import { embedSource } from "@/app/actions/embed";
 import type {
   CareFriction,
   CareQuality,
@@ -724,6 +725,9 @@ function NoteForm({
         }
       }
     }
+
+    // Inline (re)embed for semantic search; non-blocking, backfill repairs gaps.
+    void embedSource("quick_note", savedId);
 
     setSubmitting(false);
     onDone();
