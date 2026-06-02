@@ -38,28 +38,28 @@ export async function semanticSearch(
   let mode: "hybrid" | "keyword" = "keyword";
 
   try {
+    // Try hybrid first when a key is configured. If embedding or the RPC fails
+    // at runtime (e.g. an OpenAI 429/outage), degrade to keyword-only rather
+    // than failing the whole search — no client-visible failure (ADR 0001).
     if (hasOpenAIKey()) {
-      const vector = await embedText(trimmed);
-      const { data, error } = await supabase.rpc("search_embeddings", {
-        query_text: trimmed,
-        query_embedding: toVectorLiteral(vector),
-        match_count: 25,
-        filter_source_types: filter,
-      });
-      if (error) throw new Error(error.message);
-      raw = (data ?? []) as RawHit[];
-      mode = "hybrid";
+      try {
+        const vector = await embedText(trimmed);
+        const { data, error } = await supabase.rpc("search_embeddings", {
+          query_text: trimmed,
+          query_embedding: toVectorLiteral(vector),
+          match_count: 25,
+          filter_source_types: filter,
+        });
+        if (error) throw new Error(error.message);
+        raw = (data ?? []) as RawHit[];
+        mode = "hybrid";
+      } catch (embedErr) {
+        console.warn("[search] hybrid failed, falling back to keyword:", embedErr);
+        raw = await keywordSearch(supabase, trimmed, filter);
+        mode = "keyword";
+      }
     } else {
-      // Keyword-only fallback: still useful when OPENAI_API_KEY is unset.
-      let q = supabase
-        .from("embeddings")
-        .select("source_type, source_id, content")
-        .textSearch("content_tsv", trimmed, { type: "websearch", config: "norwegian" })
-        .limit(25);
-      if (filter) q = q.in("source_type", filter);
-      const { data, error } = await q;
-      if (error) throw new Error(error.message);
-      raw = (data ?? []).map((r, i) => ({ ...(r as RawHit), score: 1 / (i + 1) }));
+      raw = await keywordSearch(supabase, trimmed, filter);
       mode = "keyword";
     }
   } catch (err) {
@@ -71,6 +71,24 @@ export async function semanticSearch(
 
   const hits = await hydrate(supabase, raw);
   return { status: "ok", hits, mode };
+}
+
+// Keyword-only path over the Norwegian FTS column. Used when no OpenAI key is
+// configured, or as a runtime fallback when embedding/RPC fails.
+async function keywordSearch(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  trimmed: string,
+  filter: string[] | null,
+): Promise<RawHit[]> {
+  let q = supabase
+    .from("embeddings")
+    .select("source_type, source_id, content")
+    .textSearch("content_tsv", trimmed, { type: "websearch", config: "norwegian" })
+    .limit(25);
+  if (filter) q = q.in("source_type", filter);
+  const { data, error } = await q;
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((r, i) => ({ ...(r as RawHit), score: 1 / (i + 1) }));
 }
 
 // Resolve display title + link for each hit by batch-fetching the source rows.
