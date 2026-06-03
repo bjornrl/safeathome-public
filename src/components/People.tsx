@@ -23,12 +23,13 @@ interface TeamMember {
 }
 
 const FALLBACK_TEAM: TeamMember[] = [
-  { id: "marit-haldar",        name: "Marit Haldar",                  institution: "OsloMet",       role: "Project lead (PI)" },
-  { id: "carolina-rau",        name: "Carolina Rau",                  institution: "UiO",           role: "WP1 lead — Homes & Communities" },
-  { id: "jonas-debesay",       name: "Jonas Debesay",                 institution: "OsloMet",       role: "WP2 lead — Health & Care Institutions" },
-  { id: "erika-gubrium",       name: "Erika Gubrium",                 institution: "OsloMet",       role: "WP3 lead — Transnational Contexts" },
-  { id: "alejandro-miranda",   name: "Alejandro Miranda Nieto",       institution: "OsloMet",       role: "WP4 co-lead — Innovation & Service Design" },
-  { id: "oystein-evensen",     name: "Øystein Evensen",               institution: "Comte Bureau",  role: "WP4 co-lead — Platform & Service Design" },
+  { id: "marit-haldar", name: "Marit Haldar", institution: "OsloMet", role: "Prosjektleder (PI)" },
+  { id: "marit-haldar", name: "Carolina Borges Rau Steuernagel", institution: "OsloMet", role: "Prosjektleder (PI)" },
+  { id: "carolina-rau", name: "Tony Sandseth", institution: "UiO", role: "WP1-leder — Hjem og fellesskap" },
+  { id: "jonas-debesay", name: "Jonas Debesay", institution: "OsloMet", role: "WP2-leder — Helse- og omsorgsinstitusjoner" },
+  { id: "erika-gubrium", name: "Erika Gubrium", institution: "OsloMet", role: "WP3-leder — Transnasjonale kontekster" },
+  { id: "alejandro-miranda", name: "Alejandro Miranda Nieto", institution: "OsloMet", role: "WP4 med-leder — Innovasjon og tjenestedesign" },
+  { id: "oystein-evensen", name: "Øystein Evensen", institution: "Comte Bureau", role: "WP4 med-leder — Plattform og tjenestedesign" },
 ];
 
 function normalize(rows: ProfileRow[]): TeamMember[] {
@@ -41,7 +42,7 @@ function normalize(rows: ProfileRow[]): TeamMember[] {
         id: r.id,
         name,
         institution: r.institution ?? "",
-        role: role || "Project team",
+        role: role || "Prosjektgruppe",
       };
     })
     .filter((x): x is TeamMember => x != null);

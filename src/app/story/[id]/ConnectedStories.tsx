@@ -91,12 +91,12 @@ export default function ConnectedStories({
   return (
     <section className="[margin-top:56px] [padding-top:32px] [border-top:1px_solid_#e6e6e6]" style={{ fontFamily: FONT_STACK }}>
       <p className="[font-size:11px] [font-weight:600] [text-transform:uppercase] [letter-spacing:0.14em] [color:#808080] [margin-bottom:24px]">
-        Connected stories
+        Tilkoblede historier
       </p>
 
       {groups.length === 0 ? (
         <p className="[font-size:14px] [color:#9a9a9a] [font-style:italic]">
-          No connected stories yet.
+          Ingen tilkoblede historier ennå.
         </p>
       ) : (
         <div className="[display:flex] [flex-direction:column] [gap:32px]">
@@ -123,7 +123,7 @@ function GroupSection({ group }: { group: Group }) {
         />
         <h3 className="[font-size:16px] [font-weight:600] [color:#2a2859]">{group.label}</h3>
         <span className="[font-size:12px] [color:#9a9a9a]">
-          {group.stories.length} {group.stories.length === 1 ? "story" : "stories"}
+          {group.stories.length} {group.stories.length === 1 ? "historie" : "historier"}
         </span>
       </div>
       <div className="[display:grid] [grid-template-columns:repeat(auto-fill,_minmax(220px,_1fr))] [gap:8px]">
@@ -138,7 +138,7 @@ function GroupSection({ group }: { group: Group }) {
           style={{ fontFamily: FONT_STACK }}
           className="[margin-top:12px] [font-size:12px] [font-weight:600] [color:#1f42aa] [background:transparent] [border:none] [cursor:pointer] [padding:0px]"
         >
-          {expanded ? "Show fewer" : `Show all ${group.stories.length}`}
+          {expanded ? "Vis færre" : `Vis alle ${group.stories.length}`}
         </button>
       )}
     </div>

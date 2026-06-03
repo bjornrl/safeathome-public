@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Nav from "@/components/Nav";
+import Greeting from "@/components/Greeting";
 import { supabase } from "@/lib/supabase";
 
 const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
@@ -60,7 +61,12 @@ function AdminGate({ children }: { children: React.ReactNode }) {
     return null;
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      <Greeting />
+      {children}
+    </>
+  );
 }
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

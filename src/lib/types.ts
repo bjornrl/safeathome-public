@@ -109,7 +109,7 @@ export interface PublicResource {
   title: string;
   description: string;
   type: ResourceType;
-  url: string;
+  url: string | null;
   authors: string | null;
   year: number | null;
   field_site: FieldSite | null;
