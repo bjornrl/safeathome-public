@@ -9,7 +9,16 @@ import {
   toVectorLiteral,
   type EmbeddableSourceType,
 } from "@/lib/embeddings";
-import type { SearchHit, SearchResponse } from "@/lib/search-types";
+import type { SearchHit, SearchHitDetail, SearchResponse } from "@/lib/search-types";
+import { RESOURCE_TYPE_LABELS } from "@/lib/seed-resources";
+import type {
+  CareFriction,
+  CareQuality,
+  FieldSite,
+  HouseTheme,
+  ResourceType,
+  WorkPackage,
+} from "@/lib/types";
 
 type RawHit = {
   source_type: string;
@@ -178,4 +187,140 @@ function snippetFrom(content: string, title?: string): string {
   let body = content;
   if (title && body.startsWith(title)) body = body.slice(title.length);
   return body.replace(/\s+/g, " ").trim().slice(0, 220);
+}
+
+// ─── Hit detail (for the slide-in panel) ────────────────────────
+//
+// Hydrates the full source row for a single hit. Authenticated-only and
+// RLS-enforced, like search itself. Returns null if not signed in or the row
+// is gone. NOTE: public_resources has no authors/year column despite the TS
+// type listing them (the type and DB diverge) — don't select them here.
+
+const humanizeTheme = (t: HouseTheme): string => t.replace(/_/g, " ");
+
+export async function getSearchHitDetail(
+  sourceType: string,
+  sourceId: string,
+): Promise<SearchHitDetail | null> {
+  if (!isEmbeddableSourceType(sourceType)) return null;
+
+  const supabase = await createSupabaseServerClient();
+  const { data: sessionData } = await supabase.auth.getUser();
+  if (!sessionData.user?.id) return null;
+
+  const base = { sourceType, sourceId } as const;
+
+  if (sourceType === "quick_note") {
+    const { data } = await supabase
+      .from("quick_notes")
+      .select("id, headline, body, work_package, field_site, house_themes, care_frictions, care_qualities")
+      .eq("id", sourceId)
+      .maybeSingle();
+    if (!data) return null;
+    const r = data as {
+      headline: string | null;
+      body: string;
+      work_package: WorkPackage | null;
+      field_site: FieldSite | null;
+      house_themes: HouseTheme[] | null;
+      care_frictions: CareFriction[] | null;
+      care_qualities: CareQuality[] | null;
+    };
+    return {
+      ...base,
+      title: r.headline?.trim() || r.body.slice(0, 60) || "(uten tittel)",
+      body: r.body ?? "",
+      href: null,
+      external: false,
+      workPackage: r.work_package,
+      fieldSite: r.field_site,
+      frictions: r.care_frictions ?? [],
+      qualities: r.care_qualities ?? [],
+      tags: (r.house_themes ?? []).map(humanizeTheme),
+    };
+  }
+
+  if (sourceType === "insight") {
+    const { data } = await supabase
+      .from("insights")
+      .select("id, title, body, work_package, field_site, tags")
+      .eq("id", sourceId)
+      .maybeSingle();
+    if (!data) return null;
+    const r = data as {
+      title: string;
+      body: string;
+      work_package: WorkPackage | null;
+      field_site: FieldSite | null;
+      tags: string[] | null;
+    };
+    return {
+      ...base,
+      title: r.title,
+      body: r.body ?? "",
+      href: null,
+      external: false,
+      workPackage: r.work_package,
+      fieldSite: r.field_site,
+      frictions: [],
+      qualities: [],
+      tags: r.tags ?? [],
+    };
+  }
+
+  if (sourceType === "story") {
+    const { data } = await supabase
+      .from("public_stories")
+      .select("id, title, body, work_package, field_site, frictions, qualities")
+      .eq("id", sourceId)
+      .maybeSingle();
+    if (!data) return null;
+    const r = data as {
+      title: string;
+      body: string;
+      work_package: WorkPackage | null;
+      field_site: FieldSite | null;
+      frictions: CareFriction[] | null;
+      qualities: CareQuality[] | null;
+    };
+    return {
+      ...base,
+      title: r.title,
+      body: r.body ?? "",
+      href: `/story/${sourceId}`,
+      external: false,
+      workPackage: r.work_package,
+      fieldSite: r.field_site,
+      frictions: r.frictions ?? [],
+      qualities: r.qualities ?? [],
+      tags: [],
+    };
+  }
+
+  // resource
+  const { data } = await supabase
+    .from("public_resources")
+    .select("id, title, description, type, url, field_site")
+    .eq("id", sourceId)
+    .maybeSingle();
+  if (!data) return null;
+  const r = data as {
+    title: string;
+    description: string | null;
+    type: ResourceType;
+    url: string | null;
+    field_site: FieldSite | null;
+  };
+  return {
+    ...base,
+    title: r.title,
+    body: r.description ?? "",
+    href: r.url,
+    external: Boolean(r.url && r.url.startsWith("http")),
+    workPackage: null,
+    fieldSite: r.field_site,
+    frictions: [],
+    qualities: [],
+    tags: r.type ? [RESOURCE_TYPE_LABELS[r.type] ?? r.type] : [],
+  };
 }

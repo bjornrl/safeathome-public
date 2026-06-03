@@ -3,6 +3,7 @@
 // and not the "server-only" embeddings lib, which can't be imported by the
 // client search UI).
 import type { EmbeddableSourceType } from "@/lib/embeddings";
+import type { CareFriction, CareQuality, FieldSite, WorkPackage } from "@/lib/types";
 
 export type { EmbeddableSourceType };
 
@@ -13,6 +14,23 @@ export type SearchHit = {
   snippet: string;
   href: string | null;
   score: number;
+};
+
+// Full content for a single hit, hydrated on click for the slide-in detail
+// panel. Frictions/qualities are returned as keys; the client maps them to
+// labels + colours via @/lib/constants (mirrors the node map).
+export type SearchHitDetail = {
+  sourceType: EmbeddableSourceType;
+  sourceId: string;
+  title: string;
+  body: string;
+  href: string | null;
+  external: boolean; // href should open in a new tab
+  workPackage: WorkPackage | null;
+  fieldSite: FieldSite | null;
+  frictions: CareFriction[];
+  qualities: CareQuality[];
+  tags: string[]; // free-text / house themes / resource type — already humanised
 };
 
 export type SearchResponse =

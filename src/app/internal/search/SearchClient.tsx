@@ -1,13 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useTransition } from "react";
-import { colors, motion, radius, space, typography } from "@/lib/design-tokens";
-import { semanticSearch } from "@/app/actions/search";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { colors, motion as motionTokens, radius, space, typography } from "@/lib/design-tokens";
+import { FRICTIONS, QUALITIES } from "@/lib/constants";
+import { getSearchHitDetail, semanticSearch } from "@/app/actions/search";
 import {
   sourceLabel,
   type EmbeddableSourceType,
   type SearchHit,
+  type SearchHitDetail,
   type SearchResponse,
 } from "@/lib/search-types";
 
@@ -31,6 +34,15 @@ export default function SearchClient() {
   const [response, setResponse] = useState<SearchResponse | null>(null);
   const [pending, startTransition] = useTransition();
 
+  // Slide-in detail. `activeHit` opens the panel instantly with what we already
+  // have; `detail` arrives from the server fetch and fills in the full body.
+  const [activeHit, setActiveHit] = useState<SearchHit | null>(null);
+  const [detail, setDetail] = useState<SearchHitDetail | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  // Monotonic token so a slow fetch from a previous click can't overwrite the
+  // detail of the hit that's open now.
+  const reqRef = useRef(0);
+
   function toggle(key: EmbeddableSourceType) {
     setSelected((prev) =>
       prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
@@ -49,6 +61,31 @@ export default function SearchClient() {
       setResponse(res);
     });
   }
+
+  const openHit = useCallback((hit: SearchHit) => {
+    const token = ++reqRef.current;
+    setActiveHit(hit);
+    setDetail(null);
+    setDetailLoading(true);
+    getSearchHitDetail(hit.sourceType, hit.sourceId)
+      .then((d) => {
+        if (reqRef.current !== token) return; // a newer click (or close) won
+        setDetail(d);
+        setDetailLoading(false);
+      })
+      .catch(() => {
+        if (reqRef.current !== token) return;
+        setDetail(null);
+        setDetailLoading(false);
+      });
+  }, []);
+
+  const closeHit = useCallback(() => {
+    reqRef.current++; // invalidate any in-flight fetch
+    setActiveHit(null);
+    setDetail(null);
+    setDetailLoading(false);
+  }, []);
 
   return (
     <main
@@ -84,7 +121,7 @@ export default function SearchClient() {
                 background: colors.bgCard,
                 border: `1px solid ${colors.borderGray}`,
                 borderRadius: radius.none,
-                transition: `border-color ${motion.fast}`,
+                transition: `border-color ${motionTokens.fast}`,
               }}
             />
             <button
@@ -125,7 +162,7 @@ export default function SearchClient() {
                     border: `1px solid ${active ? BADGE_COLOR[f.key] : colors.borderGray}`,
                     borderRadius: "999px",
                     cursor: "pointer",
-                    transition: `all ${motion.fast}`,
+                    transition: `all ${motionTokens.fast}`,
                   }}
                 >
                   {f.label}
@@ -135,13 +172,34 @@ export default function SearchClient() {
           </div>
         </form>
 
-        <Results response={response} pending={pending} />
+        <Results response={response} pending={pending} onOpen={openHit} activeId={activeHit?.sourceId ?? null} />
       </div>
+
+      <AnimatePresence>
+        {activeHit && (
+          <DetailPanel
+            hit={activeHit}
+            detail={detail}
+            loading={detailLoading}
+            onClose={closeHit}
+          />
+        )}
+      </AnimatePresence>
     </main>
   );
 }
 
-function Results({ response, pending }: { response: SearchResponse | null; pending: boolean }) {
+function Results({
+  response,
+  pending,
+  onOpen,
+  activeId,
+}: {
+  response: SearchResponse | null;
+  pending: boolean;
+  onOpen: (hit: SearchHit) => void;
+  activeId: string | null;
+}) {
   if (pending) {
     return <p style={{ ...typography.sizes.t14, color: colors.textMuted }}>Søker…</p>;
   }
@@ -170,7 +228,7 @@ function Results({ response, pending }: { response: SearchResponse | null; pendi
       <ul style={{ listStyle: "none", margin: 0, padding: 0, borderTop: `1px solid ${colors.borderSubtle}` }}>
         {response.hits.map((h) => (
           <li key={`${h.sourceType}:${h.sourceId}`} style={{ borderBottom: `1px solid ${colors.borderSubtle}` }}>
-            <HitRow hit={h} />
+            <HitRow hit={h} onOpen={onOpen} active={activeId === h.sourceId} />
           </li>
         ))}
       </ul>
@@ -178,9 +236,34 @@ function Results({ response, pending }: { response: SearchResponse | null; pendi
   );
 }
 
-function HitRow({ hit }: { hit: SearchHit }) {
-  const inner = (
-    <div style={{ padding: `${space.s16} 0` }}>
+function HitRow({
+  hit,
+  onOpen,
+  active,
+}: {
+  hit: SearchHit;
+  onOpen: (hit: SearchHit) => void;
+  active: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onOpen(hit)}
+      aria-label={`Åpne ${hit.title}`}
+      style={{
+        display: "block",
+        width: "100%",
+        textAlign: "left",
+        padding: `${space.s16} ${space.s12}`,
+        margin: 0,
+        border: "none",
+        cursor: "pointer",
+        fontFamily: typography.fontFamily,
+        color: colors.textBody,
+        background: active ? colors.bgSubtle : "transparent",
+        transition: `background ${motionTokens.fast}`,
+      }}
+    >
       <div style={{ display: "flex", alignItems: "center", gap: space.s8, marginBottom: space.s4 }}>
         <span
           style={{
@@ -206,22 +289,230 @@ function HitRow({ hit }: { hit: SearchHit }) {
           {hit.snippet}…
         </p>
       )}
-    </div>
+    </button>
   );
+}
 
-  if (hit.href) {
-    const external = hit.href.startsWith("http");
-    return external ? (
-      <a href={hit.href} target="_blank" rel="noreferrer" style={{ textDecoration: "none", color: colors.textBody, display: "block" }}>
-        {inner}
-      </a>
-    ) : (
-      <Link href={hit.href} style={{ textDecoration: "none", color: colors.textBody, display: "block" }}>
-        {inner}
-      </Link>
-    );
-  }
-  return inner;
+// ─── Slide-in detail panel (mirrors the node map's DetailPanel) ───
+
+function DetailPanel({
+  hit,
+  detail,
+  loading,
+  onClose,
+}: {
+  hit: SearchHit;
+  detail: SearchHitDetail | null;
+  loading: boolean;
+  onClose: () => void;
+}) {
+  // Internal Nav is ~120px tall and sticky; push the panel below it (same
+  // offset the node map uses) so the header isn't hidden behind the nav.
+  const NAV_OFFSET = 120;
+
+  // Close on Escape — expected for an overlay panel.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  // Lock background scroll while the panel is open. Unlike the node map (whose
+  // backdrop sits over a non-scrolling SVG), the search page is a scrollable
+  // document — without this the results list scrolls up behind the navbar.
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
+
+  const body = detail?.body ?? (hit.snippet ? `${hit.snippet}…` : "");
+  const hasTags =
+    !!detail &&
+    (detail.frictions.length > 0 ||
+      detail.qualities.length > 0 ||
+      detail.tags.length > 0 ||
+      detail.workPackage !== null ||
+      detail.fieldSite !== null);
+
+  return (
+    <>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        style={{
+          position: "fixed",
+          top: NAV_OFFSET,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: "rgba(42, 40, 89, 0.2)",
+          zIndex: 30,
+        }}
+      />
+      <motion.aside
+        initial={{ x: "100%" }}
+        animate={{ x: 0 }}
+        exit={{ x: "100%" }}
+        transition={{ type: "spring", damping: 30, stiffness: 300 }}
+        role="dialog"
+        aria-label={hit.title}
+        style={{
+          position: "fixed",
+          top: NAV_OFFSET,
+          right: 0,
+          height: `calc(100vh - ${NAV_OFFSET}px)`,
+          width: 480,
+          maxWidth: "90vw",
+          background: colors.bgCard,
+          borderLeft: `1px solid ${colors.borderSubtle}`,
+          zIndex: 40,
+          display: "flex",
+          flexDirection: "column",
+          fontFamily: typography.fontFamily,
+        }}
+      >
+        <header
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            padding: `${space.s16} ${space.s24}`,
+            borderBottom: `1px solid ${colors.borderSubtle}`,
+          }}
+        >
+          <span
+            style={{
+              ...typography.sizes.t12,
+              padding: `2px ${space.s8}`,
+              background: `${BADGE_COLOR[hit.sourceType]}22`,
+              color: BADGE_COLOR[hit.sourceType],
+              fontWeight: typography.weights.bold,
+              textTransform: "uppercase",
+              letterSpacing: "0.08em",
+              borderRadius: 4,
+            }}
+          >
+            {sourceLabel(hit.sourceType)}
+          </span>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Lukk"
+            style={{
+              background: "transparent",
+              border: "none",
+              fontSize: 24,
+              cursor: "pointer",
+              color: colors.textMuted,
+              lineHeight: 1,
+              fontFamily: typography.fontFamily,
+            }}
+          >
+            ×
+          </button>
+        </header>
+
+        <div style={{ flex: 1, overflowY: "auto", padding: space.s24 }}>
+          <h2
+            style={{
+              ...typography.sizes.t26,
+              fontWeight: typography.weights.bold,
+              color: colors.textBody,
+              letterSpacing: "-0.01em",
+              marginBottom: space.s16,
+            }}
+          >
+            {detail?.title ?? hit.title}
+          </h2>
+
+          {hasTags && detail && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: space.s4, marginBottom: space.s24 }}>
+              {detail.workPackage && <Tag color={colors.brandDarkBlue}>{detail.workPackage}</Tag>}
+              {detail.fieldSite && <Tag color={colors.brandWarmBlue}>{detail.fieldSite}</Tag>}
+              {detail.frictions.map((f) => (
+                <Tag key={`f-${f}`} color={FRICTIONS[f]?.color}>
+                  {FRICTIONS[f]?.label ?? f}
+                </Tag>
+              ))}
+              {detail.qualities.map((q) => (
+                <Tag key={`q-${q}`} color={QUALITIES[q]?.color}>
+                  {QUALITIES[q]?.label ?? q}
+                </Tag>
+              ))}
+              {detail.tags.map((t) => (
+                <Tag key={`t-${t}`}>{t}</Tag>
+              ))}
+            </div>
+          )}
+
+          <div
+            style={{
+              ...typography.sizes.t16,
+              color: colors.textBody,
+              lineHeight: 1.7,
+              whiteSpace: "pre-wrap",
+            }}
+          >
+            {body}
+          </div>
+
+          {loading && (
+            <p style={{ ...typography.sizes.t14, color: colors.textMuted, marginTop: space.s16, fontStyle: "italic" }}>
+              Laster…
+            </p>
+          )}
+
+          {detail?.href && (
+            <p style={{ marginTop: space.s24, paddingTop: space.s12, borderTop: `1px solid ${colors.borderSubtle}` }}>
+              {detail.external ? (
+                <a
+                  href={detail.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ ...typography.sizes.t14, color: BADGE_COLOR[hit.sourceType], fontWeight: typography.weights.medium }}
+                >
+                  Åpne lenke ↗
+                </a>
+              ) : (
+                <Link
+                  href={detail.href}
+                  style={{ ...typography.sizes.t14, color: BADGE_COLOR[hit.sourceType], fontWeight: typography.weights.medium }}
+                >
+                  Åpne hele siden →
+                </Link>
+              )}
+            </p>
+          )}
+        </div>
+      </motion.aside>
+    </>
+  );
+}
+
+function Tag({ children, color }: { children: React.ReactNode; color?: string }) {
+  const accent = color ?? colors.brandWarmBlue;
+  return (
+    <span
+      style={{
+        ...typography.sizes.t12,
+        padding: `2px ${space.s8}`,
+        background: `${accent}22`,
+        color: accent,
+        border: `1px solid ${accent}`,
+        borderRadius: 4,
+        fontWeight: typography.weights.medium,
+      }}
+    >
+      {children}
+    </span>
+  );
 }
 
 function Note({ children }: { children: React.ReactNode }) {
