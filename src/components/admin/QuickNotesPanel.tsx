@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { colors, space, typography } from "@/lib/design-tokens";
 import { FRICTIONS, QUALITIES, SCALES } from "@/lib/constants";
+import { embedSource } from "@/app/actions/embed";
 import type {
   CareFriction,
   CareQuality,
@@ -272,6 +273,7 @@ function NoteForm({
         noteBody: body,
         currentFrictions: frictions,
         currentQualities: qualities,
+        noteId,
       });
       if (res.status === "ok") {
         // Drop anything the user already picked.
@@ -299,7 +301,7 @@ function NoteForm({
       // cooldownTimer keeps the button disabled for the rest of the 3s window.
       void cooldownTimer;
     }
-  }, [body, headline, frictions, qualities, workPackage, linked, aiAvailability, aiLoading, aiCoolingDown]);
+  }, [body, headline, frictions, qualities, workPackage, linked, noteId, aiAvailability, aiLoading, aiCoolingDown]);
 
   const acceptFrictionSuggestion = useCallback((k: CareFriction) => {
     setFrictions((prev) => (prev.includes(k) ? prev : [...prev, k]));
@@ -502,6 +504,9 @@ function NoteForm({
         }
       }
     }
+
+    // Inline (re)embed for semantic search; non-blocking, backfill repairs gaps.
+    void embedSource("quick_note", savedId);
 
     setSubmitting(false);
     onDone();

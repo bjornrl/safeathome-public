@@ -17,6 +17,7 @@ const PUBLIC_LINKS: { href: string; label: string }[] = [
 
 const INTERNAL_LINKS: { href: string; label: string }[] = [
   { href: "/admin", label: "Innholdsredigering" },
+  { href: "/internal/search", label: "Søk" },
   { href: "/welfare-tech", label: "Velferdsteknologi" },
   { href: "/internal/nodes", label: "Nodekart" },
   { href: "/explore", label: "Utforsk" },
