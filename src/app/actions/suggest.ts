@@ -2,12 +2,19 @@
 
 import Anthropic from "@anthropic-ai/sdk";
 import { createSupabaseServerClient } from "@/lib/supabase-server";
+import { embedText, hasOpenAIKey, toVectorLiteral } from "@/lib/embeddings";
 import { FRICTIONS, QUALITIES } from "@/lib/constants";
 import type { CareFriction, CareQuality, WorkPackage } from "@/lib/types";
 
 const DAILY_LIMIT = 20;
 const MODEL = "claude-haiku-4-5-20251001";
-const MAX_TOKENS = 500;
+const MAX_TOKENS = 300; // categories-only output is small (no related list anymore)
+
+// Related-items kNN tuning. The floor mirrors search's `min_similarity` (0.32):
+// it separates on-topic (~0.34–0.54) from off-topic (~0.18–0.26). See ADR 0001.
+const RELATED_MIN_SIMILARITY = 0.32;
+const RELATED_CANDIDATES = 15; // how many neighbours to pull before floor + dedupe
+const RELATED_MAX = 5; // chips shown to the researcher
 
 const FRICTION_KEYS = Object.keys(FRICTIONS) as CareFriction[];
 const QUALITY_KEYS = Object.keys(QUALITIES) as CareQuality[];
@@ -38,6 +45,9 @@ const EMPTY_RESULT: SuggestionResult = {
   work_package: null,
   related: [],
 };
+
+type Categories = Pick<SuggestionResult, "frictions" | "qualities" | "work_package">;
+const EMPTY_CATEGORIES: Categories = { frictions: [], qualities: [], work_package: null };
 
 function hasApiKey(): boolean {
   return Boolean(process.env.ANTHROPIC_API_KEY);
@@ -72,6 +82,7 @@ export type SuggestInput = {
   noteBody: string;
   currentFrictions: CareFriction[];
   currentQualities: CareQuality[];
+  noteId?: string; // present when editing — excluded from its own related results
 };
 
 export type SuggestResponse =
@@ -93,59 +104,29 @@ export async function requestSuggestions(input: SuggestInput): Promise<SuggestRe
   const used = await readUsage(userId);
   if (used >= DAILY_LIMIT) return { status: "limit_reached" };
 
-  // Pull the existing notes + insights to give Claude something to relate against.
-  const [notesRes, insightsRes] = await Promise.all([
-    supabase.from("quick_notes").select("id, headline, body").limit(200),
-    supabase.from("insights").select("id, title, body").limit(200),
+  // Categorisation (Claude) and related items (vector kNN) are independent
+  // paths backed by different providers — run them together and let either
+  // degrade on its own (ADR 0001). `categories === null` means Claude failed.
+  const [categories, related] = await Promise.all([
+    suggestCategories(input),
+    relatedByKnn(supabase, input),
   ]);
-  type NoteRow = { id: string; headline: string | null; body: string };
-  type InsightRow = { id: string; title: string; body: string };
-  const notes = ((notesRes.data ?? []) as NoteRow[]).map((n) => ({
-    id: n.id,
-    type: "note" as const,
-    title: (n.headline?.trim() || n.body.slice(0, 60)) ?? "(uten tittel)",
-    excerpt: (n.body ?? "").slice(0, 200),
-  }));
-  const insights = ((insightsRes.data ?? []) as InsightRow[]).map((i) => ({
-    id: i.id,
-    type: "insight" as const,
-    title: i.title,
-    excerpt: (i.body ?? "").slice(0, 200),
-  }));
-  const corpus = [...notes, ...insights];
 
-  // Build prompt.
-  const system =
-    "You are a research assistant for the SAFE@HOME project, a Norwegian research project studying how municipal homecare services can be adapted for aging immigrants. You help researchers tag their field notes with the correct analytical categories and find connections to related observations.\n\nRespond only with valid JSON. No explanation, no markdown, no preamble.";
-
-  const userPrompt = buildUserPrompt({
-    headline: input.noteHeadline,
-    body: input.noteBody,
-    currentFrictions: input.currentFrictions,
-    currentQualities: input.currentQualities,
-    corpus,
-  });
-
-  let parsed: SuggestionResult = EMPTY_RESULT;
-  try {
-    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-    const response = await client.messages.create({
-      model: MODEL,
-      max_tokens: MAX_TOKENS,
-      system,
-      messages: [{ role: "user", content: userPrompt }],
-    });
-    const text = response.content
-      .filter((b): b is Anthropic.TextBlock => b.type === "text")
-      .map((b) => b.text)
-      .join("");
-    parsed = parseSuggestion(text, corpus);
-  } catch (err) {
-    console.warn("[suggest] Claude call failed:", err);
-    return { status: "error", suggestions: EMPTY_RESULT };
+  if (categories === null) {
+    // Claude failed. Surface related anyway (it's free of the Claude budget),
+    // but only treat it as an error — and skip the counter — when nothing came
+    // back at all. Either way we never charged a Claude unit, so don't bump.
+    if (related.length === 0) return { status: "error", suggestions: EMPTY_RESULT };
+    return {
+      status: "ok",
+      suggestions: { ...EMPTY_CATEGORIES, related },
+      remaining: Math.max(0, DAILY_LIMIT - used),
+    };
   }
 
-  // Bump the counter only after a successful API response.
+  const suggestions: SuggestionResult = { ...categories, related };
+
+  // Bump the counter only after a successful Claude response.
   let remaining = Math.max(0, DAILY_LIMIT - used - 1);
   try {
     const { data: rpcData, error: rpcErr } = await supabase.rpc(
@@ -159,7 +140,151 @@ export async function requestSuggestions(input: SuggestInput): Promise<SuggestRe
     console.warn("[suggest] increment usage failed:", err);
   }
 
-  return { status: "ok", suggestions: parsed, remaining };
+  return { status: "ok", suggestions, remaining };
+}
+
+// ─── Related items: vector kNN over the corpus ──────────────────
+//
+// Embeds the live draft text and asks `match_embeddings` for the nearest
+// notes/insights. This replaces the old "dump 200 rows into Claude" approach:
+// it's cheaper, scales with the corpus, and ranks by actual semantic distance.
+
+type KnnRow = {
+  source_type: string;
+  source_id: string;
+  chunk_index: number;
+  content: string;
+  similarity: number;
+};
+
+async function relatedByKnn(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  input: SuggestInput,
+): Promise<SuggestionRelated[]> {
+  if (!hasOpenAIKey()) return [];
+  const text = [input.noteHeadline, input.noteBody]
+    .map((s) => s?.trim())
+    .filter(Boolean)
+    .join("\n\n");
+  if (!text) return [];
+
+  try {
+    const vector = await embedText(text);
+    const { data, error } = await supabase.rpc("match_embeddings", {
+      query_embedding: toVectorLiteral(vector),
+      match_count: RELATED_CANDIDATES,
+      filter_source_types: ["quick_note", "insight"],
+      exclude_source_id: input.noteId ?? null,
+    });
+    if (error) throw new Error(error.message);
+
+    // Apply the similarity floor and collapse multiple chunks of the same
+    // source down to its best-scoring hit (v1 is single-chunk, but PDF
+    // chunking — slice E — will produce chunk_index > 0).
+    const bestBySource = new Map<string, KnnRow>();
+    for (const r of (data ?? []) as KnnRow[]) {
+      if (r.similarity < RELATED_MIN_SIMILARITY) continue;
+      const existing = bestBySource.get(r.source_id);
+      if (!existing || r.similarity > existing.similarity) {
+        bestBySource.set(r.source_id, r);
+      }
+    }
+    const top = [...bestBySource.values()]
+      .sort((a, b) => b.similarity - a.similarity)
+      .slice(0, RELATED_MAX);
+
+    return hydrateRelated(supabase, top);
+  } catch (err) {
+    console.warn("[suggest] related kNN failed:", err);
+    return [];
+  }
+}
+
+// Resolve display titles for the kNN hits by batch-fetching the source rows.
+async function hydrateRelated(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  rows: KnnRow[],
+): Promise<SuggestionRelated[]> {
+  const noteIds = rows.filter((r) => r.source_type === "quick_note").map((r) => r.source_id);
+  const insightIds = rows.filter((r) => r.source_type === "insight").map((r) => r.source_id);
+
+  // key: "source_type:id" -> title
+  const titles = new Map<string, string>();
+
+  await Promise.all([
+    noteIds.length
+      ? supabase
+          .from("quick_notes")
+          .select("id, headline, body")
+          .in("id", noteIds)
+          .then(({ data }) => {
+            for (const r of (data ?? []) as { id: string; headline: string | null; body: string }[]) {
+              titles.set(
+                `quick_note:${r.id}`,
+                r.headline?.trim() || r.body.slice(0, 60) || "(uten tittel)",
+              );
+            }
+          })
+      : null,
+    insightIds.length
+      ? supabase
+          .from("insights")
+          .select("id, title")
+          .in("id", insightIds)
+          .then(({ data }) => {
+            for (const r of (data ?? []) as { id: string; title: string }[]) {
+              titles.set(`insight:${r.id}`, r.title);
+            }
+          })
+      : null,
+  ]);
+
+  return rows
+    .map((r): SuggestionRelated | null => {
+      const title = titles.get(`${r.source_type}:${r.source_id}`);
+      if (!title) return null; // source deleted but embedding not yet pruned
+      return {
+        id: r.source_id,
+        type: r.source_type === "quick_note" ? "note" : "insight",
+        title,
+      };
+    })
+    .filter((x): x is SuggestionRelated => x !== null);
+}
+
+// ─── Categories: Claude over the note text + the taxonomy ───────
+//
+// Returns null on failure so the caller can keep the related items and avoid
+// charging a Claude unit.
+
+async function suggestCategories(input: SuggestInput): Promise<Categories | null> {
+  const system =
+    "You are a research assistant for the SAFE@HOME project, a Norwegian research project studying how municipal homecare services can be adapted for aging immigrants. You help researchers tag their field notes with the correct analytical categories.\n\nRespond only with valid JSON. No explanation, no markdown, no preamble.";
+
+  const userPrompt = buildUserPrompt({
+    headline: input.noteHeadline,
+    body: input.noteBody,
+    currentFrictions: input.currentFrictions,
+    currentQualities: input.currentQualities,
+  });
+
+  try {
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    const response = await client.messages.create({
+      model: MODEL,
+      max_tokens: MAX_TOKENS,
+      system,
+      messages: [{ role: "user", content: userPrompt }],
+    });
+    const text = response.content
+      .filter((b): b is Anthropic.TextBlock => b.type === "text")
+      .map((b) => b.text)
+      .join("");
+    return parseCategories(text);
+  } catch (err) {
+    console.warn("[suggest] Claude call failed:", err);
+    return null;
+  }
 }
 
 // ─── Prompt building + parsing ──────────────────────────────────
@@ -169,13 +294,8 @@ function buildUserPrompt(args: {
   body: string;
   currentFrictions: CareFriction[];
   currentQualities: CareQuality[];
-  corpus: { id: string; type: "note" | "insight"; title: string; excerpt: string }[];
 }): string {
   const headline = args.headline.trim() || "(none)";
-  const corpusLines = args.corpus
-    .slice(0, 200)
-    .map((c) => `[${c.id}] [type: ${c.type}] ${c.title}: ${c.excerpt}`)
-    .join("\n");
 
   return `A researcher has written the following note:
 
@@ -210,38 +330,28 @@ Work packages:
 Already selected frictions (do not suggest these): ${args.currentFrictions.join(", ") || "none"}
 Already selected qualities (do not suggest these): ${args.currentQualities.join(", ") || "none"}
 
-Existing notes and insights (suggest up to 5 that are most related):
-${corpusLines || "(none)"}
-
 Respond with JSON in exactly this format:
 {
   "frictions": ["rotate", "script"],
   "qualities": ["cultural_anchoring"],
-  "work_package": "WP1",
-  "related": [
-    {"id": "uuid-here", "type": "note", "title": "Title here"},
-    {"id": "uuid-here", "type": "insight", "title": "Title here"}
-  ]
+  "work_package": "WP1"
 }
 
 Only suggest categories you are confident about. Fewer confident suggestions are better than many uncertain ones. Return empty arrays if unsure.`;
 }
 
-function parseSuggestion(
-  text: string,
-  corpus: { id: string; type: "note" | "insight"; title: string }[],
-): SuggestionResult {
+function parseCategories(text: string): Categories {
   // Extract JSON, even if the model wrapped it in code fences or stray prose.
   const jsonText = extractJsonObject(text);
-  if (!jsonText) return EMPTY_RESULT;
+  if (!jsonText) return EMPTY_CATEGORIES;
 
   let raw: unknown;
   try {
     raw = JSON.parse(jsonText);
   } catch {
-    return EMPTY_RESULT;
+    return EMPTY_CATEGORIES;
   }
-  if (!raw || typeof raw !== "object") return EMPTY_RESULT;
+  if (!raw || typeof raw !== "object") return EMPTY_CATEGORIES;
   const obj = raw as Record<string, unknown>;
 
   const frictions = Array.isArray(obj.frictions)
@@ -261,27 +371,7 @@ function parseSuggestion(
       ? (obj.work_package as WorkPackage)
       : null;
 
-  const corpusById = new Map(corpus.map((c) => [c.id, c]));
-  const related = Array.isArray(obj.related)
-    ? (obj.related
-        .map((entry) => {
-          if (!entry || typeof entry !== "object") return null;
-          const e = entry as Record<string, unknown>;
-          const id = typeof e.id === "string" ? e.id : null;
-          if (!id) return null;
-          const known = corpusById.get(id);
-          if (!known) return null; // Drop hallucinated IDs.
-          return {
-            id,
-            type: known.type,
-            title: typeof e.title === "string" && e.title.trim() ? e.title : known.title,
-          };
-        })
-        .filter((x): x is SuggestionRelated => x !== null)
-        .slice(0, 5))
-    : [];
-
-  return { frictions, qualities, work_package, related };
+  return { frictions, qualities, work_package };
 }
 
 function extractJsonObject(text: string): string | null {

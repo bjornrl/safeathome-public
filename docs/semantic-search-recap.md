@@ -19,6 +19,12 @@ ranked, hydrated results at **`/internal/search`** (authenticated).
 - ✅ Admin **"Search index"** tab (missing-count panel + re-embed button).
 - ✅ Search degrades to keyword-only if OpenAI fails (no client-visible error).
 - ✅ Relevance tuning: absolute floor + relative band (see "Tuning" below).
+- ✅ **C/D — autosuggest related items now use `match_embeddings` kNN** instead
+  of dumping 200 rows into Claude. Claude's call shrank to categories-only;
+  related is pure vector kNN (floor **0.32**, dedupe-by-source, top 5). The two
+  paths are decoupled — different providers, each degrades on its own. `noteId`
+  is threaded from the form so a note never relates to itself. See
+  `src/app/actions/suggest.ts`.
 
 ### Current behaviour (measured today)
 - `pizza med ananas` (off-topic) → **0 hits** ✓
@@ -50,11 +56,11 @@ node --env-file=.env.local scripts/backfill-embeddings.mjs
 them — the type and DB diverge. Resource embedding uses `title` + `description`
 only. (Worth reconciling the `PublicResource` type vs. the real table someday.)
 
-## Next steps (not started)
-1. **C/D — autosuggest upgrade** in `src/app/actions/suggest.ts`: replace the
-   200-row "dump everything into Claude" with `match_embeddings` kNN for
-   candidates, then Claude for rationale. The RPC is ready; `suggest.ts` is
-   untouched. This was the original #1 priority.
+## Next steps
+1. ✅ **C/D — autosuggest upgrade** — done (pure-kNN related, see "Done" above).
+   We chose pure kNN over "kNN→Claude rationale": the UI has no rationale slot,
+   and cosine over good candidates is cheaper/deterministic. If we ever want LLM
+   re-ranking, feed the ~15 kNN candidates to Claude in `suggestCategories`.
 2. **E** — PDF full-text ingestion for resources (storage bucket → extract →
    chunk → embed). Born-digital only, no OCR. Deferred.
 3. **F/G** — cross-corpus synthesis; public features (NL map filter, semantic
