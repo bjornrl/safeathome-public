@@ -9,6 +9,7 @@ import { STAGES } from "@/lib/seed-solutions";
 import type { CareFriction, CareQuality, FieldSite, HouseTheme, MapScale, ResourceType, WorkPackage } from "@/lib/types";
 import { QuickNotesPanel } from "@/components/admin/QuickNotesPanel";
 import { WelfareTechPanel } from "@/components/admin/WelfareTechPanel";
+import { AdminHome } from "@/components/admin/AdminHome";
 import { EmbeddingsPanel } from "@/components/admin/EmbeddingsPanel";
 import { embedSource, removeEmbedding } from "@/app/actions/embed";
 import {
@@ -29,10 +30,11 @@ import {
   requestSuggestions,
 } from "@/app/actions/suggest";
 const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
-type Tab = "notes" | "stories" | "challenges" | "resources" | "wp" | "welfare-tech" | "search-index";
-const TAB_VALUES: Tab[] = ["notes", "stories", "challenges", "resources", "wp", "welfare-tech", "search-index"];
+type Tab = "home" | "notes" | "stories" | "challenges" | "resources" | "wp" | "welfare-tech" | "search-index";
+const TAB_VALUES: Tab[] = ["home", "notes", "stories", "challenges", "resources", "wp", "welfare-tech", "search-index"];
 
-const TAB_DESCRIPTIONS: Record<Tab, string> = {
+// "home" carries its own copy (AdminHome), so it has no banner description.
+const TAB_DESCRIPTIONS: Record<Exclude<Tab, "home">, string> = {
   notes:
     "Kladdebok for pågående observasjoner, ideer og spørsmål fra feltet. Merk med arbeidspakke, friksjon, kvalitet, tema eller skala slik at notatene dukker opp i nodekartet og i AI-forslagene.",
   stories:
@@ -225,7 +227,7 @@ export default function AdminPage() {
   const searchParams = useSearchParams();
   const initialTab = (() => {
     const raw = searchParams.get("tab");
-    return raw && (TAB_VALUES as string[]).includes(raw) ? (raw as Tab) : "notes";
+    return raw && (TAB_VALUES as string[]).includes(raw) ? (raw as Tab) : "home";
   })();
   const [tab, setTab] = useState<Tab>(initialTab);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -292,6 +294,9 @@ export default function AdminPage() {
       </header>
 
       <nav className="[display:flex] [gap:8px] [margin-bottom:20px] [flex-wrap:wrap]">
+        <TabButton active={tab === "home"} onClick={() => selectTab("home")}>
+          Start
+        </TabButton>
         <TabButton active={tab === "notes"} onClick={() => selectTab("notes")}>
           Hurtignotater
         </TabButton>
@@ -319,10 +324,13 @@ export default function AdminPage() {
         )}
       </nav>
 
-      <p className="[font-size:14px] [color:#4d4d4d] [line-height:1.65] [max-width:760px] [margin:0_0_40px] [padding:14px_18px] [background:#f7f6f0] [border:1px_solid_#e6e6e6] [border-radius:8px]">
-        {TAB_DESCRIPTIONS[tab]}
-      </p>
+      {tab !== "home" && (
+        <p className="[font-size:14px] [color:#4d4d4d] [line-height:1.65] [max-width:760px] [margin:0_0_40px] [padding:14px_18px] [background:#f7f6f0] [border:1px_solid_#e6e6e6] [border-radius:8px]">
+          {TAB_DESCRIPTIONS[tab]}
+        </p>
+      )}
 
+      {tab === "home" && <AdminHome onOpenTab={(t) => selectTab(t as Tab)} />}
       {tab === "notes" && <QuickNotesPanel />}
       {tab === "stories" && <StoriesPanel />}
       {tab === "challenges" && <ChallengesPanel />}
