@@ -669,6 +669,10 @@ function StoryForm({ onCreated }: { onCreated: () => void }) {
       title: title.trim(),
       body: body.trim(),
       theme,
+      // theme is always set by this form (dropdown defaults to a room), and the
+      // `public_stories_theme_home_based_chk` constraint requires home_based=TRUE
+      // whenever theme is non-null. Keep them in lockstep.
+      home_based: true,
       field_site: fieldSite || null,
       work_package: workPackage || null,
       frictions,
