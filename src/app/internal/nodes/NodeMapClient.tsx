@@ -6,6 +6,13 @@ import {
   useRef,
   useState,
 } from "react";
+import {
+  forceCenter,
+  forceCollide,
+  forceLink,
+  forceManyBody,
+  forceSimulation,
+} from "d3";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { colors, space, typography } from "@/lib/design-tokens";
@@ -69,10 +76,10 @@ interface GraphEdge {
   category: EdgeCategory;
 }
 
-// ─── Layout: seeded RNG + Poisson-disk scatter ───
-// Stable across renders so the constellation doesn't reshuffle every time the
-// graph re-mounts. Lifted from the project-cluster recipe in
-// .claude/node_cluster.md.
+// ─── Layout: category similarity + force simulation ───
+// Nodes with more shared tags attract; unrelated nodes repel. Initial
+// positions come from Poisson-disk scatter so the layout is stable across
+// remounts; the simulation runs once and freezes.
 
 function seededRandom(seed: string): () => number {
   let h = 2166136261 >>> 0;
@@ -92,6 +99,144 @@ function seededRandom(seed: string): () => number {
 const SCATTER_SEED = "safeathome-node-graph";
 const MAX_DEGREE = 4;
 
+const TAG_WEIGHTS: Record<string, number> = {
+  friction: 1.0,
+  quality: 1.0,
+  wp: 0.8,
+  site: 0.6,
+  theme: 0.5,
+  scale: 0.3,
+};
+
+const MIN_LINK_DIST = 70;
+const MAX_LINK_DIST = 280;
+const MANUAL_LINK_DIST = 55;
+const MAX_SIMILARITY = 4;
+const LAYOUT_TICKS = 320;
+
+type TagKey = string;
+
+function tagsOf(n: GraphNode): Set<TagKey> {
+  const tags = new Set<TagKey>();
+  for (const f of n.frictions) tags.add(`friction:${f}`);
+  for (const q of n.qualities) tags.add(`quality:${q}`);
+  if (n.workPackage) tags.add(`wp:${n.workPackage}`);
+  if (n.fieldSite) tags.add(`site:${n.fieldSite}`);
+  for (const t of n.houseThemes) tags.add(`theme:${t}`);
+  if (n.mapScale) tags.add(`scale:${n.mapScale}`);
+  return tags;
+}
+
+function categorySimilarity(a: GraphNode, b: GraphNode): number {
+  const bTags = tagsOf(b);
+  let score = 0;
+  for (const tag of tagsOf(a)) {
+    if (!bTags.has(tag)) continue;
+    const kind = tag.split(":")[0];
+    score += TAG_WEIGHTS[kind] ?? 0.5;
+  }
+  return score;
+}
+
+function targetLinkDistance(similarity: number, isManual: boolean): number {
+  if (isManual) return MANUAL_LINK_DIST;
+  if (similarity <= 0) return MAX_LINK_DIST;
+  const capped = Math.min(similarity, MAX_SIMILARITY);
+  return MAX_LINK_DIST - (capped / MAX_SIMILARITY) * (MAX_LINK_DIST - MIN_LINK_DIST);
+}
+
+function linkStrength(similarity: number, isManual: boolean): number {
+  if (isManual) return 1;
+  if (similarity <= 0) return 0;
+  return 0.12 + 0.1 * Math.min(similarity, MAX_SIMILARITY);
+}
+
+type SimNode = GraphNode & { x: number; y: number };
+
+interface SimLink {
+  source: SimNode;
+  target: SimNode;
+  distance: number;
+  strength: number;
+}
+
+function clampInCanvas(
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  pad: { x: number; top: number; bottom: number },
+): { x: number; y: number } {
+  return {
+    x: Math.max(pad.x, Math.min(width - pad.x, x)),
+    y: Math.max(pad.top, Math.min(height - pad.bottom, y)),
+  };
+}
+
+function computeForceLayout(
+  nodes: GraphNode[],
+  edges: GraphEdge[],
+  width: number,
+  height: number,
+  pad: { x: number; top: number; bottom: number },
+): Map<string, { x: number; y: number }> {
+  const map = new Map<string, { x: number; y: number }>();
+  if (nodes.length === 0 || width <= 0 || height <= 0) return map;
+
+  const scattered = poissonScatter(nodes.length, width, height, pad, `${SCATTER_SEED}:${nodes.length}`);
+  const simNodes: SimNode[] = nodes.map((n, i) => ({
+    ...n,
+    x: scattered[i]?.x ?? width / 2,
+    y: scattered[i]?.y ?? height / 2,
+  }));
+
+  const manualPairs = new Set<string>();
+  for (const e of edges) {
+    if (e.category.kind !== "manual") continue;
+    manualPairs.add([e.source, e.target].sort().join("|"));
+  }
+
+  const links: SimLink[] = [];
+  for (let i = 0; i < simNodes.length; i++) {
+    for (let j = i + 1; j < simNodes.length; j++) {
+      const a = simNodes[i];
+      const b = simNodes[j];
+      const pairKey = [a.id, b.id].sort().join("|");
+      const isManual = manualPairs.has(pairKey);
+      const sim = categorySimilarity(a, b);
+      if (!isManual && sim <= 0) continue;
+      links.push({
+        source: a,
+        target: b,
+        distance: targetLinkDistance(sim, isManual),
+        strength: linkStrength(sim, isManual),
+      });
+    }
+  }
+
+  const cx = width / 2;
+  const cy = height / 2;
+  const simulation = forceSimulation(simNodes)
+    .force(
+      "link",
+      forceLink<SimNode, SimLink>(links)
+        .id((d) => d.id)
+        .distance((d) => d.distance)
+        .strength((d) => d.strength),
+    )
+    .force("charge", forceManyBody<SimNode>().strength(-165))
+    .force("collide", forceCollide<SimNode>(28))
+    .force("center", forceCenter(cx, cy).strength(0.08))
+    .stop();
+
+  for (let i = 0; i < LAYOUT_TICKS; i++) simulation.tick();
+
+  for (const n of simNodes) {
+    map.set(n.id, clampInCanvas(n.x, n.y, width, height, pad));
+  }
+  return map;
+}
+
 function poissonScatter(
   count: number,
   width: number,
@@ -104,7 +249,7 @@ function poissonScatter(
   const usableW = Math.max(1, width - pad.x * 2);
   const usableH = Math.max(1, height - pad.top - pad.bottom);
   const area = usableW * usableH;
-  const minDist = Math.sqrt(area / count) * 0.65;
+  const minDist = Math.sqrt(area / count) * 0.85;
   const minDistSq = minDist * minDist;
   const MAX_ATTEMPTS = 200;
   const placed: { x: number; y: number }[] = [];
@@ -511,26 +656,11 @@ export default function NodeMapClient() {
     );
   }, [nodes, search]);
 
-  // ── Stable Poisson-disk scatter of anchor positions ──
-  // Recomputed only when the node set or canvas size changes; the seed keeps
-  // the constellation stable across renders so it doesn't reshuffle on every
-  // mount or filter toggle.
+  // ── Category-weighted force layout (one-shot, then frozen) ──
   const positions = useMemo(() => {
-    const map = new Map<string, { x: number; y: number }>();
-    if (nodes.length === 0 || size.width <= 0 || size.height <= 0) return map;
-    const padX = 64;
-    const padTop = 32;
-    const padBottom = 32;
-    const scattered = poissonScatter(
-      nodes.length,
-      size.width,
-      size.height,
-      { x: padX, top: padTop, bottom: padBottom },
-      `${SCATTER_SEED}:${nodes.length}`,
-    );
-    nodes.forEach((n, i) => map.set(n.id, scattered[i]));
-    return map;
-  }, [nodes, size.width, size.height]);
+    const pad = { x: 64, top: 32, bottom: 32 };
+    return computeForceLayout(nodes, edges, size.width, size.height, pad);
+  }, [nodes, edges, size.width, size.height]);
 
   // ── Anim state seeded per node id ──
   useEffect(() => {
