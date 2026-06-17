@@ -13,6 +13,20 @@ export const ENTITY_KIND_LABELS: Record<EntityLinkKind, string> = {
 
 const ENTITY_KINDS = new Set<string>(["quick_note", "insight", "story", "resource"]);
 
+function friendlyEntityLinksError(message: string): string {
+  if (isMissingEntityLinksTable(message)) {
+    return "Koblingstabellen (entity_links) mangler i databasen. Kjør supabase/migrations/0007_entity_links.sql i Supabase SQL-editor, og prøv igjen.";
+  }
+  return message;
+}
+
+function isMissingEntityLinksTable(message: string): boolean {
+  return (
+    /entity_links/i.test(message) &&
+    /(schema cache|does not exist|Could not find)/i.test(message)
+  );
+}
+
 export function entityLinkKey(kind: EntityLinkKind, id: string): string {
   return `${kind}:${id}`;
 }
@@ -62,7 +76,11 @@ export async function saveEntityLinks(
     .delete()
     .eq("from_type", fromType)
     .eq("from_id", fromId);
-  if (delErr) return delErr.message;
+  if (delErr) {
+    // Let saves without connections succeed until the migration is applied.
+    if (linked.size === 0 && isMissingEntityLinksTable(delErr.message)) return null;
+    return friendlyEntityLinksError(delErr.message);
+  }
 
   if (linked.size === 0) return null;
 
@@ -83,7 +101,7 @@ export async function saveEntityLinks(
   if (rows.length === 0) return null;
 
   const { error: insErr } = await supabase.from("entity_links").insert(rows);
-  return insErr?.message ?? null;
+  return insErr ? friendlyEntityLinksError(insErr.message) : null;
 }
 
 export function linkedIdsOfKind(linked: Set<string>, kind: EntityLinkKind): string[] {
