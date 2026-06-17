@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { colors, space, typography } from "@/lib/design-tokens";
 import { supabase } from "@/lib/supabase";
 import type { WelfareTechnology } from "@/lib/types";
+import "./welfare-tech.css";
 
 const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
 const ALL = "__all__";
@@ -114,6 +115,7 @@ export default function WelfareTechClient({ items }: { items: WelfareTechnology[
         <div
           role="tablist"
           aria-label="Filtrer etter kategori"
+          className="welfare-filter-tabs"
           style={{
             display: "flex",
             gap: space.s8,
@@ -237,28 +239,6 @@ export default function WelfareTechClient({ items }: { items: WelfareTechnology[
           />
         )}
       </AnimatePresence>
-
-      {/* Responsive grid: 2 col default (mobile), 3 col tablet, 5 col desktop.
-          Plus hide the horizontal scrollbar on filter row. */}
-      <style jsx global>{`
-        .welfare-grid > li > * { width: 100%; }
-        .welfare-detail-panel { width: 100vw; }
-        @media (min-width: 768px) {
-          .welfare-grid {
-            grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-          }
-          .welfare-detail-panel {
-            width: 60vw;
-            min-width: 480px;
-          }
-        }
-        @media (min-width: 1100px) {
-          .welfare-grid {
-            grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-          }
-        }
-        [role="tablist"]::-webkit-scrollbar { display: none; }
-      `}</style>
     </main>
   );
 }
