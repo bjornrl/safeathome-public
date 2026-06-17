@@ -1323,6 +1323,7 @@ interface ResourceRow {
   description: string | null;
   type: ResourceType;
   url: string | null;
+  authors: string | null;
   map_scale: MapScale | null;
   published: boolean;
   created_at?: string;
@@ -1356,6 +1357,7 @@ function ResourcesPanel({ currentUserId }: { currentUserId: string | null }) {
         title: r.title,
         subtitle: [
           RESOURCE_TYPE_LABELS[r.type],
+          r.authors,
           r.map_scale ? SCALES[r.map_scale]?.label : null,
         ].filter(Boolean).join(" · "),
         published: r.published,
@@ -1389,6 +1391,7 @@ function ResourceForm({
 }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [authors, setAuthors] = useState("");
   const [type, setType] = useState<ResourceType>("publication");
   const [url, setUrl] = useState("");
   const [mapScale, setMapScale] = useState<MapScale | "">("");
@@ -1463,6 +1466,7 @@ function ResourceForm({
       const r = rRes.data as ResourceRow;
       setTitle(r.title);
       setDescription(r.description ?? "");
+      setAuthors(r.authors ?? "");
       setType(r.type);
       setUrl(r.url ?? "");
       setMapScale(r.map_scale ?? "");
@@ -1489,6 +1493,7 @@ function ResourceForm({
       id,
       title: title.trim(),
       description: description.trim() || null,
+      authors: authors.trim() || null,
       type,
       url: url.trim() || null,
       map_scale: mapScale || null,
@@ -1533,6 +1538,7 @@ function ResourceForm({
     if (!editId) {
       setTitle("");
       setDescription("");
+      setAuthors("");
       setUrl("");
       setMapScale("");
       setFrictions([]);
@@ -1554,6 +1560,15 @@ function ResourceForm({
       <textarea style={{
         ...inputStyle
       }} value={description} onChange={e => setDescription(e.target.value)} className="[min-height:110px]" />
+    </FormField>
+
+    <FormField label="Utgiver / forfatter">
+      <input
+        style={inputStyle}
+        value={authors}
+        onChange={(e) => setAuthors(e.target.value)}
+        placeholder="F.eks. OsloMet, Kommune-Alna, Navn et al."
+      />
     </FormField>
 
     <SuggestBar

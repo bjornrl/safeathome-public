@@ -195,8 +195,7 @@ function snippetFrom(content: string, title?: string): string {
 //
 // Hydrates the full source row for a single hit. Authenticated-only and
 // RLS-enforced, like search itself. Returns null if not signed in or the row
-// is gone. NOTE: public_resources has no authors/year column despite the TS
-// type listing them (the type and DB diverge) — don't select them here.
+// is gone.
 
 const humanizeTheme = (t: HouseTheme): string => t.replace(/_/g, " ");
 
