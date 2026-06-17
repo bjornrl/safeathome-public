@@ -13,7 +13,6 @@ import type {
   HouseTheme,
   LinkableEntity,
   MapScale,
-  NoteConnection,
   Profile,
   QuickNote,
   SuggestedCategory,
@@ -34,6 +33,16 @@ import {
   labelStyle as sharedLabelStyle,
 } from "./FormPrimitives";
 import { CategoryHelp } from "@/components/ui";
+import { ConnectSidebar } from "./ConnectSidebar";
+import {
+  fetchLinkedEntities,
+  ENTITY_KIND_LABELS,
+  loadEntityLinks,
+  loadNoteConnectionsAsEntityKeys,
+  saveEntityLinks,
+  suggestionRelatedToKey,
+  syncNoteConnectionsFromLinks,
+} from "@/lib/entity-links";
 import {
   getSuggestionAvailability,
   requestSuggestions,
@@ -273,7 +282,7 @@ function NoteForm({
         noteBody: body,
         currentFrictions: frictions,
         currentQualities: qualities,
-        noteId,
+        excludeSourceId: noteId,
       });
       if (res.status === "ok") {
         // Drop anything the user already picked.
@@ -285,7 +294,9 @@ function NoteForm({
             : null,
         );
         setAiRelated(
-          res.suggestions.related.filter((r) => !linked.has(`${r.type === "note" ? "quick_note" : "insight"}:${r.id}`)),
+          res.suggestions.related.filter(
+            (r) => !linked.has(suggestionRelatedToKey(r)),
+          ),
         );
         if (res.remaining === 0) setAiAvailability("limit_reached");
       } else if (res.status === "limit_reached") {
@@ -329,20 +340,16 @@ function NoteForm({
       const next = new Set(linked);
       next.add(key);
       setLinked(next);
-      setAiRelated((prev) =>
-        prev.filter((r) => `${r.type === "note" ? "quick_note" : "insight"}:${r.id}` !== key),
-      );
+      setAiRelated((prev) => prev.filter((r) => suggestionRelatedToKey(r) !== key));
     },
     [linked],
   );
   const dismissRelatedSuggestion = useCallback((key: string) => {
-    setAiRelated((prev) =>
-      prev.filter((r) => `${r.type === "note" ? "quick_note" : "insight"}:${r.id}` !== key),
-    );
+    setAiRelated((prev) => prev.filter((r) => suggestionRelatedToKey(r) !== key));
   }, []);
 
   const aiRelatedKeys = useMemo(
-    () => new Set(aiRelated.map((r) => `${r.type === "note" ? "quick_note" : "insight"}:${r.id}`)),
+    () => new Set(aiRelated.map((r) => suggestionRelatedToKey(r))),
     [aiRelated],
   );
 
@@ -352,12 +359,8 @@ function NoteForm({
     let cancelled = false;
     (async () => {
       setLoading(true);
-      const [noteRes, connRes, sugRes] = await Promise.all([
+      const [noteRes, sugRes] = await Promise.all([
         supabase.from("quick_notes").select("*").eq("id", noteId).single(),
-        supabase
-          .from("note_connections")
-          .select("from_note_id,from_insight_id,to_note_id,to_insight_id")
-          .or(`from_note_id.eq.${noteId},to_note_id.eq.${noteId}`),
         supabase.from("note_suggested_categories").select("suggestion_id").eq("note_id", noteId),
       ]);
       if (cancelled) return;
@@ -376,12 +379,10 @@ function NoteForm({
       setQualities(n.care_qualities ?? []);
       setMapScale(n.map_scale ?? "");
 
-      const linkedSet = new Set<string>();
-      for (const c of (connRes.data as Pick<NoteConnection, "from_note_id" | "from_insight_id" | "to_note_id" | "to_insight_id">[] | null) ?? []) {
-        const otherNote = c.from_note_id === noteId ? c.to_note_id : c.from_note_id;
-        const otherInsight = c.from_note_id === noteId ? c.to_insight_id : c.from_insight_id;
-        if (otherNote) linkedSet.add(`quick_note:${otherNote}`);
-        if (otherInsight) linkedSet.add(`insight:${otherInsight}`);
+      const linkedSet = await loadEntityLinks("quick_note", noteId);
+      if (linkedSet.size === 0) {
+        const legacy = await loadNoteConnectionsAsEntityKeys(noteId);
+        legacy.forEach((k) => linkedSet.add(k));
       }
       setLinked(linkedSet);
 
@@ -473,35 +474,19 @@ function NoteForm({
       }
     }
 
-    // Reconcile connections — delete existing edges that touch this note,
-    // then re-insert from `linked`.
+    // Reconcile cross-corpus links + legacy note_connections for the node map.
     {
-      const { error: delErr } = await supabase
-        .from("note_connections")
-        .delete()
-        .or(`from_note_id.eq.${savedId},to_note_id.eq.${savedId}`);
-      if (delErr) {
+      const linkErr = await saveEntityLinks("quick_note", savedId, linked, currentProfile.id);
+      if (linkErr) {
         setSubmitting(false);
-        setStatus({ kind: "err", msg: delErr.message });
+        setStatus({ kind: "err", msg: linkErr });
         return;
       }
-      if (linked.size > 0) {
-        const rows = Array.from(linked).map((key) => {
-          const [kind, id] = key.split(":");
-          return {
-            from_note_id: savedId,
-            from_insight_id: null,
-            to_note_id: kind === "quick_note" ? id : null,
-            to_insight_id: kind === "insight" ? id : null,
-            created_by: currentProfile.id,
-          };
-        });
-        const { error: insErr } = await supabase.from("note_connections").insert(rows);
-        if (insErr) {
-          setSubmitting(false);
-          setStatus({ kind: "err", msg: insErr.message });
-          return;
-        }
+      const legacyErr = await syncNoteConnectionsFromLinks(savedId, linked, currentProfile.id);
+      if (legacyErr) {
+        setSubmitting(false);
+        setStatus({ kind: "err", msg: legacyErr });
+        return;
       }
     }
 
@@ -779,7 +764,7 @@ function NoteForm({
       </div>
 
       <ConnectSidebar
-        currentNoteId={noteId}
+        exclude={noteId ? { kind: "quick_note", id: noteId } : undefined}
         linked={linked}
         setLinked={setLinked}
         suggestedKeys={aiRelatedKeys}
@@ -791,263 +776,6 @@ function NoteForm({
 }
 
 const labelStyle = sharedLabelStyle;
-
-// ─── Connect sidebar ───
-
-function ConnectSidebar({
-  currentNoteId,
-  linked,
-  setLinked,
-  suggestedKeys,
-  onAcceptSuggested,
-  onDismissSuggested,
-}: {
-  currentNoteId?: string;
-  linked: Set<string>;
-  setLinked: (next: Set<string>) => void;
-  suggestedKeys?: Set<string>;
-  onAcceptSuggested?: (key: string) => void;
-  onDismissSuggested?: (key: string) => void;
-}) {
-  const [items, setItems] = useState<LinkableEntity[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState("");
-
-  useEffect(() => {
-    let active = true;
-    (async () => {
-      const [notesRes, insightsRes] = await Promise.all([
-        supabase
-          .from("quick_notes")
-          .select("id, headline, body, updated_at")
-          .order("updated_at", { ascending: false })
-          .limit(200),
-        supabase
-          .from("insights")
-          .select("id, title, body, updated_at")
-          .order("updated_at", { ascending: false })
-          .limit(200),
-      ]);
-      if (!active) return;
-      const noteItems: LinkableEntity[] = ((notesRes.data as { id: string; headline: string | null; body: string; updated_at: string }[] | null) ?? [])
-        .filter((n) => n.id !== currentNoteId)
-        .map((n) => ({
-          kind: "quick_note",
-          id: n.id,
-          title: n.headline?.trim() || (n.body.length > 60 ? `${n.body.slice(0, 60)}…` : n.body),
-          subtitle: null,
-          updated_at: n.updated_at,
-        }));
-      const insightItems: LinkableEntity[] = ((insightsRes.data as { id: string; title: string; body: string; updated_at: string }[] | null) ?? []).map((i) => ({
-        kind: "insight",
-        id: i.id,
-        title: i.title,
-        subtitle: i.body.length > 80 ? `${i.body.slice(0, 80)}…` : i.body,
-        updated_at: i.updated_at,
-      }));
-      setItems(
-        [...noteItems, ...insightItems].sort((a, b) => (a.updated_at < b.updated_at ? 1 : -1)),
-      );
-      setLoading(false);
-    })();
-    return () => {
-      active = false;
-    };
-  }, [currentNoteId]);
-
-  const visible = useMemo(() => {
-    const q = filter.trim().toLowerCase();
-    if (!q) return items;
-    return items.filter((it) => it.title.toLowerCase().includes(q) || (it.subtitle ?? "").toLowerCase().includes(q));
-  }, [items, filter]);
-
-  function toggle(it: LinkableEntity) {
-    const key = `${it.kind}:${it.id}`;
-    const next = new Set(linked);
-    if (next.has(key)) next.delete(key);
-    else next.add(key);
-    setLinked(next);
-    // If this row was an AI suggestion, mark it as resolved either way.
-    if (suggestedKeys?.has(key)) onAcceptSuggested?.(key);
-  }
-
-  // Sort: AI suggestions first, then by recency (already sorted upstream).
-  const ordered = useMemo(() => {
-    if (!suggestedKeys || suggestedKeys.size === 0) return visible;
-    const sug: LinkableEntity[] = [];
-    const rest: LinkableEntity[] = [];
-    for (const it of visible) {
-      const key = `${it.kind}:${it.id}`;
-      if (suggestedKeys.has(key)) sug.push(it);
-      else rest.push(it);
-    }
-    return [...sug, ...rest];
-  }, [visible, suggestedKeys]);
-
-  return (
-    <aside
-      style={{
-        position: "sticky",
-        top: space.s24,
-        background: colors.bgCard,
-        border: `1px solid ${colors.borderSubtle}`,
-        padding: space.s16,
-        display: "flex",
-        flexDirection: "column",
-        gap: space.s12,
-        maxHeight: "80vh",
-      }}
-    >
-      <div>
-        <p style={labelStyle}>Koble til andre</p>
-        <p
-          style={{
-            ...typography.sizes.t12,
-            color: colors.textMuted,
-            marginTop: space.s4,
-          }}
-        >
-          Innsikter og notater {currentNoteId ? "(unntatt dette notatet)" : ""}
-        </p>
-      </div>
-      <input
-        type="text"
-        value={filter}
-        onChange={(e) => setFilter(e.target.value)}
-        placeholder="Søk…"
-        style={inputStyle}
-      />
-      <div style={{ overflowY: "auto", flex: 1, minHeight: 0 }}>
-        {loading ? (
-          <p style={{ ...typography.sizes.t12, color: colors.textMuted }}>Laster…</p>
-        ) : visible.length === 0 ? (
-          <p style={{ ...typography.sizes.t12, color: colors.textMuted }}>
-            Ingen treff.
-          </p>
-        ) : (
-          <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: space.s4 }}>
-            {ordered.map((it) => {
-              const key = `${it.kind}:${it.id}`;
-              const on = linked.has(key);
-              const suggested = suggestedKeys?.has(key) ?? false;
-              return (
-                <li key={key}>
-                  <label
-                    style={{
-                      display: "flex",
-                      alignItems: "flex-start",
-                      gap: space.s8,
-                      padding: `${space.s8} ${space.s12}`,
-                      cursor: "pointer",
-                      background: on
-                        ? colors.brandBlueFaded
-                        : suggested
-                          ? `${SUGGEST_ACCENT}10`
-                          : "transparent",
-                      border: `1px ${suggested && !on ? "dashed" : "solid"} ${on
-                          ? colors.brandWarmBlue
-                          : suggested
-                            ? SUGGEST_ACCENT
-                            : "transparent"
-                        }`,
-                      position: "relative",
-                    }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={on}
-                      onChange={() => toggle(it)}
-                      style={{ marginTop: 3, accentColor: suggested ? SUGGEST_ACCENT : colors.brandWarmBlue }}
-                    />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          gap: space.s8,
-                          marginBottom: 2,
-                        }}
-                      >
-                        <p
-                          style={{
-                            ...typography.sizes.t12,
-                            color: it.kind === "insight" ? colors.brandWarmBlue : colors.textMuted,
-                            fontWeight: typography.weights.bold,
-                            textTransform: "uppercase",
-                            letterSpacing: "0.1em",
-                          }}
-                        >
-                          {it.kind === "insight" ? "Innsikt" : "Notat"}
-                        </p>
-                        {suggested && (
-                          <span
-                            style={{
-                              ...typography.sizes.t12,
-                              color: SUGGEST_ACCENT,
-                              fontWeight: typography.weights.bold,
-                              textTransform: "uppercase",
-                              letterSpacing: "0.1em",
-                            }}
-                          >
-                            ✦ Foreslått
-                          </span>
-                        )}
-                      </div>
-                      <p
-                        style={{
-                          ...typography.sizes.t14,
-                          color: colors.textBody,
-                          fontWeight: typography.weights.medium,
-                          marginBottom: 2,
-                        }}
-                      >
-                        {it.title || "(Uten tittel)"}
-                      </p>
-                      {it.subtitle && (
-                        <p
-                          style={{
-                            ...typography.sizes.t12,
-                            color: colors.textMuted,
-                            lineHeight: 1.45,
-                          }}
-                        >
-                          {it.subtitle}
-                        </p>
-                      )}
-                      {suggested && !on && onDismissSuggested && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            onDismissSuggested(key);
-                          }}
-                          style={{
-                            ...typography.sizes.t12,
-                            background: "transparent",
-                            border: "none",
-                            color: colors.textMuted,
-                            cursor: "pointer",
-                            padding: 0,
-                            marginTop: space.s4,
-                            fontFamily: FONT_STACK,
-                          }}
-                        >
-                          × Avvis forslag
-                        </button>
-                      )}
-                    </div>
-                  </label>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </div>
-    </aside>
-  );
-}
 
 // ─── Detail view ───
 
@@ -1072,13 +800,9 @@ function NoteDetail({
   const [error, setError] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
-    const [noteRes, sugJoinRes, connRes, commentRes] = await Promise.all([
+    const [noteRes, sugJoinRes, commentRes] = await Promise.all([
       supabase.from("quick_notes").select("*").eq("id", noteId).single(),
       supabase.from("note_suggested_categories").select("suggestion_id").eq("note_id", noteId),
-      supabase
-        .from("note_connections")
-        .select("from_note_id,from_insight_id,to_note_id,to_insight_id")
-        .or(`from_note_id.eq.${noteId},to_note_id.eq.${noteId}`),
       supabase.from("comments").select("*").eq("quick_note_id", noteId).order("created_at", { ascending: true }),
     ]);
 
@@ -1104,47 +828,7 @@ function NoteDetail({
       setSuggestions([]);
     }
 
-    // Linked items
-    const conns = (connRes.data as Pick<NoteConnection, "from_note_id" | "from_insight_id" | "to_note_id" | "to_insight_id">[] | null) ?? [];
-    const otherNoteIds: string[] = [];
-    const otherInsightIds: string[] = [];
-    for (const c of conns) {
-      const otherNote = c.from_note_id === noteId ? c.to_note_id : c.from_note_id;
-      const otherInsight = c.from_note_id === noteId ? c.to_insight_id : c.from_insight_id;
-      if (otherNote) otherNoteIds.push(otherNote);
-      if (otherInsight) otherInsightIds.push(otherInsight);
-    }
-    const [otherNotesRes, otherInsightsRes] = await Promise.all([
-      otherNoteIds.length > 0
-        ? supabase
-          .from("quick_notes")
-          .select("id, headline, body, updated_at")
-          .in("id", otherNoteIds)
-        : Promise.resolve({ data: [], error: null }),
-      otherInsightIds.length > 0
-        ? supabase
-          .from("insights")
-          .select("id, title, body, updated_at")
-          .in("id", otherInsightIds)
-        : Promise.resolve({ data: [], error: null }),
-    ]);
-    const linked: LinkableEntity[] = [
-      ...((otherNotesRes.data as { id: string; headline: string | null; body: string; updated_at: string }[] | null) ?? []).map<LinkableEntity>((n2) => ({
-        kind: "quick_note",
-        id: n2.id,
-        title: n2.headline?.trim() || (n2.body.length > 60 ? `${n2.body.slice(0, 60)}…` : n2.body),
-        subtitle: null,
-        updated_at: n2.updated_at,
-      })),
-      ...((otherInsightsRes.data as { id: string; title: string; body: string; updated_at: string }[] | null) ?? []).map<LinkableEntity>((i) => ({
-        kind: "insight",
-        id: i.id,
-        title: i.title,
-        subtitle: i.body.length > 80 ? `${i.body.slice(0, 80)}…` : i.body,
-        updated_at: i.updated_at,
-      })),
-    ];
-    setLinkedItems(linked);
+    setLinkedItems(await fetchLinkedEntities("quick_note", noteId));
 
     // Comments + their authors
     const cmts = (commentRes.data as CommentRow[] | null) ?? [];
@@ -1316,7 +1000,7 @@ function NoteDetail({
                     marginBottom: 2,
                   }}
                 >
-                  {it.kind === "insight" ? "Innsikt" : "Notat"}
+                  {ENTITY_KIND_LABELS[it.kind]}
                 </p>
                 <p
                   style={{

@@ -114,6 +114,7 @@ export interface PublicResource {
   year: number | null;
   field_site: FieldSite | null;
   theme: HouseTheme | null;
+  map_scale: MapScale | null;
   published: boolean;
   created_at: string;
 }
@@ -282,7 +283,7 @@ export interface WelfareTechnology {
   updated_at: string;
 }
 
-export type LinkableEntityKind = "quick_note" | "insight";
+export type LinkableEntityKind = "quick_note" | "insight" | "story" | "resource";
 
 export interface LinkableEntity {
   kind: LinkableEntityKind;

@@ -9,14 +9,18 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { colors, space, typography } from "@/lib/design-tokens";
-import { FRICTIONS, QUALITIES } from "@/lib/constants";
+import { FRICTIONS, QUALITIES, SCALES } from "@/lib/constants";
+import { RESOURCE_TYPE_LABELS } from "@/lib/seed-resources";
 import type {
   CareFriction,
   CareQuality,
   FieldSite,
   HouseTheme,
   Insight,
+  MapScale,
+  PublicResource,
   QuickNote,
+  ResourceType,
   WorkPackage,
 } from "@/lib/types";
 
@@ -24,13 +28,14 @@ const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
 
 const INSIGHT_COLOR = "#C45D3E";
 const NOTE_COLOR = "#5B6AAF";
+const RESOURCE_COLOR = "#6b3fa0";
 const NEUTRAL_EDGE = "#A09A8E";
 // Manual links the editor created via "Koble til andre" in the note editor.
 // Rendered thicker + fully opaque so they stand out from the weaker
 // auto-derived shared-category edges.
 const MANUAL_EDGE = "#2a2859";
 
-type NodeKind = "quick_note" | "insight";
+type NodeKind = "quick_note" | "insight" | "resource";
 
 interface GraphNode {
   id: string;
@@ -42,8 +47,10 @@ interface GraphNode {
   workPackage: WorkPackage | null;
   fieldSite: FieldSite | null;
   houseThemes: HouseTheme[];
+  mapScale: MapScale | null;
+  resourceType: ResourceType | null;
   degree: number;
-  raw: QuickNote | Insight;
+  raw: QuickNote | Insight | PublicResource;
 }
 
 type EdgeCategory =
@@ -52,6 +59,7 @@ type EdgeCategory =
   | { kind: "work_package"; key: WorkPackage }
   | { kind: "field_site"; key: FieldSite }
   | { kind: "house_theme"; key: HouseTheme }
+  | { kind: "map_scale"; key: MapScale }
   | { kind: "manual"; key: "manual" };
 
 interface GraphEdge {
@@ -148,7 +156,7 @@ function makeAnimState(id: string): AnimState {
 }
 
 interface FilterState {
-  type: "all" | "insights" | "notes";
+  type: "all" | "insights" | "notes" | "resources";
   frictions: Set<CareFriction>;
   qualities: Set<CareQuality>;
   workPackages: Set<WorkPackage>;
@@ -174,6 +182,18 @@ function dedupe<T>(arr: (T | null | undefined)[]): T[] {
   return Array.from(seen);
 }
 
+function nodeColor(kind: NodeKind): string {
+  if (kind === "insight") return INSIGHT_COLOR;
+  if (kind === "resource") return RESOURCE_COLOR;
+  return NOTE_COLOR;
+}
+
+function nodeKindLabel(kind: NodeKind, short = false): string {
+  if (kind === "insight") return "Innsikt";
+  if (kind === "resource") return "Ressurs";
+  return short ? "Notat" : "Hurtignotat";
+}
+
 function noteToNode(n: QuickNote): GraphNode {
   return {
     id: `note:${n.id}`,
@@ -185,6 +205,8 @@ function noteToNode(n: QuickNote): GraphNode {
     workPackage: n.work_package,
     fieldSite: n.field_site,
     houseThemes: n.house_themes ?? [],
+    mapScale: n.map_scale,
+    resourceType: null,
     degree: 0,
     raw: n,
   };
@@ -201,8 +223,31 @@ function insightToNode(i: Insight): GraphNode {
     workPackage: i.work_package,
     fieldSite: i.field_site,
     houseThemes: [],
+    mapScale: null,
+    resourceType: null,
     degree: 0,
     raw: i,
+  };
+}
+
+function resourceToNode(
+  r: PublicResource,
+  links: { frictions: CareFriction[]; qualities: CareQuality[] },
+): GraphNode {
+  return {
+    id: `resource:${r.id}`,
+    kind: "resource",
+    title: r.title,
+    body: r.description ?? "",
+    frictions: links.frictions,
+    qualities: links.qualities,
+    workPackage: null,
+    fieldSite: r.field_site,
+    houseThemes: r.theme ? [r.theme] : [],
+    mapScale: r.map_scale,
+    resourceType: r.type,
+    degree: 0,
+    raw: r,
   };
 }
 
@@ -214,6 +259,9 @@ function findShared(a: GraphNode, b: GraphNode): EdgeCategory | null {
   }
   if (a.fieldSite && a.fieldSite === b.fieldSite) {
     return { kind: "field_site", key: a.fieldSite };
+  }
+  if (a.mapScale && a.mapScale === b.mapScale) {
+    return { kind: "map_scale", key: a.mapScale };
   }
   for (const t of a.houseThemes) if (b.houseThemes.includes(t)) return { kind: "house_theme", key: t };
   return null;
@@ -231,8 +279,43 @@ function edgeLabel(category: EdgeCategory): string {
   if (category.kind === "quality") return QUALITIES[category.key].label;
   if (category.kind === "work_package") return category.key;
   if (category.kind === "field_site") return category.key;
+  if (category.kind === "map_scale") return SCALES[category.key].label;
   if (category.kind === "manual") return "Manuell kobling";
   return category.key.replace(/_/g, " ");
+}
+
+function NodeTitleLabel({ x, y, title }: { x: number; y: number; title: string }) {
+  const display = title.length > 40 ? `${title.slice(0, 40)}…` : title;
+  const padX = 6;
+  const padY = 3;
+  const fontSize = 12;
+  const lineHeight = 14;
+  const width = display.length * 6.6 + padX * 2;
+  const height = lineHeight + padY * 2;
+  return (
+    <g style={{ pointerEvents: "none" }}>
+      <rect
+        x={x}
+        y={y - height / 2}
+        width={width}
+        height={height}
+        fill={colors.bgCard}
+        stroke={colors.borderSubtle}
+        strokeWidth={1}
+        rx={3}
+      />
+      <text
+        x={x + padX}
+        y={y}
+        fontSize={fontSize}
+        fontFamily={FONT_STACK}
+        fill={colors.textBody}
+        dominantBaseline="middle"
+      >
+        {display}
+      </text>
+    </g>
+  );
 }
 
 export default function NodeMapClient() {
@@ -254,6 +337,8 @@ export default function NodeMapClient() {
   const [search, setSearch] = useState("");
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selectedIdRef = useRef<string | null>(null);
+  selectedIdRef.current = selectedId;
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -274,9 +359,13 @@ export default function NodeMapClient() {
   useEffect(() => {
     let active = true;
     (async () => {
-      const [notesRes, insightsRes, connRes] = await Promise.all([
+      const [notesRes, insightsRes, resourcesRes, resFrictionsRes, resQualitiesRes, connRes] =
+        await Promise.all([
         supabase.from("quick_notes").select("*"),
         supabase.from("insights").select("*"),
+        supabase.from("public_resources").select("*"),
+        supabase.from("public_resource_frictions").select("resource_id, friction_key"),
+        supabase.from("public_resource_qualities").select("resource_id, quality_key"),
         // Manual links the editor created via "Koble til andre" in the note
         // editor. Surface them as strong edges that don't get dimmed by the
         // category filters.
@@ -290,9 +379,34 @@ export default function NodeMapClient() {
         setLoading(false);
         return;
       }
+      if (resourcesRes.error) {
+        console.warn("[NodeMap] public_resources failed:", resourcesRes.error.message);
+      }
+      if (resFrictionsRes.error) {
+        console.warn("[NodeMap] public_resource_frictions failed:", resFrictionsRes.error.message);
+      }
+      if (resQualitiesRes.error) {
+        console.warn("[NodeMap] public_resource_qualities failed:", resQualitiesRes.error.message);
+      }
+
+      const resourceLinks = new Map<string, { frictions: CareFriction[]; qualities: CareQuality[] }>();
+      for (const row of (resFrictionsRes.data ?? []) as { resource_id: string; friction_key: CareFriction }[]) {
+        const entry = resourceLinks.get(row.resource_id) ?? { frictions: [], qualities: [] };
+        entry.frictions.push(row.friction_key);
+        resourceLinks.set(row.resource_id, entry);
+      }
+      for (const row of (resQualitiesRes.data ?? []) as { resource_id: string; quality_key: CareQuality }[]) {
+        const entry = resourceLinks.get(row.resource_id) ?? { frictions: [], qualities: [] };
+        entry.qualities.push(row.quality_key);
+        resourceLinks.set(row.resource_id, entry);
+      }
+
       const noteNodes = ((notesRes.data as QuickNote[] | null) ?? []).map(noteToNode);
       const insightNodes = ((insightsRes.data as Insight[] | null) ?? []).map(insightToNode);
-      const all = [...noteNodes, ...insightNodes];
+      const resourceNodes = ((resourcesRes.data as PublicResource[] | null) ?? []).map((r) =>
+        resourceToNode(r, resourceLinks.get(r.id) ?? { frictions: [], qualities: [] }),
+      );
+      const all = [...noteNodes, ...insightNodes, ...resourceNodes];
       const byId = new Map(all.map((n) => [n.id, n] as const));
 
       const builtEdges: GraphEdge[] = [];
@@ -374,6 +488,7 @@ export default function NodeMapClient() {
     for (const n of nodes) {
       if (filters.type === "insights" && n.kind !== "insight") continue;
       if (filters.type === "notes" && n.kind !== "quick_note") continue;
+      if (filters.type === "resources" && n.kind !== "resource") continue;
       if (filters.frictions.size > 0 && !n.frictions.some((f) => filters.frictions.has(f))) continue;
       if (filters.qualities.size > 0 && !n.qualities.some((q) => filters.qualities.has(q))) continue;
       if (filters.workPackages.size > 0 && (!n.workPackage || !filters.workPackages.has(n.workPackage))) continue;
@@ -475,9 +590,18 @@ export default function NodeMapClient() {
 
       // 2) Update each dot's transform.
       const offsets = new Map<string, { x: number; y: number }>();
+      const pinnedId = selectedIdRef.current;
       positions.forEach((p, id) => {
         const state = animStateRef.current.get(id);
         if (!state) return;
+        // Keep the selected node anchored — no drift or cursor-snap while detail is open.
+        if (id === pinnedId) {
+          state.snapFactor = 0;
+          offsets.set(id, { x: p.x, y: p.y });
+          const el = nodeElsRef.current.get(id);
+          if (el) el.setAttribute("transform", `translate(${p.x}, ${p.y})`);
+          return;
+        }
         const target = id === nearestId ? 1 : 0;
         state.snapFactor += (target - state.snapFactor) * SNAP_RAMP;
         const drift = 1 - state.snapFactor;
@@ -520,6 +644,10 @@ export default function NodeMapClient() {
   }
 
   const selectedNode = selectedId ? nodes.find((n) => n.id === selectedId) ?? null : null;
+
+  function isNodeHighlighted(id: string): boolean {
+    return hoveredId === id || selectedId === id;
+  }
 
   return (
     <main
@@ -597,7 +725,7 @@ export default function NodeMapClient() {
             height={size.height}
             style={{ display: "block" }}
             role="img"
-            aria-label="Konstellasjonsgraf over hurtignotater og innsikter"
+            aria-label="Konstellasjonsgraf over hurtignotater, innsikter og ressurser"
           >
             <g>
               {visibleEdges.map((e) => {
@@ -607,7 +735,7 @@ export default function NodeMapClient() {
                 const sPos = positions.get(e.source);
                 const tPos = positions.get(e.target);
                 if (!sPos || !tPos) return null;
-                const isHighlighted = hoveredId === e.source || hoveredId === e.target;
+                const isHighlighted = isNodeHighlighted(e.source) || isNodeHighlighted(e.target);
                 const isManual = e.category.kind === "manual";
                 const strokeOpacity = isManual ? (isHighlighted ? 1 : 0.85) : isHighlighted ? 0.9 : 0.4;
                 const strokeWidth = isManual ? (isHighlighted ? 3.5 : 2.5) : isHighlighted ? 2 : 1;
@@ -639,9 +767,11 @@ export default function NodeMapClient() {
                 .map((n) => {
                   const dim = searchHits ? !searchHits.has(n.id) : false;
                   const r = radiusFor(n);
-                  const fill = n.kind === "insight" ? INSIGHT_COLOR : NOTE_COLOR;
+                  const fill = nodeColor(n.kind);
                   const pos = positions.get(n.id);
                   if (!pos) return null;
+                  const highlighted = isNodeHighlighted(n.id);
+                  const selected = selectedId === n.id;
                   return (
                     <g
                       key={n.id}
@@ -654,23 +784,23 @@ export default function NodeMapClient() {
                       onClick={() => setSelectedId(n.id)}
                       style={{ cursor: "pointer", opacity: dim ? 0.2 : 1 }}
                     >
+                      {selected && (
+                        <circle
+                          r={r + 6}
+                          fill="none"
+                          stroke={colors.brandDarkBlue}
+                          strokeWidth={2}
+                          strokeOpacity={0.45}
+                        />
+                      )}
                       <circle
                         r={r}
                         fill={fill}
-                        stroke={hoveredId === n.id || selectedId === n.id ? colors.brandDarkBlue : "white"}
-                        strokeWidth={hoveredId === n.id || selectedId === n.id ? 3 : 1.5}
+                        stroke={highlighted ? colors.brandDarkBlue : "white"}
+                        strokeWidth={selected ? 3.5 : highlighted ? 3 : 1.5}
                       />
-                      {(hoveredId === n.id || (searchHits && searchHits.has(n.id))) && (
-                        <text
-                          x={r + 6}
-                          y={4}
-                          fontSize={12}
-                          fontFamily={FONT_STACK}
-                          fill={colors.textBody}
-                          style={{ pointerEvents: "none" }}
-                        >
-                          {n.title.length > 40 ? `${n.title.slice(0, 40)}…` : n.title}
-                        </text>
+                      {(highlighted || (searchHits && searchHits.has(n.id))) && (
+                        <NodeTitleLabel x={r + 6} y={4} title={n.title} />
                       )}
                     </g>
                   );
@@ -687,7 +817,13 @@ export default function NodeMapClient() {
 
       <AnimatePresence>
         {selectedNode && (
-          <DetailPanel node={selectedNode} onClose={() => setSelectedId(null)} />
+          <DetailPanel
+            node={selectedNode}
+            nodes={nodes}
+            edges={edges}
+            onClose={() => setSelectedId(null)}
+            onSelectNode={setSelectedId}
+          />
         )}
       </AnimatePresence>
     </main>
@@ -701,6 +837,7 @@ function HoverTooltip({ node }: { node: GraphNode | null }) {
     node.qualities.length +
     (node.workPackage ? 1 : 0) +
     (node.fieldSite ? 1 : 0) +
+    (node.mapScale ? 1 : 0) +
     node.houseThemes.length;
   return (
     <div
@@ -722,10 +859,10 @@ function HoverTooltip({ node }: { node: GraphNode | null }) {
           fontWeight: typography.weights.bold,
           textTransform: "uppercase",
           letterSpacing: "0.1em",
-          color: node.kind === "insight" ? INSIGHT_COLOR : NOTE_COLOR,
+          color: nodeColor(node.kind),
         }}
       >
-        {node.kind === "insight" ? "Innsikt" : "Hurtignotat"}
+        {nodeKindLabel(node.kind)}
       </p>
       <p
         style={{
@@ -744,7 +881,39 @@ function HoverTooltip({ node }: { node: GraphNode | null }) {
   );
 }
 
-function DetailPanel({ node, onClose }: { node: GraphNode; onClose: () => void }) {
+function DetailPanel({
+  node,
+  nodes,
+  edges,
+  onClose,
+  onSelectNode,
+}: {
+  node: GraphNode;
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+  onClose: () => void;
+  onSelectNode: (id: string) => void;
+}) {
+  const connections = useMemo(() => {
+    const byId = new Map(nodes.map((n) => [n.id, n] as const));
+    const list: { other: GraphNode; category: EdgeCategory }[] = [];
+    for (const e of edges) {
+      if (e.source !== node.id && e.target !== node.id) continue;
+      const otherId = e.source === node.id ? e.target : e.source;
+      const other = byId.get(otherId);
+      if (!other) continue;
+      list.push({ other, category: e.category });
+    }
+    return list.sort((a, b) => {
+      const aManual = a.category.kind === "manual" ? 0 : 1;
+      const bManual = b.category.kind === "manual" ? 0 : 1;
+      if (aManual !== bManual) return aManual - bManual;
+      return a.other.title.localeCompare(b.other.title, "nb");
+    });
+  }, [node.id, nodes, edges]);
+
+  const resource = node.kind === "resource" ? (node.raw as PublicResource) : null;
+
   // Internal Nav (utility row + main row) is roughly 100px tall and sticks at
   // the top with z-index 50. Push the panel + overlay below it so the panel
   // header isn't hidden behind the nav.
@@ -799,15 +968,15 @@ function DetailPanel({ node, onClose }: { node: GraphNode; onClose: () => void }
             style={{
               ...typography.sizes.t12,
               padding: `2px ${space.s8}`,
-              background: node.kind === "insight" ? `${INSIGHT_COLOR}22` : `${NOTE_COLOR}22`,
-              color: node.kind === "insight" ? INSIGHT_COLOR : NOTE_COLOR,
+              background: `${nodeColor(node.kind)}22`,
+              color: nodeColor(node.kind),
               fontWeight: typography.weights.bold,
               textTransform: "uppercase",
               letterSpacing: "0.08em",
               borderRadius: 4,
             }}
           >
-            {node.kind === "insight" ? "Innsikt" : "Hurtignotat"}
+            {nodeKindLabel(node.kind)}
           </span>
           <button
             type="button"
@@ -838,12 +1007,27 @@ function DetailPanel({ node, onClose }: { node: GraphNode; onClose: () => void }
           >
             {node.title}
           </h2>
-          {(node.frictions.length > 0 || node.qualities.length > 0 || node.workPackage || node.fieldSite || node.houseThemes.length > 0) && (
+          {node.resourceType && (
+            <p
+              style={{
+                ...typography.sizes.t14,
+                color: colors.textMuted,
+                marginTop: -space.s8,
+                marginBottom: space.s16,
+              }}
+            >
+              {RESOURCE_TYPE_LABELS[node.resourceType]}
+            </p>
+          )}
+          {(node.frictions.length > 0 || node.qualities.length > 0 || node.workPackage || node.fieldSite || node.mapScale || node.houseThemes.length > 0) && (
             <div style={{ display: "flex", flexWrap: "wrap", gap: space.s4, marginBottom: space.s24 }}>
               {node.workPackage && (
                 <Tag color={colors.brandDarkBlue}>{node.workPackage}</Tag>
               )}
               {node.fieldSite && <Tag color={colors.brandWarmBlue}>{node.fieldSite}</Tag>}
+              {node.mapScale && (
+                <Tag color={colors.brandMutedBlue}>{SCALES[node.mapScale].label}</Tag>
+              )}
               {node.frictions.map((f) => (
                 <Tag key={`f-${f}`} color={FRICTIONS[f].color}>
                   {FRICTIONS[f].label}
@@ -869,17 +1053,110 @@ function DetailPanel({ node, onClose }: { node: GraphNode; onClose: () => void }
           >
             {node.body}
           </div>
-          <p
-            style={{
-              ...typography.sizes.t12,
-              color: colors.textMuted,
-              marginTop: space.s24,
-              paddingTop: space.s12,
-              borderTop: `1px solid ${colors.borderSubtle}`,
-            }}
-          >
-            {node.degree} {node.degree === 1 ? "kobling" : "koblinger"} via delte kategorier
-          </p>
+          {resource?.url && (
+            <p style={{ marginTop: space.s16 }}>
+              <a
+                href={resource.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  ...typography.sizes.t14,
+                  color: colors.brandWarmBlue,
+                  fontWeight: typography.weights.medium,
+                }}
+              >
+                Åpne ressurs →
+              </a>
+            </p>
+          )}
+          {resource?.authors && (
+            <p style={{ ...typography.sizes.t12, color: colors.textMuted, marginTop: space.s8 }}>
+              {resource.authors}
+              {resource.year ? ` · ${resource.year}` : ""}
+            </p>
+          )}
+          {connections.length > 0 && (
+            <section
+              style={{
+                marginTop: space.s24,
+                paddingTop: space.s16,
+                borderTop: `1px solid ${colors.borderSubtle}`,
+              }}
+            >
+              <h3
+                style={{
+                  ...typography.sizes.t12,
+                  fontWeight: typography.weights.bold,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.12em",
+                  color: colors.textMuted,
+                  marginBottom: space.s12,
+                }}
+              >
+                {connections.length} {connections.length === 1 ? "kobling" : "koblinger"}
+              </h3>
+              <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: space.s8 }}>
+                {connections.map(({ other, category }) => (
+                  <li key={`${other.id}--${category.kind}:${category.key}`}>
+                    <button
+                      type="button"
+                      onClick={() => onSelectNode(other.id)}
+                      style={{
+                        width: "100%",
+                        textAlign: "left",
+                        padding: space.s12,
+                        background: colors.bgSubtle,
+                        border: `1px solid ${colors.borderSubtle}`,
+                        cursor: "pointer",
+                        fontFamily: FONT_STACK,
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: space.s8,
+                      }}
+                    >
+                      <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                        <span
+                          style={{
+                            ...typography.sizes.t12,
+                            color: nodeColor(other.kind),
+                            fontWeight: typography.weights.bold,
+                            textTransform: "uppercase",
+                            letterSpacing: "0.1em",
+                          }}
+                        >
+                          {nodeKindLabel(other.kind)}
+                        </span>
+                        <span
+                          style={{
+                            ...typography.sizes.t14,
+                            color: colors.textBody,
+                            fontWeight: typography.weights.medium,
+                            lineHeight: 1.4,
+                          }}
+                        >
+                          {other.title || "(uten tittel)"}
+                        </span>
+                      </div>
+                      <Tag color={edgeColor(category)}>{edgeLabel(category)}</Tag>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+          {connections.length === 0 && (
+            <p
+              style={{
+                ...typography.sizes.t12,
+                color: colors.textMuted,
+                marginTop: space.s24,
+                paddingTop: space.s12,
+                borderTop: `1px solid ${colors.borderSubtle}`,
+              }}
+            >
+              Ingen koblinger via delte kategorier
+            </p>
+          )}
         </div>
       </motion.aside>
     </>
@@ -1066,7 +1343,7 @@ function FilterSidebar({
             />
 
             <div style={{ display: "flex", gap: space.s4, flexWrap: "wrap" }}>
-              {(["all", "notes", "insights"] as const).map((t) => (
+              {(["all", "notes", "insights", "resources"] as const).map((t) => (
                 <button
                   key={t}
                   type="button"
@@ -1082,7 +1359,13 @@ function FilterSidebar({
                     fontWeight: typography.weights.medium,
                   }}
                 >
-                  {t === "all" ? "Alt" : t === "notes" ? "Notater" : "Innsikter"}
+                  {t === "all"
+                    ? "Alt"
+                    : t === "notes"
+                      ? "Notater"
+                      : t === "insights"
+                        ? "Innsikter"
+                        : "Ressurser"}
                 </button>
               ))}
             </div>
@@ -1125,11 +1408,7 @@ function FilterSidebar({
                           padding: `${space.s8} ${space.s16}`,
                           background: active ? colors.bgCard : "transparent",
                           borderLeft: `3px solid ${
-                            active
-                              ? n.kind === "insight"
-                                ? INSIGHT_COLOR
-                                : NOTE_COLOR
-                              : "transparent"
+                            active ? nodeColor(n.kind) : "transparent"
                           }`,
                           borderTop: "none",
                           borderRight: "none",
@@ -1145,13 +1424,13 @@ function FilterSidebar({
                         <span
                           style={{
                             ...typography.sizes.t12,
-                            color: n.kind === "insight" ? INSIGHT_COLOR : NOTE_COLOR,
+                            color: nodeColor(n.kind),
                             fontWeight: typography.weights.bold,
                             textTransform: "uppercase",
                             letterSpacing: "0.1em",
                           }}
                         >
-                          {n.kind === "insight" ? "Innsikt" : "Notat"}
+                          {nodeKindLabel(n.kind, true)}
                         </span>
                         <span
                           style={{
@@ -1170,6 +1449,8 @@ function FilterSidebar({
                           }}
                         >
                           {n.degree} {n.degree === 1 ? "kobling" : "koblinger"}
+                          {n.resourceType ? ` · ${RESOURCE_TYPE_LABELS[n.resourceType]}` : ""}
+                          {n.mapScale ? ` · ${SCALES[n.mapScale].label}` : ""}
                           {n.workPackage ? ` · ${n.workPackage}` : ""}
                           {n.fieldSite ? ` · ${n.fieldSite}` : ""}
                         </span>
@@ -1273,9 +1554,13 @@ function FilterSidebar({
                   <span style={{ display: "inline-block", width: 10, height: 10, background: NOTE_COLOR, marginRight: 6, borderRadius: "50%" }} />
                   Quick note
                 </p>
-                <p>
+                <p style={{ marginBottom: 2 }}>
                   <span style={{ display: "inline-block", width: 10, height: 10, background: INSIGHT_COLOR, marginRight: 6, borderRadius: "50%" }} />
                   Innsikt
+                </p>
+                <p>
+                  <span style={{ display: "inline-block", width: 10, height: 10, background: RESOURCE_COLOR, marginRight: 6, borderRadius: "50%" }} />
+                  Ressurs
                 </p>
                 <p style={{ marginTop: space.s8, lineHeight: 1.5 }}>
                   Linjer kobler noder som deler en tag — friksjonsfargen brukes når koblingen

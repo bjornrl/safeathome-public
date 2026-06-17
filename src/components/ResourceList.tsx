@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import type { PublicResource, PublicStory, ResourceType, CareFriction, CareQuality } from "@/lib/types";
 import { RESOURCE_TYPE_LABELS } from "@/lib/seed-resources";
-import { FRICTIONS, QUALITIES } from "@/lib/constants";
+import { FRICTIONS, QUALITIES, SCALES } from "@/lib/constants";
 import type { ResourceLinksByResource } from "@/lib/queries";
 
 const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
@@ -286,8 +286,10 @@ function ResourceCard({
       <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
         <span style={{ fontSize: 12, color: "#666666" }}>
           {resource.authors}
-          {resource.authors && resource.field_site && " · "}
+          {resource.authors && (resource.field_site || resource.map_scale) && " · "}
           {resource.field_site}
+          {resource.field_site && resource.map_scale && " · "}
+          {resource.map_scale ? SCALES[resource.map_scale].label : null}
         </span>
         {resource.url ? (
           <span style={{ fontSize: 13, fontWeight: 600, color: accent }}>Åpne →</span>

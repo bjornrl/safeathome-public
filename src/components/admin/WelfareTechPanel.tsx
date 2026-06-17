@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { colors, space, typography } from "@/lib/design-tokens";
+import { uploadWelfareTechImage, validateWelfareTechImage } from "@/lib/welfare-tech-storage";
 import type { WelfareTechnology } from "@/lib/types";
 
 const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
@@ -67,8 +68,11 @@ export function WelfareTechPanel({ currentUserId }: { currentUserId: string | nu
   const [loading, setLoading] = useState(true);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
+  const [pendingImage, setPendingImage] = useState<File | null>(null);
+  const [pendingPreviewUrl, setPendingPreviewUrl] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [status, setStatus] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -90,7 +94,23 @@ export function WelfareTechPanel({ currentUserId }: { currentUserId: string | nu
     void reload();
   }, [reload]);
 
+  useEffect(() => {
+    if (!pendingImage) {
+      setPendingPreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(pendingImage);
+    setPendingPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [pendingImage]);
+
+  function clearPendingImage() {
+    setPendingImage(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
   function startEdit(item: WelfareTechnology) {
+    clearPendingImage();
     setEditId(item.id);
     setForm({
       title: item.title,
@@ -108,9 +128,29 @@ export function WelfareTechPanel({ currentUserId }: { currentUserId: string | nu
   }
 
   function startCreate() {
+    clearPendingImage();
     setEditId(null);
     setForm(EMPTY_FORM);
     setStatus(null);
+  }
+
+  function handleImageFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const validationError = validateWelfareTechImage(file);
+    if (validationError) {
+      setStatus({ kind: "err", msg: validationError });
+      e.target.value = "";
+      return;
+    }
+    setStatus(null);
+    setPendingImage(file);
+    setForm((f) => ({ ...f, image_url: "" }));
+  }
+
+  function clearImage() {
+    clearPendingImage();
+    setForm((f) => ({ ...f, image_url: "" }));
   }
 
   async function submit(e: React.FormEvent) {
@@ -122,13 +162,24 @@ export function WelfareTechPanel({ currentUserId }: { currentUserId: string | nu
     setSubmitting(true);
     setStatus(null);
 
+    let imageUrl = form.image_url.trim() || null;
+    if (pendingImage) {
+      try {
+        imageUrl = await uploadWelfareTechImage(pendingImage);
+      } catch (err) {
+        setSubmitting(false);
+        setStatus({ kind: "err", msg: (err as Error).message });
+        return;
+      }
+    }
+
     const row = {
       title: form.title.trim(),
       description: form.description.trim(),
       category: form.category.trim() || null,
       tags: splitList(form.tags),
       url: form.url.trim() || null,
-      image_url: form.image_url.trim() || null,
+      image_url: imageUrl,
       manufacturer: form.manufacturer.trim() || null,
       country_availability: splitList(form.country_availability),
       notes: form.notes.trim() || null,
@@ -144,6 +195,7 @@ export function WelfareTechPanel({ currentUserId }: { currentUserId: string | nu
         return;
       }
       setStatus({ kind: "ok", msg: "Oppdatert." });
+      clearPendingImage();
     } else {
       const { error } = await supabase
         .from("welfare_technologies")
@@ -155,6 +207,7 @@ export function WelfareTechPanel({ currentUserId }: { currentUserId: string | nu
       }
       setStatus({ kind: "ok", msg: "Lagret." });
       setForm(EMPTY_FORM);
+      clearPendingImage();
     }
     setSubmitting(false);
     await reload();
@@ -280,13 +333,17 @@ export function WelfareTechPanel({ currentUserId }: { currentUserId: string | nu
               onChange={(e) => setForm((f) => ({ ...f, url: e.target.value }))}
             />
           </Field>
-          <Field label="Bilde-URL">
-            <input
-              type="url"
-              style={inputStyle}
-              placeholder="https://…"
-              value={form.image_url}
-              onChange={(e) => setForm((f) => ({ ...f, image_url: e.target.value }))}
+          <Field label="Bilde">
+            <ImageUploadField
+              previewUrl={pendingPreviewUrl ?? (form.image_url.trim() || null)}
+              fileInputRef={fileInputRef}
+              onFileChange={handleImageFileChange}
+              onClear={clearImage}
+              imageUrl={form.image_url}
+              onImageUrlChange={(image_url) => {
+                clearPendingImage();
+                setForm((f) => ({ ...f, image_url }));
+              }}
             />
           </Field>
           <Field label="Produsent">
@@ -470,5 +527,107 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <span style={labelStyle}>{label}</span>
       {children}
     </label>
+  );
+}
+
+function ImageUploadField({
+  previewUrl,
+  fileInputRef,
+  onFileChange,
+  onClear,
+  imageUrl,
+  onImageUrlChange,
+}: {
+  previewUrl: string | null;
+  fileInputRef: React.RefObject<HTMLInputElement | null>;
+  onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onClear: () => void;
+  imageUrl: string;
+  onImageUrlChange: (url: string) => void;
+}) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: space.s8 }}>
+      {previewUrl ? (
+        <div style={{ position: "relative", alignSelf: "flex-start" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={previewUrl}
+            alt="Forhåndsvisning"
+            style={{
+              display: "block",
+              width: 200,
+              height: 150,
+              objectFit: "cover",
+              border: `1px solid ${colors.borderSubtle}`,
+              background: colors.bgSubtle,
+            }}
+          />
+          <button
+            type="button"
+            onClick={onClear}
+            aria-label="Fjern bilde"
+            style={{
+              position: "absolute",
+              top: 4,
+              right: 4,
+              width: 24,
+              height: 24,
+              padding: 0,
+              border: "none",
+              borderRadius: "50%",
+              background: "rgba(42, 40, 89, 0.75)",
+              color: colors.textLight,
+              cursor: "pointer",
+              fontSize: 16,
+              lineHeight: 1,
+              fontFamily: FONT_STACK,
+            }}
+          >
+            ×
+          </button>
+        </div>
+      ) : (
+        <div
+          style={{
+            width: 200,
+            height: 150,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: colors.bgSubtle,
+            border: `1px dashed ${colors.borderSubtle}`,
+            ...typography.sizes.t12,
+            color: colors.textMuted,
+            textTransform: "uppercase",
+            letterSpacing: "0.1em",
+          }}
+        >
+          Ingen bilde
+        </div>
+      )}
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp,image/gif"
+        onChange={onFileChange}
+        style={{
+          ...typography.sizes.t14,
+          fontFamily: FONT_STACK,
+          color: colors.textBody,
+        }}
+      />
+
+      <input
+        type="url"
+        style={inputStyle}
+        placeholder="Eller lim inn bilde-URL"
+        value={imageUrl}
+        onChange={(e) => onImageUrlChange(e.target.value)}
+      />
+      <p style={{ ...typography.sizes.t12, color: colors.textMuted, margin: 0 }}>
+        JPEG, PNG, WebP eller GIF · maks 5 MB
+      </p>
+    </div>
   );
 }
