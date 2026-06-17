@@ -1,5 +1,6 @@
 "use client";
 
+import type { SuggestionRelated } from "@/app/actions/suggest";
 import { colors, space, typography } from "@/lib/design-tokens";
 
 /**
@@ -259,6 +260,103 @@ export function GhostBadge({
         ×
       </button>
     </span>
+  );
+}
+
+const RELATED_TYPE_LABELS: Record<SuggestionRelated["type"], string> = {
+  note: "Notat",
+  insight: "Innsikt",
+  story: "Publisert innsikt",
+  resource: "Ressurs",
+};
+
+export function SuggestedRelatedList({
+  items,
+  onAccept,
+  onDismiss,
+  label = "✦ Relatert innhold — klikk for å koble",
+  linkableTypes,
+}: {
+  items: SuggestionRelated[];
+  onAccept: (item: SuggestionRelated) => void;
+  onDismiss: (item: SuggestionRelated) => void;
+  label?: string;
+  /** When set, only these types show an accept (✓) action; others are dismiss-only. */
+  linkableTypes?: SuggestionRelated["type"][];
+}) {
+  if (items.length === 0) return null;
+
+  return (
+    <GhostBadgeRow label={label}>
+      {items.map((item) => {
+        const canLink = !linkableTypes || linkableTypes.includes(item.type);
+        const prefix = RELATED_TYPE_LABELS[item.type];
+        return (
+          <span
+            key={`${item.type}:${item.id}`}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+              ...typography.sizes.t12,
+              padding: `2px ${space.s4} 2px ${space.s8}`,
+              background: `${SUGGEST_ACCENT}10`,
+              color: SUGGEST_ACCENT,
+              border: `1px dashed ${SUGGEST_ACCENT}`,
+              borderRadius: 4,
+              fontWeight: typography.weights.medium,
+              opacity: 0.85,
+              maxWidth: "100%",
+            }}
+          >
+            {canLink ? (
+              <button
+                type="button"
+                onClick={() => onAccept(item)}
+                title="Godta forslag"
+                aria-label="Godta forslag"
+                style={{
+                  background: "transparent",
+                  border: "none",
+                  color: SUGGEST_ACCENT,
+                  cursor: "pointer",
+                  padding: 0,
+                  fontFamily: FONT_STACK,
+                  fontSize: "inherit",
+                  fontWeight: typography.weights.medium,
+                  textAlign: "left",
+                }}
+              >
+                ✓ {prefix}: {item.title}
+              </button>
+            ) : (
+              <span style={{ paddingRight: space.s4 }}>
+                {prefix}: {item.title}
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={() => onDismiss(item)}
+              title="Avvis forslag"
+              aria-label="Avvis forslag"
+              style={{
+                background: "transparent",
+                border: "none",
+                color: SUGGEST_ACCENT,
+                cursor: "pointer",
+                padding: `0 ${space.s4}`,
+                fontFamily: FONT_STACK,
+                fontSize: "inherit",
+                opacity: 0.7,
+                flexShrink: 0,
+              }}
+            >
+              ×
+            </button>
+          </span>
+        );
+      })}
+    </GhostBadgeRow>
   );
 }
 

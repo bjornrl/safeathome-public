@@ -8,6 +8,7 @@ import { RESOURCE_TYPE_LABELS } from "@/lib/seed-resources";
 import { STAGES } from "@/lib/seed-solutions";
 import type { CareFriction, CareQuality, FieldSite, HouseTheme, MapScale, ResourceType, WorkPackage } from "@/lib/types";
 import { QuickNotesPanel } from "@/components/admin/QuickNotesPanel";
+import { ConnectSidebar } from "@/components/admin/ConnectSidebar";
 import { WelfareTechPanel } from "@/components/admin/WelfareTechPanel";
 import { AdminHome } from "@/components/admin/AdminHome";
 import { EmbeddingsPanel } from "@/components/admin/EmbeddingsPanel";
@@ -26,8 +27,17 @@ import {
 } from "@/components/admin/FormPrimitives";
 import { CategoryHelp, InlineConfirm, Toast } from "@/components/ui";
 import {
+  entityLinkKey,
+  linkedIdsOfKind,
+  loadEntityLinks,
+  saveEntityLinks,
+  suggestionRelatedToKey,
+} from "@/lib/entity-links";
+import {
   getSuggestionAvailability,
   requestSuggestions,
+  type RelatedSourceType,
+  type SuggestionRelated,
 } from "@/app/actions/suggest";
 const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
 type Tab = "home" | "notes" | "stories" | "challenges" | "resources" | "wp" | "welfare-tech" | "search-index";
@@ -92,6 +102,12 @@ const qnForm: React.CSSProperties = {
   flexDirection: "column",
   gap: 24,
 };
+const formWithSidebar: React.CSSProperties = {
+  display: "grid",
+  gridTemplateColumns: "minmax(0, 2fr) minmax(280px, 1fr)",
+  gap: 24,
+  alignItems: "flex-start",
+};
 const qnFieldStack: React.CSSProperties = {
   display: "flex",
   flexDirection: "column",
@@ -106,20 +122,26 @@ const qnHeadlineInput: React.CSSProperties = {
 
 // ─── Shared AI suggestion hook ───
 // Mirrors the integration in QuickNotesPanel: availability check, debounce,
-// per-category accept/dismiss handlers. Used by both StoryForm (insights) and
-// ChallengeForm.
+// per-category accept/dismiss handlers. Used by StoryForm, ChallengeForm, and
+// ResourceForm.
 function useAiSuggest({
   title,
   body,
   currentFrictions,
   currentQualities,
   currentWorkPackage,
+  excludeSourceId,
+  relatedSourceTypes,
+  isRelatedExcluded,
 }: {
   title: string;
   body: string;
   currentFrictions: CareFriction[];
   currentQualities: CareQuality[];
   currentWorkPackage?: WorkPackage | "";
+  excludeSourceId?: string;
+  relatedSourceTypes?: RelatedSourceType[];
+  isRelatedExcluded?: (item: SuggestionRelated) => boolean;
 }) {
   const [availability, setAvailability] = useState<"checking" | "ready" | "limit_reached" | "unavailable">("checking");
   const [loading, setLoading] = useState(false);
@@ -128,6 +150,7 @@ function useAiSuggest({
   const [frictions, setFrictions] = useState<CareFriction[]>([]);
   const [qualities, setQualities] = useState<CareQuality[]>([]);
   const [workPackage, setWorkPackage] = useState<WorkPackage | null>(null);
+  const [related, setRelated] = useState<SuggestionRelated[]>([]);
   const hadSuggestionsRef = useRef(false);
 
   useEffect(() => {
@@ -143,7 +166,11 @@ function useAiSuggest({
     };
   }, []);
 
-  const hasSuggestions = frictions.length > 0 || qualities.length > 0 || workPackage !== null;
+  const hasSuggestions =
+    frictions.length > 0 ||
+    qualities.length > 0 ||
+    workPackage !== null ||
+    related.length > 0;
   useEffect(() => {
     if (hasSuggestions) {
       hadSuggestionsRef.current = true;
@@ -168,6 +195,8 @@ function useAiSuggest({
         noteBody: body,
         currentFrictions,
         currentQualities,
+        excludeSourceId,
+        relatedSourceTypes,
       });
       if (res.status === "ok") {
         setFrictions(res.suggestions.frictions.filter((f) => !currentFrictions.includes(f)));
@@ -176,6 +205,9 @@ function useAiSuggest({
           res.suggestions.work_package && res.suggestions.work_package !== currentWorkPackage
             ? res.suggestions.work_package
             : null,
+        );
+        setRelated(
+          res.suggestions.related.filter((r) => !isRelatedExcluded?.(r)),
         );
         if (res.remaining === 0) setAvailability("limit_reached");
       } else if (res.status === "limit_reached") {
@@ -199,7 +231,18 @@ function useAiSuggest({
     currentFrictions,
     currentQualities,
     currentWorkPackage,
+    excludeSourceId,
+    relatedSourceTypes,
+    isRelatedExcluded,
   ]);
+
+  const dismissRelated = useCallback((item: SuggestionRelated) => {
+    setRelated((prev) => prev.filter((r) => !(r.type === item.type && r.id === item.id)));
+  }, []);
+
+  const dismissRelatedByKey = useCallback((key: string) => {
+    setRelated((prev) => prev.filter((r) => suggestionRelatedToKey(r) !== key));
+  }, []);
 
   return {
     availability,
@@ -209,14 +252,18 @@ function useAiSuggest({
     frictions,
     qualities,
     workPackage,
+    related,
     run,
     dismissFriction: (k: CareFriction) => setFrictions((prev) => prev.filter((x) => x !== k)),
     dismissQuality: (k: CareQuality) => setQualities((prev) => prev.filter((x) => x !== k)),
     dismissWorkPackage: () => setWorkPackage(null),
+    dismissRelated,
+    dismissRelatedByKey,
     reset: () => {
       setFrictions([]);
       setQualities([]);
       setWorkPackage(null);
+      setRelated([]);
     },
   };
 }
@@ -332,9 +379,9 @@ export default function AdminPage() {
 
       {tab === "home" && <AdminHome onOpenTab={(t) => selectTab(t as Tab)} />}
       {tab === "notes" && <QuickNotesPanel />}
-      {tab === "stories" && <StoriesPanel />}
+      {tab === "stories" && <StoriesPanel currentUserId={currentUserId} />}
       {tab === "challenges" && <ChallengesPanel />}
-      {tab === "resources" && <ResourcesPanel />}
+      {tab === "resources" && <ResourcesPanel currentUserId={currentUserId} />}
       {tab === "wp" && <WpPanel />}
       {tab === "welfare-tech" && (isAdmin ? (
         <WelfareTechPanel currentUserId={currentUserId} />
@@ -399,7 +446,7 @@ interface StoryRow {
   created_at?: string;
   sort_order?: number;
 }
-function StoriesPanel() {
+function StoriesPanel({ currentUserId }: { currentUserId: string | null }) {
   const showToast = useToast();
   const [rows, setRows] = useState<StoryRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -427,7 +474,7 @@ function StoriesPanel() {
     <div className="[display:grid] [grid-template-columns:repeat(auto-fit,_minmax(320px,_1fr))] [gap:32px]">
       <section>
         <SectionHeading>Ny innsikt</SectionHeading>
-        <StoryForm onCreated={load} />
+        <StoryForm onCreated={load} currentUserId={currentUserId} />
       </section>
 
       <section>
@@ -620,7 +667,13 @@ function ConnectionForm({ stories, onCreated }: { stories: { id: string; title: 
     <SubmitBar status={status} submitting={submitting} label="Lagre kobling" />
   </Form>;
 }
-function StoryForm({ onCreated }: { onCreated: () => void }) {
+function StoryForm({
+  onCreated,
+  currentUserId,
+}: {
+  onCreated: () => void;
+  currentUserId: string | null;
+}) {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [mapScale, setMapScale] = useState<MapScale>("meso");
@@ -633,8 +686,14 @@ function StoryForm({ onCreated }: { onCreated: () => void }) {
   const [longitude, setLongitude] = useState("");
   const [author, setAuthor] = useState("safe@home fieldwork team");
   const [published, setPublished] = useState(true);
+  const [linked, setLinked] = useState<Set<string>>(() => new Set());
   const [submitting, setSubmitting] = useState(false);
   const [status, setStatus] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
+
+  const isRelatedExcluded = useCallback(
+    (item: SuggestionRelated) => linked.has(suggestionRelatedToKey(item)),
+    [linked],
+  );
 
   const ai = useAiSuggest({
     title,
@@ -642,7 +701,28 @@ function StoryForm({ onCreated }: { onCreated: () => void }) {
     currentFrictions: frictions,
     currentQualities: qualities,
     currentWorkPackage: workPackage,
+    isRelatedExcluded,
   });
+
+  const aiRelatedKeys = useMemo(
+    () => new Set(ai.related.map((r) => suggestionRelatedToKey(r))),
+    [ai.related],
+  );
+
+  const acceptRelatedSuggestion = useCallback(
+    (key: string) => {
+      setLinked((prev) => new Set(prev).add(key));
+      ai.dismissRelatedByKey(key);
+    },
+    [ai],
+  );
+
+  const dismissRelatedSuggestion = useCallback(
+    (key: string) => {
+      ai.dismissRelatedByKey(key);
+    },
+    [ai],
+  );
 
   function acceptFriction(k: CareFriction) {
     setFrictions((prev) => (prev.includes(k) ? prev : [...prev, k]));
@@ -687,11 +767,20 @@ function StoryForm({ onCreated }: { onCreated: () => void }) {
       media_urls: [],
     };
     const { error } = await supabase.from("public_stories").insert(row);
-    setSubmitting(false);
     if (error) {
+      setSubmitting(false);
       setStatus({ kind: "err", msg: error.message });
       return;
     }
+
+    const linkErr = await saveEntityLinks("story", row.id, linked, currentUserId);
+    if (linkErr) {
+      setSubmitting(false);
+      setStatus({ kind: "err", msg: linkErr });
+      return;
+    }
+
+    setSubmitting(false);
     // Inline (re)embed; failures leave a null vector that the admin
     // "missing embeddings" panel / backfill repairs. Don't block the UI.
     void embedSource("story", row.id);
@@ -703,12 +792,14 @@ function StoryForm({ onCreated }: { onCreated: () => void }) {
     setLatitude("");
     setLongitude("");
     setWorkPackage("");
+    setLinked(new Set());
     ai.reset();
     onCreated();
   }
 
   return (
-    <form onSubmit={submit} style={qnForm}>
+    <form onSubmit={submit} style={formWithSidebar}>
+      <div style={qnForm}>
       <FormHeader title="Ny innsikt" />
 
       <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
@@ -908,6 +999,15 @@ function StoryForm({ onCreated }: { onCreated: () => void }) {
       <PublishToggle value={published} onChange={setPublished} />
       <StatusBanner status={status} />
       <PrimarySubmit submitting={submitting} label="Publiser innsikt" />
+      </div>
+
+      <ConnectSidebar
+        linked={linked}
+        setLinked={setLinked}
+        suggestedKeys={aiRelatedKeys}
+        onAcceptSuggested={acceptRelatedSuggestion}
+        onDismissSuggested={dismissRelatedSuggestion}
+      />
     </form>
   );
 }
@@ -1223,26 +1323,21 @@ interface ResourceRow {
   description: string | null;
   type: ResourceType;
   url: string | null;
+  map_scale: MapScale | null;
   published: boolean;
   created_at?: string;
 }
-function ResourcesPanel() {
+function ResourcesPanel({ currentUserId }: { currentUserId: string | null }) {
   const showToast = useToast();
   const [rows, setRows] = useState<ResourceRow[]>([]);
-  const [stories, setStories] = useState<{ id: string; title: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const load = useCallback(async () => {
     setLoading(true);
-    const [resRes, storyRes] = await Promise.all([
-      supabase.from("public_resources").select("*").order("created_at", { ascending: false }).limit(50),
-      supabase.from("public_stories").select("id,title").order("title", { ascending: true })
-    ]);
+    const resRes = await supabase.from("public_resources").select("*").order("created_at", { ascending: false }).limit(50);
     setLoading(false);
     if (resRes.error) console.warn("Load resources:", resRes.error.message);
-    if (storyRes.error) console.warn("Load stories for picker:", storyRes.error.message);
     setRows((resRes.data as ResourceRow[]) ?? []);
-    setStories((storyRes.data as { id: string; title: string }[]) ?? []);
   }, []);
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -1251,7 +1346,7 @@ function ResourcesPanel() {
   return <div className="[display:grid] [grid-template-columns:repeat(auto-fit,_minmax(320px,_1fr))] [gap:32px]">
     <section>
       <SectionHeading>{editId ? "Rediger ressurs" : "Ny ressurs"}</SectionHeading>
-      <ResourceForm key={editId ?? "new"} editId={editId} stories={stories} onSaved={() => { setEditId(null); load(); }} onCancel={() => setEditId(null)} />
+      <ResourceForm key={editId ?? "new"} editId={editId} onSaved={() => { setEditId(null); load(); }} onCancel={() => setEditId(null)} currentUserId={currentUserId} />
     </section>
 
     <section>
@@ -1259,7 +1354,10 @@ function ResourcesPanel() {
       <ItemList loading={loading} rows={rows.map(r => ({
         id: r.id,
         title: r.title,
-        subtitle: RESOURCE_TYPE_LABELS[r.type],
+        subtitle: [
+          RESOURCE_TYPE_LABELS[r.type],
+          r.map_scale ? SCALES[r.map_scale]?.label : null,
+        ].filter(Boolean).join(" · "),
         published: r.published,
         tags: []
       }))} onTogglePublish={async (id, next) => {
@@ -1280,28 +1378,72 @@ function ResourcesPanel() {
 }
 function ResourceForm({
   editId,
-  stories,
   onSaved,
-  onCancel
+  onCancel,
+  currentUserId,
 }: {
   editId: string | null;
-  stories: { id: string; title: string }[];
   onSaved: () => void;
   onCancel: () => void;
+  currentUserId: string | null;
 }) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [type, setType] = useState<ResourceType>("publication");
   const [url, setUrl] = useState("");
+  const [mapScale, setMapScale] = useState<MapScale | "">("");
   const [frictions, setFrictions] = useState<CareFriction[]>([]);
   const [qualities, setQualities] = useState<CareQuality[]>([]);
-  const [linkedStories, setLinkedStories] = useState<string[]>([]);
+  const [linked, setLinked] = useState<Set<string>>(() => new Set());
   const [published, setPublished] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [status, setStatus] = useState<{
     kind: "ok" | "err";
     msg: string;
   } | null>(null);
+
+  const isRelatedExcluded = useCallback(
+    (item: SuggestionRelated) => linked.has(suggestionRelatedToKey(item)),
+    [linked],
+  );
+
+  const ai = useAiSuggest({
+    title,
+    body: description,
+    currentFrictions: frictions,
+    currentQualities: qualities,
+    excludeSourceId: editId ?? undefined,
+    isRelatedExcluded,
+  });
+
+  const aiRelatedKeys = useMemo(
+    () => new Set(ai.related.map((r) => suggestionRelatedToKey(r))),
+    [ai.related],
+  );
+
+  const acceptRelatedSuggestion = useCallback(
+    (key: string) => {
+      setLinked((prev) => new Set(prev).add(key));
+      ai.dismissRelatedByKey(key);
+    },
+    [ai],
+  );
+
+  const dismissRelatedSuggestion = useCallback(
+    (key: string) => {
+      ai.dismissRelatedByKey(key);
+    },
+    [ai],
+  );
+
+  function acceptFrictionSuggestion(k: CareFriction) {
+    setFrictions((prev) => (prev.includes(k) ? prev : [...prev, k]));
+    ai.dismissFriction(k);
+  }
+  function acceptQualitySuggestion(k: CareQuality) {
+    setQualities((prev) => (prev.includes(k) ? prev : [...prev, k]));
+    ai.dismissQuality(k);
+  }
 
   useEffect(() => {
     if (!editId) return;
@@ -1323,10 +1465,16 @@ function ResourceForm({
       setDescription(r.description ?? "");
       setType(r.type);
       setUrl(r.url ?? "");
+      setMapScale(r.map_scale ?? "");
       setPublished(r.published);
       setFrictions(((fRes.data ?? []) as { friction_key: CareFriction }[]).map(x => x.friction_key));
       setQualities(((qRes.data ?? []) as { quality_key: CareQuality }[]).map(x => x.quality_key));
-      setLinkedStories(((sRes.data ?? []) as { story_id: string }[]).map(x => x.story_id));
+
+      const linkedSet = await loadEntityLinks("resource", editId);
+      for (const storyId of ((sRes.data ?? []) as { story_id: string }[]).map(x => x.story_id)) {
+        linkedSet.add(entityLinkKey("story", storyId));
+      }
+      setLinked(linkedSet);
     })();
     return () => { cancelled = true; };
   }, [editId]);
@@ -1343,6 +1491,7 @@ function ResourceForm({
       description: description.trim() || null,
       type,
       url: url.trim() || null,
+      map_scale: mapScale || null,
       theme: null,
       published
     };
@@ -1360,11 +1509,20 @@ function ResourceForm({
       const { error: insErr } = await supabase.from(table).insert(keys.map(k => ({ resource_id: id, [col]: k })));
       return insErr;
     };
+    const storyIds = linkedIdsOfKind(linked, "story");
     const errors = [
       await reconcile("public_resource_frictions", "friction_key", frictions),
       await reconcile("public_resource_qualities", "quality_key", qualities),
-      await reconcile("public_resource_stories", "story_id", linkedStories)
+      await reconcile("public_resource_stories", "story_id", storyIds),
     ].filter(Boolean);
+
+    const linkErr = await saveEntityLinks("resource", id, linked, currentUserId);
+    if (linkErr) {
+      setSubmitting(false);
+      setStatus({ kind: "err", msg: linkErr });
+      return;
+    }
+
     setSubmitting(false);
     if (errors.length > 0) {
       setStatus({ kind: "err", msg: errors.map(e => e!.message).join(" · ") });
@@ -1376,13 +1534,19 @@ function ResourceForm({
       setTitle("");
       setDescription("");
       setUrl("");
+      setMapScale("");
       setFrictions([]);
       setQualities([]);
-      setLinkedStories([]);
+      setLinked(new Set());
+      ai.reset();
     }
     onSaved();
   }
-  return <Form onSubmit={submit}>
+  const suggestTextLength = `${title}\n${description}`.trim().length;
+
+  return (
+    <div style={formWithSidebar}>
+      <Form onSubmit={submit}>
     <FormField label="Tittel">
       <input style={inputStyle} value={title} onChange={e => setTitle(e.target.value)} required />
     </FormField>
@@ -1391,6 +1555,16 @@ function ResourceForm({
         ...inputStyle
       }} value={description} onChange={e => setDescription(e.target.value)} className="[min-height:110px]" />
     </FormField>
+
+    <SuggestBar
+      availability={ai.availability}
+      bodyLength={suggestTextLength}
+      loading={ai.loading}
+      coolingDown={ai.coolingDown}
+      cleared={ai.cleared}
+      onClick={ai.run}
+    />
+
     <FormRow>
       <FormField label="Type">
         <select style={inputStyle} value={type} onChange={e => setType(e.target.value as ResourceType)}>
@@ -1403,6 +1577,21 @@ function ResourceForm({
     <FormField label="Lenke (URL)">
       <input style={inputStyle} type="url" value={url} onChange={e => setUrl(e.target.value)} placeholder="https://…" />
     </FormField>
+    <FormField label="Skala">
+      <CategoryHelp kind="scale" compact />
+      <select
+        style={inputStyle}
+        value={mapScale}
+        onChange={(e) => setMapScale(e.target.value as MapScale | "")}
+      >
+        <option value="">—</option>
+        {SCALE_KEYS.map((s) => (
+          <option key={s} value={s}>
+            {SCALES[s].label}
+          </option>
+        ))}
+      </select>
+    </FormField>
     <FormField label="Relaterte friksjoner">
       <CategoryHelp kind="friction" compact />
       <CheckboxGroup options={FRICTION_KEYS.map(k => ({
@@ -1410,6 +1599,20 @@ function ResourceForm({
         label: FRICTIONS[k].label,
         color: FRICTIONS[k].color
       }))} value={frictions} onChange={next => setFrictions(next as CareFriction[])} />
+      {ai.frictions.length > 0 && (
+        <GhostBadgeRow label="✦ AI-forslag — klikk for å godta">
+          {ai.frictions.map((k) => (
+            <GhostBadge
+              key={k}
+              color={FRICTIONS[k].color}
+              onAccept={() => acceptFrictionSuggestion(k)}
+              onDismiss={() => ai.dismissFriction(k)}
+            >
+              {FRICTIONS[k].label}
+            </GhostBadge>
+          ))}
+        </GhostBadgeRow>
+      )}
     </FormField>
     <FormField label="Relaterte kvaliteter">
       <CategoryHelp kind="quality" compact />
@@ -1418,14 +1621,36 @@ function ResourceForm({
         label: QUALITIES[k].label,
         color: QUALITIES[k].color
       }))} value={qualities} onChange={next => setQualities(next as CareQuality[])} />
-    </FormField>
-    <FormField label="Relaterte innsikter (valgfritt — la stå tom for å hoppe over)">
-      <StoryMultiSelect stories={stories} value={linkedStories} onChange={setLinkedStories} />
+      {ai.qualities.length > 0 && (
+        <GhostBadgeRow label="✦ AI-forslag — klikk for å godta">
+          {ai.qualities.map((k) => (
+            <GhostBadge
+              key={k}
+              color={QUALITIES[k].color}
+              onAccept={() => acceptQualitySuggestion(k)}
+              onDismiss={() => ai.dismissQuality(k)}
+            >
+              {QUALITIES[k].label}
+            </GhostBadge>
+          ))}
+        </GhostBadgeRow>
+      )}
     </FormField>
     <PublishToggle value={published} onChange={setPublished} />
     <SubmitBar status={status} submitting={submitting} label={editId ? "Oppdater ressurs" : "Lagre ressurs"} />
     {editId && <button type="button" onClick={onCancel} className="[font-size:12px] [color:#666666] [background:transparent] [border:none] [cursor:pointer] [padding:0px] [align-self:flex-start]">Avbryt redigering</button>}
-  </Form>;
+      </Form>
+
+      <ConnectSidebar
+        exclude={editId ? { kind: "resource", id: editId } : undefined}
+        linked={linked}
+        setLinked={setLinked}
+        suggestedKeys={aiRelatedKeys}
+        onAcceptSuggested={acceptRelatedSuggestion}
+        onDismissSuggested={dismissRelatedSuggestion}
+      />
+    </div>
+  );
 }
 
 // ─── WP monthly reports ───

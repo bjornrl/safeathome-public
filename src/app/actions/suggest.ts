@@ -16,13 +16,19 @@ const RELATED_MIN_SIMILARITY = 0.32;
 const RELATED_CANDIDATES = 15; // how many neighbours to pull before floor + dedupe
 const RELATED_MAX = 5; // chips shown to the researcher
 
+/** Corpus types searched by default for related-item kNN. */
+const ALL_RELATED_SOURCE_TYPES = ["quick_note", "insight", "story", "resource"] as const;
+export type RelatedSourceType = (typeof ALL_RELATED_SOURCE_TYPES)[number];
+
 const FRICTION_KEYS = Object.keys(FRICTIONS) as CareFriction[];
 const QUALITY_KEYS = Object.keys(QUALITIES) as CareQuality[];
 const WP_KEYS: WorkPackage[] = ["WP1", "WP2", "WP3", "WP4"];
 
+export type SuggestionRelatedType = "note" | "insight" | "story" | "resource";
+
 export type SuggestionRelated = {
   id: string;
-  type: "note" | "insight";
+  type: SuggestionRelatedType;
   title: string;
 };
 
@@ -82,7 +88,12 @@ export type SuggestInput = {
   noteBody: string;
   currentFrictions: CareFriction[];
   currentQualities: CareQuality[];
-  noteId?: string; // present when editing — excluded from its own related results
+  /** When editing — excluded from its own related results. */
+  excludeSourceId?: string;
+  /** @deprecated use excludeSourceId */
+  noteId?: string;
+  /** Limit which corpus types appear in related suggestions. Defaults to all four. */
+  relatedSourceTypes?: RelatedSourceType[];
 };
 
 export type SuggestResponse =
@@ -146,7 +157,7 @@ export async function requestSuggestions(input: SuggestInput): Promise<SuggestRe
 // ─── Related items: vector kNN over the corpus ──────────────────
 //
 // Embeds the live draft text and asks `match_embeddings` for the nearest
-// notes/insights. This replaces the old "dump 200 rows into Claude" approach:
+// corpus neighbours. This replaces the old "dump 200 rows into Claude" approach:
 // it's cheaper, scales with the corpus, and ranks by actual semantic distance.
 
 type KnnRow = {
@@ -168,13 +179,16 @@ async function relatedByKnn(
     .join("\n\n");
   if (!text) return [];
 
+  const sourceTypes = input.relatedSourceTypes ?? [...ALL_RELATED_SOURCE_TYPES];
+  const excludeId = input.excludeSourceId ?? input.noteId ?? null;
+
   try {
     const vector = await embedText(text);
     const { data, error } = await supabase.rpc("match_embeddings", {
       query_embedding: toVectorLiteral(vector),
       match_count: RELATED_CANDIDATES,
-      filter_source_types: ["quick_note", "insight"],
-      exclude_source_id: input.noteId ?? null,
+      filter_source_types: sourceTypes,
+      exclude_source_id: excludeId,
     });
     if (error) throw new Error(error.message);
 
@@ -207,6 +221,8 @@ async function hydrateRelated(
 ): Promise<SuggestionRelated[]> {
   const noteIds = rows.filter((r) => r.source_type === "quick_note").map((r) => r.source_id);
   const insightIds = rows.filter((r) => r.source_type === "insight").map((r) => r.source_id);
+  const storyIds = rows.filter((r) => r.source_type === "story").map((r) => r.source_id);
+  const resourceIds = rows.filter((r) => r.source_type === "resource").map((r) => r.source_id);
 
   // key: "source_type:id" -> title
   const titles = new Map<string, string>();
@@ -237,19 +253,54 @@ async function hydrateRelated(
             }
           })
       : null,
+    storyIds.length
+      ? supabase
+          .from("public_stories")
+          .select("id, title")
+          .in("id", storyIds)
+          .then(({ data }) => {
+            for (const r of (data ?? []) as { id: string; title: string }[]) {
+              titles.set(`story:${r.id}`, r.title);
+            }
+          })
+      : null,
+    resourceIds.length
+      ? supabase
+          .from("public_resources")
+          .select("id, title")
+          .in("id", resourceIds)
+          .then(({ data }) => {
+            for (const r of (data ?? []) as { id: string; title: string }[]) {
+              titles.set(`resource:${r.id}`, r.title);
+            }
+          })
+      : null,
   ]);
 
   return rows
     .map((r): SuggestionRelated | null => {
       const title = titles.get(`${r.source_type}:${r.source_id}`);
       if (!title) return null; // source deleted but embedding not yet pruned
-      return {
-        id: r.source_id,
-        type: r.source_type === "quick_note" ? "note" : "insight",
-        title,
-      };
+      const type = sourceTypeToSuggestionType(r.source_type);
+      if (!type) return null;
+      return { id: r.source_id, type, title };
     })
     .filter((x): x is SuggestionRelated => x !== null);
+}
+
+function sourceTypeToSuggestionType(sourceType: string): SuggestionRelatedType | null {
+  switch (sourceType) {
+    case "quick_note":
+      return "note";
+    case "insight":
+      return "insight";
+    case "story":
+      return "story";
+    case "resource":
+      return "resource";
+    default:
+      return null;
+  }
 }
 
 // ─── Categories: Claude over the note text + the taxonomy ───────

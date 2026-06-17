@@ -11,11 +11,13 @@ import {
 } from "@/lib/embeddings";
 import type { SearchHit, SearchHitDetail, SearchResponse } from "@/lib/search-types";
 import { RESOURCE_TYPE_LABELS } from "@/lib/seed-resources";
+import { SCALES } from "@/lib/constants";
 import type {
   CareFriction,
   CareQuality,
   FieldSite,
   HouseTheme,
+  MapScale,
   ResourceType,
   WorkPackage,
 } from "@/lib/types";
@@ -300,7 +302,7 @@ export async function getSearchHitDetail(
   // resource
   const { data } = await supabase
     .from("public_resources")
-    .select("id, title, description, type, url, field_site")
+    .select("id, title, description, type, url, field_site, map_scale")
     .eq("id", sourceId)
     .maybeSingle();
   if (!data) return null;
@@ -310,7 +312,12 @@ export async function getSearchHitDetail(
     type: ResourceType;
     url: string | null;
     field_site: FieldSite | null;
+    map_scale: MapScale | null;
   };
+  const tags = [
+    r.type ? (RESOURCE_TYPE_LABELS[r.type] ?? r.type) : null,
+    r.map_scale ? SCALES[r.map_scale].label : null,
+  ].filter((t): t is string => Boolean(t));
   return {
     ...base,
     title: r.title,
@@ -321,6 +328,6 @@ export async function getSearchHitDetail(
     fieldSite: r.field_site,
     frictions: [],
     qualities: [],
-    tags: r.type ? [RESOURCE_TYPE_LABELS[r.type] ?? r.type] : [],
+    tags,
   };
 }

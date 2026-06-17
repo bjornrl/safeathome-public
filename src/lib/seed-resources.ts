@@ -1,4 +1,4 @@
-import type { PublicResource, ResourceType } from "./types";
+import type { PublicResource, ResourceType, MapScale } from "./types";
 
 export const RESOURCE_TYPE_LABELS: Record<ResourceType, string> = {
   publication:     "Publikasjon",
@@ -30,6 +30,7 @@ function resource(
   authors: string | null,
   year: number | null,
   field_site: PublicResource["field_site"] = null,
+  map_scale: MapScale | null = null,
 ): PublicResource {
   return {
     id,
@@ -41,6 +42,7 @@ function resource(
     year,
     field_site,
     theme: null,
+    map_scale,
     published: true,
     created_at: "2026-01-01",
   };
