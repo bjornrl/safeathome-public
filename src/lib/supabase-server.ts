@@ -1,5 +1,14 @@
+import { createClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+
+// For public RSC reads — anon role, no session cookies.
+export function createSupabaseAnonClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  );
+}
 
 // Auth-aware Supabase client for use inside server actions / route handlers.
 // Reads the session from the request cookies so RLS sees the actual user.

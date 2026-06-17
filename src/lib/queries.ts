@@ -1,3 +1,4 @@
+import { createSupabaseAnonClient } from "./supabase-server";
 import { supabase } from "./supabase";
 import type {
   PublicStory,
@@ -208,13 +209,16 @@ export type ResourceLinksByResource = Record<
 >;
 
 export async function getWelfareTechnologies(): Promise<WelfareTechnology[]> {
-  const { data, error } = await supabase
+  const { data, error } = await createSupabaseAnonClient()
     .from("welfare_technologies")
     .select("*")
     .eq("published", true)
     .order("title", { ascending: true });
-  if (error || !data) return [];
-  return data as WelfareTechnology[];
+  if (error) {
+    console.error("[getWelfareTechnologies]", error.message);
+    return [];
+  }
+  return (data ?? []) as WelfareTechnology[];
 }
 
 export async function getAllResourceLinks(): Promise<ResourceLinksByResource> {
