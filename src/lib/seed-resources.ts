@@ -43,6 +43,8 @@ function resource(
     field_site,
     theme: null,
     map_scale,
+    file_url: null,
+    file_name: null,
     published: true,
     created_at: "2026-01-01",
   };

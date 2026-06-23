@@ -115,6 +115,8 @@ export interface PublicResource {
   field_site: FieldSite | null;
   theme: HouseTheme | null;
   map_scale: MapScale | null;
+  file_url: string | null;
+  file_name: string | null;
   published: boolean;
   created_at: string;
 }
