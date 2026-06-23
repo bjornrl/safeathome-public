@@ -24,59 +24,115 @@ const WORK_PACKAGES: {
   ink: string;
   muted: string;
 }[] = [
-  {
-    code: "WP1",
-    title: "Homes & Communities",
-    titleNo: "Hjem og fellesskap",
-    lead: "Carolina Rau",
-    institution: "UiO",
-    body: "Hvordan materielle rom og sosial dynamikk i og rundt boligen former hjemmebasert omsorg.",
-    bg: clay.colors.pink,
-    ink: clay.colors.onPrimary,
-    muted: "rgba(255, 255, 255, 0.78)",
-  },
-  {
-    code: "WP2",
-    title: "Health & Care Institutions",
-    titleNo: "Helse- og omsorgsinstitusjoner",
-    lead: "Jonas Debesay",
-    institution: "OsloMet",
-    body: "Hvilke barrierer og muligheter institusjonene gir for tilgang til hjemmetjenester.",
-    bg: clay.colors.teal,
-    ink: clay.colors.onPrimary,
-    muted: "rgba(255, 255, 255, 0.7)",
-  },
-  {
-    code: "WP3",
-    title: "Transnational Contexts & Policies",
-    titleNo: "Transnasjonale kontekster og politikk",
-    lead: "Erika Gubrium",
-    institution: "OsloMet",
-    body: "Hvordan familiebånd og politikk på tvers av landegrenser påvirker det å eldes hjemme.",
-    bg: clay.colors.lavender,
-    ink: clay.colors.ink,
-    muted: "rgba(10, 10, 10, 0.65)",
-  },
-  {
-    code: "WP4",
-    title: "Innovation & Service Development",
-    titleNo: "Innovasjon og tjenesteutvikling",
-    lead: "Alejandro Miranda Nieto · Øystein Evensen",
-    institution: "OsloMet · Comte Bureau",
-    body: "Å ko-skape praktiske løsninger og tjenester sammen med beboere, ansatte og kommuner.",
-    bg: clay.colors.peach,
-    ink: clay.colors.ink,
-    muted: "rgba(10, 10, 10, 0.65)",
-  },
-];
+    {
+      code: "WP1",
+      title: "Homes & Communities",
+      titleNo: "Hjem og fellesskap",
+      lead: "Carolina Rau",
+      institution: "UiO",
+      body: "Hvordan materielle rom og sosial dynamikk i og rundt boligen former hjemmebasert omsorg.",
+      bg: clay.colors.pink,
+      ink: clay.colors.onPrimary,
+      muted: "rgba(255, 255, 255, 0.78)",
+    },
+    {
+      code: "WP2",
+      title: "Health & Care Institutions",
+      titleNo: "Helse- og omsorgsinstitusjoner",
+      lead: "Jonas Debesay",
+      institution: "OsloMet",
+      body: "Hvilke barrierer og muligheter institusjonene gir for tilgang til hjemmetjenester.",
+      bg: clay.colors.teal,
+      ink: clay.colors.onPrimary,
+      muted: "rgba(255, 255, 255, 0.7)",
+    },
+    {
+      code: "WP3",
+      title: "Transnational Contexts & Policies",
+      titleNo: "Transnasjonale kontekster og politikk",
+      lead: "Erika Gubrium",
+      institution: "OsloMet",
+      body: "Hvordan familiebånd og politikk på tvers av landegrenser påvirker det å eldes hjemme.",
+      bg: clay.colors.lavender,
+      ink: clay.colors.ink,
+      muted: "rgba(10, 10, 10, 0.65)",
+    },
+    {
+      code: "WP4",
+      title: "Innovation & Service Development",
+      titleNo: "Innovasjon og tjenesteutvikling",
+      lead: "Alejandro Miranda Nieto · Øystein Evensen",
+      institution: "OsloMet · Comte Bureau",
+      body: "Å ko-skape praktiske løsninger og tjenester sammen med beboere, ansatte og kommuner.",
+      bg: clay.colors.peach,
+      ink: clay.colors.ink,
+      muted: "rgba(10, 10, 10, 0.65)",
+    },
+  ];
 
-const PARTNERS = [
-  { name: "OsloMet", role: "Prosjektleder" },
-  { name: "Universitetet i Oslo (UiO)", role: "Forskningspartner" },
-  { name: "Durham University", role: "Forskningspartner" },
-  { name: "Comte Bureau", role: "Designpartner" },
-  { name: "Bydel Alna, Oslo", role: "Feltsamarbeid" },
-  { name: "Bydel Søndre Nordstrand, Oslo", role: "Feltsamarbeid" },
+const PARTNERS: {
+  name: string;
+  role: string;
+  logo?: string;
+  contacts?: { name: string; title: string; email: string }[];
+}[] = [
+  {
+    name: "OsloMet",
+    role: "Prosjektleder",
+    logo: "/images/collaborator_logos/oslomet_gul.png",
+    contacts: [
+      { name: "Marit Haldar", title: "Prosjektleder (PI)", email: "mariha@oslomet.no" },
+      { name: "Jonas Debesay", title: "WP2-leder — Helse- og omsorgsinstitusjoner", email: "jonasd@oslomet.no" },
+      { name: "Erika Gubrium", title: "WP3-leder — Transnasjonale kontekster", email: "erikgu@oslomet.no" },
+      { name: "Alejandro Miranda Nieto", title: "WP4 med-leder — Innovasjon og tjenestedesign", email: "alejandr@oslomet.no" },
+      { name: "Carolina Borges Rau Steuernagel", title: "Plattform · WP4", email: "caste4774@oslomet.no" },
+    ],
+  },
+  {
+    name: "Universitetet i Oslo (UiO)",
+    role: "Forskningspartner",
+    logo: "/images/collaborator_logos/UiO.png",
+    contacts: [
+      { name: "Carolina Borges Rau Steuernagel", title: "WP1-leder — Hjem og fellesskap", email: "c.b.r.steuernagel@medisin.uio.no" },
+      { name: "Tony Joakim Ananiassen Sandset", title: "WP1 — Hjem og fellesskap", email: "t.j.a.sandset@medisin.uio.no" },
+    ],
+  },
+  {
+    name: "Durham University",
+    role: "Forskningspartner",
+    logo: "/images/collaborator_logos/Durham_Logo.png",
+  },
+  {
+    name: "Bydel Alna, Oslo",
+    role: "Feltsamarbeid",
+    logo: "/images/collaborator_logos/Oslo-logo-sort-RGB.png",
+    contacts: [
+      { name: "Elisabeth Lie Arulnesar", title: "Kommunal partner", email: "elisabeth.lie@bal.oslo.kommune.no" },
+      { name: "Aina Westby", title: "Kommunal partner", email: "aina.westby@bal.oslo.kommune.no" },
+    ],
+  },
+  {
+    name: "Bydel Søndre Nordstrand, Oslo",
+    role: "Feltsamarbeid",
+    logo: "/images/collaborator_logos/Oslo-logo-sort-RGB.png",
+    contacts: [
+      { name: "Bodil Johansen Ananiassen", title: "Kommunal partner", email: "bodil.ananiassen@bsn.oslo.kommune.no" },
+      { name: "Gudrun Barlund Broback", title: "Kommunal partner", email: "gudrunbarlund.broback@bsn.oslo.kommune.no" },
+      { name: "Lillian Rognstad", title: "Kommunal partner", email: "lillian.rognstad@bsn.oslo.kommune.no" },
+      { name: "Linda Mari Tahir", title: "Kommunal partner", email: "linda.mari.tahir@bsn.oslo.kommune.no" },
+      { name: "Ninni Marie Staff Ingjær Handal", title: "Kommunal partner", email: "ninni.handal@bsn.oslo.kommune.no" },
+      { name: "Dijana Vesovic", title: "Kommunal partner", email: "dijana.vesovic@bsn.oslo.kommune.no" },
+    ],
+  },
+  {
+    name: "Comte Bureau",
+    role: "Designpartner",
+    logo: "/images/collaborator_logos/Comte_logo_red.png",
+    contacts: [
+      { name: "Øystein Evensen", title: "WP4 med-leder — Plattform og tjenestedesign", email: "oystein@comte.no" },
+      { name: "Bjørn Ravlo-Leira", title: "Plattform · WP4", email: "bjorn@comte.no" },
+    ],
+  },
 ];
 
 const FIELD_SITES = [
@@ -123,13 +179,17 @@ export default function HomePage() {
       <Nav />
       <main id="main-content" style={{ background: clay.colors.canvas, color: clay.colors.body }}>
         {/* ── Hero ────────────────────────────────────────────── */}
-        <section>
+        <section
+
+        >
+
+
           <div style={{ ...container, ...sectionPad, paddingBottom: space.s64 }}>
             <div
               style={{
                 display: "grid",
                 gridTemplateColumns: "minmax(0, 7fr) minmax(0, 5fr)",
-                gap: space.s48,
+                gap: space.s24,
                 alignItems: "center",
               }}
             >
@@ -178,7 +238,9 @@ export default function HomePage() {
         </section>
 
         {/* ── About ───────────────────────────────────────────── */}
-        <section>
+        <section style={{ background: clay.colors.surfaceCard }}>
+
+
           <div style={{ ...narrow, ...sectionPad }}>
             <p style={{ ...eyebrow, marginBottom: space.s16 }}>Om prosjektet</p>
             <h2 style={{ marginBottom: space.s32, maxWidth: "20ch" }}>
@@ -350,12 +412,34 @@ export default function HomePage() {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
                 gap: space.s16,
               }}
             >
               {PARTNERS.map((p) => (
                 <Card key={p.name} padding="md">
+                  {p.logo && (
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "flex-start",
+                        height: "56px",
+                        marginBottom: space.s16,
+                      }}
+                    >
+                      <img
+                        src={p.logo}
+                        alt={`${p.name} logo`}
+                        style={{
+                          maxHeight: "100%",
+                          maxWidth: "100%",
+                          width: "auto",
+                          objectFit: "contain",
+                        }}
+                      />
+                    </div>
+                  )}
                   <p
                     style={{
                       fontFamily: clay.font.body,
@@ -368,7 +452,58 @@ export default function HomePage() {
                   >
                     {p.name}
                   </p>
-                  <p style={{ ...typography.sizes.t14, color: clay.colors.muted }}>{p.role}</p>
+                  <p style={{ ...typography.sizes.t14, color: clay.colors.muted, marginBottom: p.contacts?.length ? space.s16 : 0 }}>
+                    {p.role}
+                  </p>
+                  {p.contacts && p.contacts.length > 0 && (
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: space.s12,
+                        paddingTop: space.s16,
+                        borderTop: `1px solid ${clay.colors.hairline}`,
+                      }}
+                    >
+                      {p.contacts.map((c) => (
+                        <div key={c.email}>
+                          <p
+                            style={{
+                              ...typography.sizes.t14,
+                              fontWeight: 600,
+                              color: clay.colors.ink,
+                              marginBottom: space.s4,
+                              lineHeight: 1.35,
+                            }}
+                          >
+                            {c.name}
+                          </p>
+                          <p
+                            style={{
+                              ...typography.sizes.t12,
+                              color: clay.colors.muted,
+                              marginBottom: space.s4,
+                              lineHeight: 1.4,
+                            }}
+                          >
+                            {c.title}
+                          </p>
+                          <a
+                            href={`mailto:${c.email}`}
+                            style={{
+                              ...typography.sizes.t14,
+                              color: clay.colors.ink,
+                              textDecoration: "underline",
+                              textUnderlineOffset: "4px",
+                              wordBreak: "break-word",
+                            }}
+                          >
+                            {c.email}
+                          </a>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </Card>
               ))}
             </div>
@@ -571,19 +706,18 @@ export default function HomePage() {
 // in the brand palette as a tasteful stand-in.
 function HeroIllustration() {
   return (
-    <div
-      aria-hidden
+    <div aria-hidden
       style={{
-        background: clay.colors.surfaceCard,
+        // background: clay.colors.surfaceCard,
         borderRadius: "var(--clay-radius-xl)",
         aspectRatio: "5 / 5",
         position: "relative",
-        overflow: "hidden",
-        border: `1px solid ${clay.colors.hairline}`,
-      }}
-    >
-      {/* Floating blobs in Clay palette to evoke a tactile 3D scene */}
-      <div
+        overflow: "visible",
+        // border: `1px solid ${clay.colors.hairline}`,
+      }}>
+      <img style={{ width: "100%", height: "100%", zIndex: 10, position: "relative" }} src="images/Safeathome_illustration_with_color.png" alt="Hero illustration" />
+      {/* <div
+
         style={{
           position: "absolute",
           width: "60%",
@@ -592,7 +726,7 @@ function HeroIllustration() {
           left: "8%",
           borderRadius: "50%",
           background: clay.colors.peach,
-          filter: "blur(0.5px)",
+          filter: "blur(100px)",
         }}
       />
       <div
@@ -604,6 +738,7 @@ function HeroIllustration() {
           right: "10%",
           borderRadius: "50%",
           background: clay.colors.lavender,
+          filter: "blur(100px)",
         }}
       />
       <div
@@ -615,18 +750,66 @@ function HeroIllustration() {
           left: "45%",
           borderRadius: "50%",
           background: clay.colors.mint,
+          filter: "blur(100px)",
         }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          inset: "auto 0 0 0",
-          height: "30%",
-          background:
-            `linear-gradient(to top, ${clay.colors.surfaceStrong}, transparent)`,
-        }}
-      />
-    </div>
+      /> */}
+    </div >
+    // <div
+    //   aria-hidden
+    //   style={{
+    //     background: clay.colors.surfaceCard,
+    //     borderRadius: "var(--clay-radius-xl)",
+    //     aspectRatio: "5 / 5",
+    //     position: "relative",
+    //     overflow: "hidden",
+    //     border: `1px solid ${clay.colors.hairline}`,
+    //   }}
+    // >
+    //   {/* Floating blobs in Clay palette to evoke a tactile 3D scene */}
+    //   <div
+    //     style={{
+    //       position: "absolute",
+    //       width: "60%",
+    //       aspectRatio: "1",
+    //       top: "12%",
+    //       left: "8%",
+    //       borderRadius: "50%",
+    //       background: clay.colors.peach,
+    //       filter: "blur(0.5px)",
+    //     }}
+    //   />
+    //   <div
+    //     style={{
+    //       position: "absolute",
+    //       width: "45%",
+    //       aspectRatio: "1",
+    //       bottom: "10%",
+    //       right: "10%",
+    //       borderRadius: "50%",
+    //       background: clay.colors.lavender,
+    //     }}
+    //   />
+    //   <div
+    //     style={{
+    //       position: "absolute",
+    //       width: "30%",
+    //       aspectRatio: "1",
+    //       top: "45%",
+    //       left: "45%",
+    //       borderRadius: "50%",
+    //       background: clay.colors.mint,
+    //     }}
+    //   />
+    //   <div
+    //     style={{
+    //       position: "absolute",
+    //       inset: "auto 0 0 0",
+    //       height: "30%",
+    //       background:
+    //         `linear-gradient(to top, ${clay.colors.surfaceStrong}, transparent)`,
+    //     }}
+    //   />
+    // </div>
   );
 }
 

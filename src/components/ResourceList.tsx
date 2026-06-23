@@ -132,6 +132,8 @@ function ResourceCard({
   storiesById?: Record<string, PublicStory>;
 }) {
   const accent = TYPE_ACCENT[resource.type];
+  // Prefer an external link; fall back to an uploaded document.
+  const linkHref = resource.url ?? resource.file_url;
   const [storiesOpen, setStoriesOpen] = useState(false);
   const linkedStoryIds = links?.stories ?? [];
   const linkedStories = linkedStoryIds
@@ -291,8 +293,10 @@ function ResourceCard({
           {resource.field_site && resource.map_scale && " · "}
           {resource.map_scale ? SCALES[resource.map_scale].label : null}
         </span>
-        {resource.url ? (
-          <span style={{ fontSize: 13, fontWeight: 600, color: accent }}>Åpne →</span>
+        {linkHref ? (
+          <span style={{ fontSize: 13, fontWeight: 600, color: accent }}>
+            {resource.url ? "Åpne →" : "Last ned →"}
+          </span>
         ) : (
           <span style={{ fontSize: 12, fontStyle: "italic", color: "#9a9a9a" }}>
             Kommer snart
@@ -302,10 +306,10 @@ function ResourceCard({
     </>
   );
 
-  if (resource.url) {
+  if (linkHref) {
     return (
       <a
-        href={resource.url}
+        href={linkHref}
         target="_blank"
         rel="noopener noreferrer"
         style={{

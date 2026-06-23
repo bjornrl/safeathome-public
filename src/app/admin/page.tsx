@@ -10,6 +10,7 @@ import type { CareFriction, CareQuality, FieldSite, HouseTheme, MapScale, Resour
 import { QuickNotesPanel } from "@/components/admin/QuickNotesPanel";
 import { ConnectSidebar } from "@/components/admin/ConnectSidebar";
 import { WelfareTechPanel } from "@/components/admin/WelfareTechPanel";
+import { RESOURCE_FILE_ACCEPT, uploadResourceFile, validateResourceFile } from "@/lib/resource-file-storage";
 import { AdminHome } from "@/components/admin/AdminHome";
 import { EmbeddingsPanel } from "@/components/admin/EmbeddingsPanel";
 import { embedSource, removeEmbedding } from "@/app/actions/embed";
@@ -372,7 +373,7 @@ export default function AdminPage() {
       </nav>
 
       {tab !== "home" && (
-        <p className="[font-size:14px] [color:#4d4d4d] [line-height:1.65] [max-width:760px] [margin:0_0_40px] [padding:14px_18px] [background:#f7f6f0] [border:1px_solid_#e6e6e6] [border-radius:8px]">
+        <p className="[font-size:14px] [color:#4d4d4d] [line-height:1.65] [max-width:760px] [margin:0_0_56px] [padding:14px_18px] [background:#f7f6f0] [border:1px_solid_#e6e6e6] [border-radius:8px]">
           {TAB_DESCRIPTIONS[tab]}
         </p>
       )}
@@ -1325,6 +1326,8 @@ interface ResourceRow {
   url: string | null;
   authors: string | null;
   map_scale: MapScale | null;
+  file_url: string | null;
+  file_name: string | null;
   published: boolean;
   created_at?: string;
 }
@@ -1344,11 +1347,8 @@ function ResourcesPanel({ currentUserId }: { currentUserId: string | null }) {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
   }, [load]);
-  return <div className="[display:grid] [grid-template-columns:repeat(auto-fit,_minmax(320px,_1fr))] [gap:32px]">
-    <section>
-      <SectionHeading>{editId ? "Rediger ressurs" : "Ny ressurs"}</SectionHeading>
-      <ResourceForm key={editId ?? "new"} editId={editId} onSaved={() => { setEditId(null); load(); }} onCancel={() => setEditId(null)} currentUserId={currentUserId} />
-    </section>
+  return <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr)", gap: 32, alignItems: "flex-start" }}>
+    <ResourceForm key={editId ?? "new"} editId={editId} onSaved={() => { setEditId(null); load(); }} onCancel={() => setEditId(null)} currentUserId={currentUserId} />
 
     <section>
       <SectionHeading>Siste ressurser</SectionHeading>
@@ -1394,6 +1394,10 @@ function ResourceForm({
   const [authors, setAuthors] = useState("");
   const [type, setType] = useState<ResourceType>("publication");
   const [url, setUrl] = useState("");
+  const [fileUrl, setFileUrl] = useState("");
+  const [fileName, setFileName] = useState("");
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [mapScale, setMapScale] = useState<MapScale | "">("");
   const [frictions, setFrictions] = useState<CareFriction[]>([]);
   const [qualities, setQualities] = useState<CareQuality[]>([]);
@@ -1469,6 +1473,8 @@ function ResourceForm({
       setAuthors(r.authors ?? "");
       setType(r.type);
       setUrl(r.url ?? "");
+      setFileUrl(r.file_url ?? "");
+      setFileName(r.file_name ?? "");
       setMapScale(r.map_scale ?? "");
       setPublished(r.published);
       setFrictions(((fRes.data ?? []) as { friction_key: CareFriction }[]).map(x => x.friction_key));
@@ -1483,12 +1489,45 @@ function ResourceForm({
     return () => { cancelled = true; };
   }, [editId]);
 
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const validationError = validateResourceFile(file);
+    if (validationError) {
+      setStatus({ kind: "err", msg: validationError });
+      e.target.value = "";
+      return;
+    }
+    setStatus(null);
+    setPendingFile(file);
+    setFileName(file.name);
+  }
+
+  function removeFile() {
+    setPendingFile(null);
+    setFileUrl("");
+    setFileName("");
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim()) return;
     setSubmitting(true);
     setStatus(null);
     const id = editId ?? crypto.randomUUID();
+    let savedFileUrl = fileUrl.trim() || null;
+    let savedFileName = fileName.trim() || null;
+    if (pendingFile) {
+      try {
+        savedFileUrl = await uploadResourceFile(pendingFile);
+        savedFileName = pendingFile.name;
+      } catch (err) {
+        setSubmitting(false);
+        setStatus({ kind: "err", msg: (err as Error).message });
+        return;
+      }
+    }
     const row = {
       id,
       title: title.trim(),
@@ -1497,6 +1536,8 @@ function ResourceForm({
       type,
       url: url.trim() || null,
       map_scale: mapScale || null,
+      file_url: savedFileUrl,
+      file_name: savedFileName,
       theme: null,
       published
     };
@@ -1540,6 +1581,10 @@ function ResourceForm({
       setDescription("");
       setAuthors("");
       setUrl("");
+      setFileUrl("");
+      setFileName("");
+      setPendingFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
       setMapScale("");
       setFrictions([]);
       setQualities([]);
@@ -1551,8 +1596,10 @@ function ResourceForm({
   const suggestTextLength = `${title}\n${description}`.trim().length;
 
   return (
-    <div style={formWithSidebar}>
-      <Form onSubmit={submit}>
+    <>
+      <section>
+        <SectionHeading>{editId ? "Rediger ressurs" : "Ny ressurs"}</SectionHeading>
+        <Form onSubmit={submit}>
     <FormField label="Tittel">
       <input style={inputStyle} value={title} onChange={e => setTitle(e.target.value)} required />
     </FormField>
@@ -1592,6 +1639,44 @@ function ResourceForm({
     <FormField label="Lenke (URL)">
       <input style={inputStyle} type="url" value={url} onChange={e => setUrl(e.target.value)} placeholder="https://…" />
     </FormField>
+    <div className="[display:flex] [flex-direction:column] [gap:8px]">
+      <span className="[font-size:12px] [font-weight:600] [color:#2c2c2c]">Fil (PDF, Word, PowerPoint)</span>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept={RESOURCE_FILE_ACCEPT}
+        onChange={handleFileChange}
+        className="[display:none]"
+      />
+      <button
+        type="button"
+        onClick={() => fileInputRef.current?.click()}
+        style={{
+          alignSelf: "flex-start",
+          padding: "10px 16px",
+          border: "1px solid #d4d4d4",
+          borderRadius: 8,
+          background: "#f5f5f5",
+          color: "#2c2c2c",
+          fontSize: 14,
+          fontFamily: FONT_STACK,
+          fontWeight: 600,
+          cursor: "pointer",
+        }}
+      >
+        {pendingFile || fileUrl ? "Bytt fil" : "Velg fil"}
+      </button>
+      {(pendingFile || fileUrl) && (
+        <div className="[display:flex] [align-items:center] [gap:12px] [font-size:12px]">
+          <span className="[color:#2c2c2c] [overflow-wrap:anywhere]">{fileName || "Vedlagt fil"}</span>
+          {fileUrl && !pendingFile && (
+            <a href={fileUrl} target="_blank" rel="noreferrer" className="[color:#2563eb]">Åpne</a>
+          )}
+          <button type="button" onClick={removeFile} className="[color:#666666] [background:transparent] [border:none] [cursor:pointer] [padding:0px]">Fjern</button>
+        </div>
+      )}
+      <span className="[font-size:12px] [color:#666666]">PDF, Word (.doc/.docx) eller PowerPoint (.ppt/.pptx) · maks 25 MB</span>
+    </div>
     <FormField label="Skala">
       <CategoryHelp kind="scale" compact />
       <select
@@ -1654,7 +1739,8 @@ function ResourceForm({
     <PublishToggle value={published} onChange={setPublished} />
     <SubmitBar status={status} submitting={submitting} label={editId ? "Oppdater ressurs" : "Lagre ressurs"} />
     {editId && <button type="button" onClick={onCancel} className="[font-size:12px] [color:#666666] [background:transparent] [border:none] [cursor:pointer] [padding:0px] [align-self:flex-start]">Avbryt redigering</button>}
-      </Form>
+        </Form>
+      </section>
 
       <ConnectSidebar
         exclude={editId ? { kind: "resource", id: editId } : undefined}
@@ -1664,7 +1750,7 @@ function ResourceForm({
         onAcceptSuggested={acceptRelatedSuggestion}
         onDismissSuggested={dismissRelatedSuggestion}
       />
-    </div>
+    </>
   );
 }
 
