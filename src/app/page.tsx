@@ -76,64 +76,67 @@ const PARTNERS: {
   logo?: string;
   contacts?: { name: string; title: string; email: string }[];
 }[] = [
-  {
-    name: "OsloMet",
-    role: "Prosjektleder",
-    logo: "/images/collaborator_logos/oslomet_gul.png",
-    contacts: [
-      { name: "Marit Haldar", title: "Prosjektleder (PI)", email: "mariha@oslomet.no" },
-      { name: "Jonas Debesay", title: "WP2-leder — Helse- og omsorgsinstitusjoner", email: "jonasd@oslomet.no" },
-      { name: "Erika Gubrium", title: "WP3-leder — Transnasjonale kontekster", email: "erikgu@oslomet.no" },
-      { name: "Alejandro Miranda Nieto", title: "WP4 med-leder — Innovasjon og tjenestedesign", email: "alejandr@oslomet.no" },
-      { name: "Carolina Borges Rau Steuernagel", title: "Plattform · WP4", email: "caste4774@oslomet.no" },
-    ],
-  },
-  {
-    name: "Universitetet i Oslo (UiO)",
-    role: "Forskningspartner",
-    logo: "/images/collaborator_logos/UiO.png",
-    contacts: [
-      { name: "Carolina Borges Rau Steuernagel", title: "WP1-leder — Hjem og fellesskap", email: "c.b.r.steuernagel@medisin.uio.no" },
-      { name: "Tony Joakim Ananiassen Sandset", title: "WP1 — Hjem og fellesskap", email: "t.j.a.sandset@medisin.uio.no" },
-    ],
-  },
-  {
-    name: "Durham University",
-    role: "Forskningspartner",
-    logo: "/images/collaborator_logos/Durham_Logo.png",
-  },
-  {
-    name: "Bydel Alna, Oslo",
-    role: "Feltsamarbeid",
-    logo: "/images/collaborator_logos/Oslo-logo-sort-RGB.png",
-    contacts: [
-      { name: "Elisabeth Lie Arulnesar", title: "Kommunal partner", email: "elisabeth.lie@bal.oslo.kommune.no" },
-      { name: "Aina Westby", title: "Kommunal partner", email: "aina.westby@bal.oslo.kommune.no" },
-    ],
-  },
-  {
-    name: "Bydel Søndre Nordstrand, Oslo",
-    role: "Feltsamarbeid",
-    logo: "/images/collaborator_logos/Oslo-logo-sort-RGB.png",
-    contacts: [
-      { name: "Bodil Johansen Ananiassen", title: "Kommunal partner", email: "bodil.ananiassen@bsn.oslo.kommune.no" },
-      { name: "Gudrun Barlund Broback", title: "Kommunal partner", email: "gudrunbarlund.broback@bsn.oslo.kommune.no" },
-      { name: "Lillian Rognstad", title: "Kommunal partner", email: "lillian.rognstad@bsn.oslo.kommune.no" },
-      { name: "Linda Mari Tahir", title: "Kommunal partner", email: "linda.mari.tahir@bsn.oslo.kommune.no" },
-      { name: "Ninni Marie Staff Ingjær Handal", title: "Kommunal partner", email: "ninni.handal@bsn.oslo.kommune.no" },
-      { name: "Dijana Vesovic", title: "Kommunal partner", email: "dijana.vesovic@bsn.oslo.kommune.no" },
-    ],
-  },
-  {
-    name: "Comte Bureau",
-    role: "Designpartner",
-    logo: "/images/collaborator_logos/Comte_logo_red.png",
-    contacts: [
-      { name: "Øystein Evensen", title: "WP4 med-leder — Plattform og tjenestedesign", email: "oystein@comte.no" },
-      { name: "Bjørn Ravlo-Leira", title: "Plattform · WP4", email: "bjorn@comte.no" },
-    ],
-  },
-];
+    {
+      name: "OsloMet",
+      role: "Prosjektleder",
+      logo: "/images/collaborator_logos/oslomet_gul.png",
+      contacts: [
+        { name: "Marit Haldar", title: "Prosjektleder (PI)", email: "mariha@oslomet.no" },
+        { name: "Jonas Debesay", title: "WP2-leder — Helse- og omsorgsinstitusjoner", email: "jonasd@oslomet.no" },
+        { name: "Erika Gubrium", title: "WP3-leder — Transnasjonale kontekster", email: "erikgu@oslomet.no" },
+        { name: "Alejandro Miranda Nieto", title: "WP4 med-leder — Innovasjon og tjenestedesign", email: "alejandr@oslomet.no" },
+        { name: "Carolina Borges Rau Steuernagel", title: "Plattform · WP4", email: "caste4774@oslomet.no" },
+      ],
+    },
+    {
+      name: "Universitetet i Oslo (UiO)",
+      role: "Forskningspartner",
+      logo: "/images/collaborator_logos/UiO.png",
+      contacts: [
+        { name: "Carolina Borges Rau Steuernagel", title: "WP1-leder — Hjem og fellesskap", email: "c.b.r.steuernagel@medisin.uio.no" },
+        { name: "Tony Joakim Ananiassen Sandset", title: "WP1 — Hjem og fellesskap", email: "t.j.a.sandset@medisin.uio.no" },
+      ],
+    },
+    {
+      name: "Durham University",
+      role: "Forskningspartner",
+      logo: "/images/collaborator_logos/Durham_Logo.png",
+      contacts: [
+        { name: "Tiago Moreira", title: "Forsker", email: "https://www.durham.ac.uk/staff/tiago-moreira/" },
+      ],
+    },
+    {
+      name: "Bydel Alna, Oslo",
+      role: "Feltsamarbeid",
+      logo: "/images/collaborator_logos/Oslo-logo-sort-RGB.png",
+      contacts: [
+        { name: "Elisabeth Lie Arulnesar", title: "Kommunal partner", email: "elisabeth.lie@bal.oslo.kommune.no" },
+        { name: "Aina Westby", title: "Kommunal partner", email: "aina.westby@bal.oslo.kommune.no" },
+      ],
+    },
+    {
+      name: "Bydel Søndre Nordstrand, Oslo",
+      role: "Feltsamarbeid",
+      logo: "/images/collaborator_logos/Oslo-logo-sort-RGB.png",
+      contacts: [
+        { name: "Bodil Johansen Ananiassen", title: "Kommunal partner", email: "bodil.ananiassen@bsn.oslo.kommune.no" },
+        { name: "Gudrun Barlund Broback", title: "Kommunal partner", email: "gudrunbarlund.broback@bsn.oslo.kommune.no" },
+        { name: "Lillian Rognstad", title: "Kommunal partner", email: "lillian.rognstad@bsn.oslo.kommune.no" },
+        { name: "Linda Mari Tahir", title: "Kommunal partner", email: "linda.mari.tahir@bsn.oslo.kommune.no" },
+        { name: "Ninni Marie Staff Ingjær Handal", title: "Kommunal partner", email: "ninni.handal@bsn.oslo.kommune.no" },
+        { name: "Dijana Vesovic", title: "Kommunal partner", email: "dijana.vesovic@bsn.oslo.kommune.no" },
+      ],
+    },
+    {
+      name: "Comte Bureau",
+      role: "Designpartner",
+      logo: "/images/collaborator_logos/Comte_logo_red.png",
+      contacts: [
+        { name: "Øystein Evensen", title: "WP4 med-leder — Plattform og tjenestedesign", email: "oystein@comte.no" },
+        { name: "Bjørn Ravlo-Leira", title: "Plattform · WP4", email: "bjorn@comte.no" },
+      ],
+    },
+  ];
 
 const FIELD_SITES = [
   { place: "Alna", region: "Oslo" },
@@ -302,8 +305,8 @@ export default function HomePage() {
               </Card>
               <Card padding="md">
                 <p style={{ ...eyebrow, marginBottom: space.s12 }}>Finansiering</p>
-                <p style={{ ...typography.sizes.t14, color: clay.colors.muted, fontStyle: "italic", lineHeight: 1.5 }}>
-                  Annonseres når midler er bekreftet.
+                <p style={{ ...typography.sizes.t14, color: clay.colors.muted, lineHeight: 1.5 }}>
+                  Prosjektet er finansiert av Norsk Forskningsråd (NORFOK). Du kan lese om prosjektet her: <a href="https://www.forskningsradet.no/nyheter/2025/277-millioner-kroner-til-helseforskning-og-helseinnovasjon/" style={{ color: clay.colors.ink, textDecoration: "underline" }}>SAFE@HOME</a>
                 </p>
               </Card>
             </div>

@@ -3,26 +3,30 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { motion as fm, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
+import { EXPLORE_MAP_ENABLED } from "@/lib/feature-flags";
 import { clay, colors, motion, space, typography } from "@/lib/design-tokens";
 import { Button } from "@/components/ui";
 
 export type NavVariant = "default" | "minimal";
 export type NavMode = "public" | "internal";
 
-const PUBLIC_LINKS: { href: string; label: string }[] = [
-  { href: "/about", label: "Om" },
-  { href: "/reading-room", label: "Lesesal" },
+type NavLink = { href: string; label: string; description: string };
+
+const PUBLIC_LINKS: NavLink[] = [
+  { href: "/about", label: "Om", description: "Om prosjektet safe@home og forskningen bak." },
+  { href: "/reading-room", label: "Lesesal", description: "Offentlig samling av publikasjoner og ressurser." },
 ];
 
-const INTERNAL_LINKS: { href: string; label: string }[] = [
-  { href: "/admin", label: "Innholdsredigering" },
-  { href: "/internal/search", label: "Søk" },
-  { href: "/welfare-tech", label: "Velferdsteknologi" },
-  { href: "/internal/nodes", label: "Nodekart" },
-  { href: "/explore", label: "Utforsk" },
-  { href: "/frictions", label: "Friksjoner" },
-  { href: "/qualities", label: "Kvaliteter" },
+const INTERNAL_LINKS: NavLink[] = [
+  { href: "/admin", label: "Innholdsredigering", description: "Skriv og rediger notater, innsikter, ressurser og mer." },
+  { href: "/internal/search", label: "Søk", description: "Semantisk søk på tvers av hele korpuset." },
+  { href: "/welfare-tech", label: "Velferdsteknologi", description: "Bla gjennom teknologi-oppføringer med detaljer." },
+  { href: "/internal/nodes", label: "Nodekart", description: "Visuelt kart over koblinger mellom innholdet." },
+  ...(EXPLORE_MAP_ENABLED ? [{ href: "/explore", label: "Utforsk", description: "Interaktivt kart over prosjektet." }] : []),
+  { href: "/frictions", label: "Friksjoner", description: "Oversikt over friksjonskategoriene." },
+  { href: "/qualities", label: "Kvaliteter", description: "Oversikt over kvalitetskategoriene." },
 ];
 
 function useAuthState() {
@@ -60,7 +64,7 @@ export default function Nav({
   const signedIn = useAuthState();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement | null>(null);
+  const menuRef = useRef<HTMLElement | null>(null);
   const toggleRef = useRef<HTMLButtonElement | null>(null);
 
   // Close on Escape + click outside.
@@ -221,9 +225,11 @@ export default function Nav({
           <PublicNavRow pathname={pathname} signedIn={signedIn} />
         )}
 
-        {(mode === "internal" || signedIn) && menuOpen && (
-          <DropdownMenu menuRef={menuRef} pathname={pathname} />
-        )}
+        <AnimatePresence>
+          {(mode === "internal" || signedIn) && menuOpen && (
+            <DropdownMenu key="menu" menuRef={menuRef} pathname={pathname} onClose={() => setMenuOpen(false)} />
+          )}
+        </AnimatePresence>
       </div>
     </header>
   );
@@ -400,9 +406,11 @@ function HamburgerIcon({ open }: { open: boolean }) {
 function DropdownMenu({
   menuRef,
   pathname,
+  onClose,
 }: {
-  menuRef: React.RefObject<HTMLDivElement | null>;
+  menuRef: React.RefObject<HTMLElement | null>;
   pathname: string | null;
+  onClose: () => void;
 }) {
   const router = useRouter();
   async function signOut() {
@@ -410,51 +418,128 @@ function DropdownMenu({
     router.replace("/login");
   }
   return (
-    <div
-      ref={menuRef}
-      role="menu"
-      style={{
-        position: "absolute",
-        top: "calc(100% + 4px)",
-        right: space.s24,
-        minWidth: 280,
-        maxWidth: "calc(100vw - 48px)",
-        background: clay.colors.canvas,
-        border: `1px solid ${clay.colors.hairline}`,
-        borderRadius: "var(--clay-radius-lg)",
-        boxShadow: "0 8px 24px rgba(10, 10, 10, 0.10)",
-        zIndex: 60,
-        padding: space.s16,
-        display: "flex",
-        flexDirection: "column",
-        gap: space.s16,
-      }}
-    >
-      <MenuSection title="Internt" links={INTERNAL_LINKS} pathname={pathname} accent={clay.colors.ink} />
-      <div style={{ height: 1, background: clay.colors.hairline }} />
-      <MenuSection title="Offentlige sider" links={PUBLIC_LINKS} pathname={pathname} accent={clay.colors.ink} />
-      <div style={{ height: 1, background: clay.colors.hairline }} />
-      <button
-        type="button"
-        role="menuitem"
-        onClick={signOut}
+    <>
+      {/* Dimmed clickable overlay */}
+      <fm.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
+        onClick={onClose}
+        aria-hidden
         style={{
-          width: "100%",
-          textAlign: "left",
-          padding: `${space.s8} ${space.s12}`,
-          ...typography.sizes.t14,
-          fontWeight: 600,
-          color: clay.colors.ink,
-          background: "transparent",
-          border: "none",
-          borderLeft: `2px solid transparent`,
-          cursor: "pointer",
+          position: "fixed",
+          inset: 0,
+          background: "rgba(42, 40, 89, 0.35)",
+          zIndex: 40,
+        }}
+      />
+
+      {/* Full-height right drawer — mirrors the welfare-tech detail panel */}
+      <fm.aside
+        ref={menuRef}
+        role="menu"
+        aria-label="Meny"
+        initial={{ x: "100%" }}
+        animate={{ x: 0 }}
+        exit={{ x: "100%" }}
+        transition={{ duration: 0.3, ease: [0.32, 0.72, 0, 1] }}
+        style={{
+          position: "fixed",
+          top: 0,
+          right: 0,
+          height: "100dvh",
+          width: 460,
+          maxWidth: "100vw",
+          background: clay.colors.canvas,
+          borderLeft: `1px solid ${clay.colors.hairline}`,
+          boxShadow: "-12px 0 32px rgba(42, 40, 89, 0.12)",
+          zIndex: 50,
+          display: "flex",
+          flexDirection: "column",
           fontFamily: clay.font.body,
         }}
       >
-        Logg ut
-      </button>
-    </div>
+        {/* Header bar */}
+        <header
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            padding: `${space.s16} ${space.s24}`,
+            borderBottom: `1px solid ${clay.colors.hairline}`,
+            flexShrink: 0,
+          }}
+        >
+          <span
+            style={{
+              ...typography.sizes.t12,
+              fontWeight: 700,
+              textTransform: "uppercase",
+              letterSpacing: "0.14em",
+              color: clay.colors.muted,
+            }}
+          >
+            Meny
+          </span>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Lukk meny"
+            style={{
+              background: "transparent",
+              border: "none",
+              fontSize: 28,
+              lineHeight: 1,
+              cursor: "pointer",
+              color: clay.colors.muted,
+              fontFamily: clay.font.body,
+              padding: 0,
+            }}
+          >
+            ×
+          </button>
+        </header>
+
+        {/* Body — fills the remaining screen height; contains its own content */}
+        <div
+          style={{
+            flex: 1,
+            minHeight: 0,
+            overflowY: "auto",
+            display: "flex",
+            flexDirection: "column",
+            gap: space.s16,
+            padding: space.s24,
+          }}
+        >
+          <MenuSection title="Internt" links={INTERNAL_LINKS} pathname={pathname} />
+          <div style={{ height: 1, background: clay.colors.hairline }} />
+          <MenuSection title="Offentlige sider" links={PUBLIC_LINKS} pathname={pathname} />
+          <div style={{ height: 1, background: clay.colors.hairline }} />
+          <button
+            type="button"
+            role="menuitem"
+            onClick={signOut}
+            style={{
+              width: "100%",
+              textAlign: "left",
+              padding: `${space.s12} ${space.s16}`,
+              ...typography.sizes.t16,
+              fontWeight: 600,
+              color: clay.colors.ink,
+              background: "transparent",
+              border: "none",
+              borderLeft: `2px solid transparent`,
+              cursor: "pointer",
+              fontFamily: clay.font.body,
+            }}
+          >
+            Logg ut
+          </button>
+        </div>
+      </fm.aside>
+    </>
   );
 }
 
@@ -462,12 +547,10 @@ function MenuSection({
   title,
   links,
   pathname,
-  accent,
 }: {
   title: string;
-  links: { href: string; label: string }[];
+  links: NavLink[];
   pathname: string | null;
-  accent: string;
 }) {
   return (
     <div>
@@ -502,20 +585,36 @@ function MenuSection({
                 aria-current={active ? "page" : undefined}
                 role="menuitem"
                 style={{
-                  display: "block",
-                  padding: `${space.s8} ${space.s12}`,
-                  ...typography.sizes.t14,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: space.s4,
+                  padding: `${space.s12} ${space.s16}`,
                   fontFamily: clay.font.body,
-                  fontWeight: active ? 600 : 500,
-                  color: active ? accent : clay.colors.body,
                   textDecoration: "none",
-                  background: active ? clay.colors.surfaceSoft : "transparent",
-                  borderRadius: "var(--clay-radius-sm)",
-                  borderLeft: `2px solid ${active ? accent : "transparent"}`,
-                  transition: `background ${motion.fast}, border-color ${motion.fast}`,
+                  background: active ? colors.brandWarmBlue : "transparent",
+                  borderRadius: "var(--clay-radius-md)",
+                  outline: "none",
+                  transition: `background ${motion.fast}, color ${motion.fast}`,
                 }}
               >
-                {link.label}
+                <span
+                  style={{
+                    ...typography.sizes.t16,
+                    fontWeight: active ? 600 : 500,
+                    color: active ? colors.textLight : clay.colors.ink,
+                  }}
+                >
+                  {link.label}
+                </span>
+                <span
+                  style={{
+                    ...typography.sizes.t12,
+                    fontWeight: 400,
+                    color: active ? "rgba(255, 255, 255, 0.82)" : clay.colors.muted,
+                  }}
+                >
+                  {link.description}
+                </span>
               </Link>
             </li>
           );

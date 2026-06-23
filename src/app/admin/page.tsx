@@ -12,6 +12,7 @@ import { ConnectSidebar } from "@/components/admin/ConnectSidebar";
 import { WelfareTechPanel } from "@/components/admin/WelfareTechPanel";
 import { RESOURCE_FILE_ACCEPT, uploadResourceFile, validateResourceFile } from "@/lib/resource-file-storage";
 import { AdminHome } from "@/components/admin/AdminHome";
+import { colors, space, typography } from "@/lib/design-tokens";
 import { EmbeddingsPanel } from "@/components/admin/EmbeddingsPanel";
 import { embedSource, removeEmbedding } from "@/app/actions/embed";
 import {
@@ -372,32 +373,44 @@ export default function AdminPage() {
         )}
       </nav>
 
-      {tab !== "home" && (
-        <p className="[font-size:14px] [color:#4d4d4d] [line-height:1.65] [max-width:760px] [margin:0_0_56px] [padding:14px_18px] [background:#f7f6f0] [border:1px_solid_#e6e6e6] [border-radius:8px]">
-          {TAB_DESCRIPTIONS[tab]}
-        </p>
-      )}
-
       {tab === "home" && <AdminHome onOpenTab={(t) => selectTab(t as Tab)} />}
-      {tab === "notes" && <QuickNotesPanel />}
-      {tab === "stories" && <StoriesPanel currentUserId={currentUserId} />}
-      {tab === "challenges" && <ChallengesPanel />}
-      {tab === "resources" && <ResourcesPanel currentUserId={currentUserId} />}
-      {tab === "wp" && <WpPanel />}
-      {tab === "welfare-tech" && (isAdmin ? (
-        <WelfareTechPanel currentUserId={currentUserId} />
-      ) : (
-        <p className="[font-size:14px] [color:#a83f34]">
-          Du må være administrator for å redigere velferdsteknologi.
-        </p>
-      ))}
-      {tab === "search-index" && (isAdmin ? (
-        <EmbeddingsPanel />
-      ) : (
-        <p className="[font-size:14px] [color:#a83f34]">
-          Du må være administrator for å se søkeindeksen.
-        </p>
-      ))}
+
+      {tab !== "home" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 48, marginTop: 28 }}>
+          <p
+            style={{
+              margin: 0,
+              ...typography.sizes.t18,
+              color: colors.textMuted,
+              maxWidth: 700,
+              lineHeight: 1.6,
+            }}
+          >
+            {TAB_DESCRIPTIONS[tab]}
+          </p>
+          <div>
+            {tab === "notes" && <QuickNotesPanel />}
+            {tab === "stories" && <StoriesPanel currentUserId={currentUserId} />}
+            {tab === "challenges" && <ChallengesPanel />}
+            {tab === "resources" && <ResourcesPanel currentUserId={currentUserId} />}
+            {tab === "wp" && <WpPanel />}
+            {tab === "welfare-tech" && (isAdmin ? (
+              <WelfareTechPanel currentUserId={currentUserId} />
+            ) : (
+              <p className="[font-size:14px] [color:#a83f34]">
+                Du må være administrator for å redigere velferdsteknologi.
+              </p>
+            ))}
+            {tab === "search-index" && (isAdmin ? (
+              <EmbeddingsPanel />
+            ) : (
+              <p className="[font-size:14px] [color:#a83f34]">
+                Du må være administrator for å se søkeindeksen.
+              </p>
+            ))}
+          </div>
+        </div>
+      )}
     </main>
     {toast && (
       <Toast
@@ -419,11 +432,18 @@ function TabButton({
   children: React.ReactNode;
 }) {
   return <button type="button" onClick={onClick} style={{
+    padding: "8px 16px",
+    fontSize: 14,
+    fontWeight: 500,
     border: `1px solid ${active ? "#2a2859" : "#e6e6e6"}`,
-    background: active ? "#2a2859" : "#ffffff",
+    background: active ? "#2a2859" : "transparent",
     color: active ? "#ffffff" : "#2c2c2c",
-    fontFamily: FONT_STACK
-  }} className="[padding:8px_16px] [font-size:14px] [font-weight:600] [border-radius:8px] [cursor:pointer]">
+    borderRadius: 999,
+    cursor: "pointer",
+    whiteSpace: "nowrap",
+    fontFamily: FONT_STACK,
+    transition: "background 0.15s, color 0.15s, border-color 0.15s"
+  }}>
     {children}
   </button>;
 }
@@ -1347,10 +1367,11 @@ function ResourcesPanel({ currentUserId }: { currentUserId: string | null }) {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     load();
   }, [load]);
-  return <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr)", gap: 32, alignItems: "flex-start" }}>
-    <ResourceForm key={editId ?? "new"} editId={editId} onSaved={() => { setEditId(null); load(); }} onCancel={() => setEditId(null)} currentUserId={currentUserId} />
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: space.s48 }}>
+      <ResourceForm key={editId ?? "new"} editId={editId} onSaved={() => { setEditId(null); load(); }} onCancel={() => setEditId(null)} currentUserId={currentUserId} />
 
-    <section>
+      <section>
       <SectionHeading>Siste ressurser</SectionHeading>
       <ItemList loading={loading} rows={rows.map(r => ({
         id: r.id,
@@ -1375,8 +1396,9 @@ function ResourcesPanel({ currentUserId }: { currentUserId: string | null }) {
         } = await supabase.from("public_resources").delete().eq("id", id);
         if (error) { showToast(error.message, "err"); } else { void removeEmbedding("resource", id); showToast("Ressurs slettet."); load(); }
       }} onEdit={id => setEditId(id)} />
-    </section>
-  </div>;
+      </section>
+    </div>
+  );
 }
 function ResourceForm({
   editId,
@@ -1596,151 +1618,232 @@ function ResourceForm({
   const suggestTextLength = `${title}\n${description}`.trim().length;
 
   return (
-    <>
-      <section>
-        <SectionHeading>{editId ? "Rediger ressurs" : "Ny ressurs"}</SectionHeading>
-        <Form onSubmit={submit}>
-    <FormField label="Tittel">
-      <input style={inputStyle} value={title} onChange={e => setTitle(e.target.value)} required />
-    </FormField>
-    <FormField label="Beskrivelse">
-      <textarea style={{
-        ...inputStyle
-      }} value={description} onChange={e => setDescription(e.target.value)} className="[min-height:110px]" />
-    </FormField>
+    <form
+      onSubmit={submit}
+      style={{
+        display: "grid",
+        gridTemplateColumns: "minmax(0, 2fr) minmax(280px, 1fr)",
+        gap: space.s24,
+        alignItems: "flex-start",
+      }}
+    >
+      <div style={{ display: "flex", flexDirection: "column", gap: space.s24 }}>
+        <FormHeader
+          title={editId ? "Rediger ressurs" : "Ny ressurs"}
+          onBack={onCancel}
+        />
 
-    <FormField label="Utgiver / forfatter">
-      <input
-        style={inputStyle}
-        value={authors}
-        onChange={(e) => setAuthors(e.target.value)}
-        placeholder="F.eks. OsloMet, Kommune-Alna, Navn et al."
-      />
-    </FormField>
-
-    <SuggestBar
-      availability={ai.availability}
-      bodyLength={suggestTextLength}
-      loading={ai.loading}
-      coolingDown={ai.coolingDown}
-      cleared={ai.cleared}
-      onClick={ai.run}
-    />
-
-    <FormRow>
-      <FormField label="Type">
-        <select style={inputStyle} value={type} onChange={e => setType(e.target.value as ResourceType)}>
-          {RESOURCE_TYPES.map(t => <option key={t} value={t}>
-            {RESOURCE_TYPE_LABELS[t]}
-          </option>)}
-        </select>
-      </FormField>
-    </FormRow>
-    <FormField label="Lenke (URL)">
-      <input style={inputStyle} type="url" value={url} onChange={e => setUrl(e.target.value)} placeholder="https://…" />
-    </FormField>
-    <div className="[display:flex] [flex-direction:column] [gap:8px]">
-      <span className="[font-size:12px] [font-weight:600] [color:#2c2c2c]">Fil (PDF, Word, PowerPoint)</span>
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept={RESOURCE_FILE_ACCEPT}
-        onChange={handleFileChange}
-        className="[display:none]"
-      />
-      <button
-        type="button"
-        onClick={() => fileInputRef.current?.click()}
-        style={{
-          alignSelf: "flex-start",
-          padding: "10px 16px",
-          border: "1px solid #d4d4d4",
-          borderRadius: 8,
-          background: "#f5f5f5",
-          color: "#2c2c2c",
-          fontSize: 14,
-          fontFamily: FONT_STACK,
-          fontWeight: 600,
-          cursor: "pointer",
-        }}
-      >
-        {pendingFile || fileUrl ? "Bytt fil" : "Velg fil"}
-      </button>
-      {(pendingFile || fileUrl) && (
-        <div className="[display:flex] [align-items:center] [gap:12px] [font-size:12px]">
-          <span className="[color:#2c2c2c] [overflow-wrap:anywhere]">{fileName || "Vedlagt fil"}</span>
-          {fileUrl && !pendingFile && (
-            <a href={fileUrl} target="_blank" rel="noreferrer" className="[color:#2563eb]">Åpne</a>
-          )}
-          <button type="button" onClick={removeFile} className="[color:#666666] [background:transparent] [border:none] [cursor:pointer] [padding:0px]">Fjern</button>
+        <div style={{ display: "flex", flexDirection: "column", gap: space.s12 }}>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Tittel"
+            required
+            style={{
+              ...sharedInputStyle,
+              ...typography.sizes.t20,
+              fontWeight: typography.weights.medium,
+              padding: `${space.s12} ${space.s16}`,
+            }}
+          />
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Beskrivelse"
+            style={{ ...sharedInputStyle, minHeight: 220, lineHeight: 1.55 }}
+          />
         </div>
-      )}
-      <span className="[font-size:12px] [color:#666666]">PDF, Word (.doc/.docx) eller PowerPoint (.ppt/.pptx) · maks 25 MB</span>
-    </div>
-    <FormField label="Skala">
-      <CategoryHelp kind="scale" compact />
-      <select
-        style={inputStyle}
-        value={mapScale}
-        onChange={(e) => setMapScale(e.target.value as MapScale | "")}
-      >
-        <option value="">—</option>
-        {SCALE_KEYS.map((s) => (
-          <option key={s} value={s}>
-            {SCALES[s].label}
-          </option>
-        ))}
-      </select>
-    </FormField>
-    <FormField label="Relaterte friksjoner">
-      <CategoryHelp kind="friction" compact />
-      <CheckboxGroup options={FRICTION_KEYS.map(k => ({
-        value: k,
-        label: FRICTIONS[k].label,
-        color: FRICTIONS[k].color
-      }))} value={frictions} onChange={next => setFrictions(next as CareFriction[])} />
-      {ai.frictions.length > 0 && (
-        <GhostBadgeRow label="✦ AI-forslag — klikk for å godta">
-          {ai.frictions.map((k) => (
-            <GhostBadge
-              key={k}
-              color={FRICTIONS[k].color}
-              onAccept={() => acceptFrictionSuggestion(k)}
-              onDismiss={() => ai.dismissFriction(k)}
+
+        <label style={{ display: "flex", flexDirection: "column", gap: space.s4 }}>
+          <span style={sharedLabelStyle}>Utgiver / forfatter</span>
+          <input
+            style={sharedInputStyle}
+            value={authors}
+            onChange={(e) => setAuthors(e.target.value)}
+            placeholder="F.eks. OsloMet, Kommune-Alna, Navn et al."
+          />
+        </label>
+
+        <SuggestBar
+          availability={ai.availability}
+          bodyLength={suggestTextLength}
+          loading={ai.loading}
+          coolingDown={ai.coolingDown}
+          cleared={ai.cleared}
+          onClick={ai.run}
+        />
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: space.s12 }}>
+          <label style={{ display: "flex", flexDirection: "column", gap: space.s4 }}>
+            <span style={sharedLabelStyle}>Type</span>
+            <select style={sharedInputStyle} value={type} onChange={(e) => setType(e.target.value as ResourceType)}>
+              {RESOURCE_TYPES.map((t) => (
+                <option key={t} value={t}>
+                  {RESOURCE_TYPE_LABELS[t]}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label style={{ display: "flex", flexDirection: "column", gap: space.s4 }}>
+            <span style={sharedLabelStyle}>Skala</span>
+            <CategoryHelp kind="scale" compact />
+            <select
+              style={sharedInputStyle}
+              value={mapScale}
+              onChange={(e) => setMapScale(e.target.value as MapScale | "")}
             >
-              {FRICTIONS[k].label}
-            </GhostBadge>
-          ))}
-        </GhostBadgeRow>
-      )}
-    </FormField>
-    <FormField label="Relaterte kvaliteter">
-      <CategoryHelp kind="quality" compact />
-      <CheckboxGroup options={QUALITY_KEYS.map(k => ({
-        value: k,
-        label: QUALITIES[k].label,
-        color: QUALITIES[k].color
-      }))} value={qualities} onChange={next => setQualities(next as CareQuality[])} />
-      {ai.qualities.length > 0 && (
-        <GhostBadgeRow label="✦ AI-forslag — klikk for å godta">
-          {ai.qualities.map((k) => (
-            <GhostBadge
-              key={k}
-              color={QUALITIES[k].color}
-              onAccept={() => acceptQualitySuggestion(k)}
-              onDismiss={() => ai.dismissQuality(k)}
-            >
-              {QUALITIES[k].label}
-            </GhostBadge>
-          ))}
-        </GhostBadgeRow>
-      )}
-    </FormField>
-    <PublishToggle value={published} onChange={setPublished} />
-    <SubmitBar status={status} submitting={submitting} label={editId ? "Oppdater ressurs" : "Lagre ressurs"} />
-    {editId && <button type="button" onClick={onCancel} className="[font-size:12px] [color:#666666] [background:transparent] [border:none] [cursor:pointer] [padding:0px] [align-self:flex-start]">Avbryt redigering</button>}
-        </Form>
-      </section>
+              <option value="">—</option>
+              {SCALE_KEYS.map((s) => (
+                <option key={s} value={s}>
+                  {SCALES[s].label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <label style={{ display: "flex", flexDirection: "column", gap: space.s4 }}>
+          <span style={sharedLabelStyle}>Lenke (URL)</span>
+          <input
+            style={sharedInputStyle}
+            type="url"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder="https://…"
+          />
+        </label>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: space.s8 }}>
+          <span style={sharedLabelStyle}>Fil (PDF, Word, PowerPoint)</span>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept={RESOURCE_FILE_ACCEPT}
+            onChange={handleFileChange}
+            style={{ display: "none" }}
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            style={{
+              alignSelf: "flex-start",
+              ...typography.sizes.t14,
+              padding: `${space.s8} ${space.s16}`,
+              border: `1px solid ${colors.borderSubtle}`,
+              borderRadius: 4,
+              background: colors.bgSubtle,
+              color: colors.textBody,
+              fontFamily: FONT_STACK,
+              fontWeight: typography.weights.medium,
+              cursor: "pointer",
+            }}
+          >
+            {pendingFile || fileUrl ? "Bytt fil" : "Velg fil"}
+          </button>
+          {(pendingFile || fileUrl) && (
+            <div style={{ display: "flex", alignItems: "center", gap: space.s12, ...typography.sizes.t12 }}>
+              <span style={{ color: colors.textBody, overflowWrap: "anywhere" }}>{fileName || "Vedlagt fil"}</span>
+              {fileUrl && !pendingFile && (
+                <a href={fileUrl} target="_blank" rel="noreferrer" style={{ color: colors.brandWarmBlue }}>
+                  Åpne
+                </a>
+              )}
+              <button
+                type="button"
+                onClick={removeFile}
+                style={{
+                  color: colors.textMuted,
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: 0,
+                  fontFamily: FONT_STACK,
+                  ...typography.sizes.t12,
+                }}
+              >
+                Fjern
+              </button>
+            </div>
+          )}
+          <span style={{ ...typography.sizes.t12, color: colors.textMuted }}>
+            PDF, Word (.doc/.docx) eller PowerPoint (.ppt/.pptx) · maks 25 MB
+          </span>
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: space.s4 }}>
+          <span style={sharedLabelStyle}>Relaterte friksjoner</span>
+          <CategoryHelp kind="friction" compact />
+          <PillGroup
+            options={FRICTION_KEYS.map((k) => ({ value: k, label: FRICTIONS[k].label, color: FRICTIONS[k].color }))}
+            value={frictions}
+            onChange={(next) => setFrictions(next as CareFriction[])}
+          />
+          {ai.frictions.length > 0 && (
+            <GhostBadgeRow label="✦ AI-forslag — klikk for å godta">
+              {ai.frictions.map((k) => (
+                <GhostBadge
+                  key={k}
+                  color={FRICTIONS[k].color}
+                  onAccept={() => acceptFrictionSuggestion(k)}
+                  onDismiss={() => ai.dismissFriction(k)}
+                >
+                  {FRICTIONS[k].label}
+                </GhostBadge>
+              ))}
+            </GhostBadgeRow>
+          )}
+        </div>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: space.s4 }}>
+          <span style={sharedLabelStyle}>Relaterte kvaliteter</span>
+          <CategoryHelp kind="quality" compact />
+          <PillGroup
+            options={QUALITY_KEYS.map((k) => ({ value: k, label: QUALITIES[k].label, color: QUALITIES[k].color }))}
+            value={qualities}
+            onChange={(next) => setQualities(next as CareQuality[])}
+          />
+          {ai.qualities.length > 0 && (
+            <GhostBadgeRow label="✦ AI-forslag — klikk for å godta">
+              {ai.qualities.map((k) => (
+                <GhostBadge
+                  key={k}
+                  color={QUALITIES[k].color}
+                  onAccept={() => acceptQualitySuggestion(k)}
+                  onDismiss={() => ai.dismissQuality(k)}
+                >
+                  {QUALITIES[k].label}
+                </GhostBadge>
+              ))}
+            </GhostBadgeRow>
+          )}
+        </div>
+
+        <PublishToggle value={published} onChange={setPublished} />
+        <StatusBanner status={status} />
+        <div style={{ display: "flex", gap: space.s8 }}>
+          <PrimarySubmit
+            label={editId ? "Oppdater ressurs" : "Lagre ressurs"}
+            submitting={submitting}
+          />
+          <button
+            type="button"
+            onClick={onCancel}
+            style={{
+              ...typography.sizes.t14,
+              padding: `${space.s12} ${space.s24}`,
+              background: colors.bgCard,
+              color: colors.brandWarmBlue,
+              border: `1px solid ${colors.brandWarmBlue}`,
+              cursor: "pointer",
+              fontFamily: FONT_STACK,
+              fontWeight: typography.weights.medium,
+            }}
+          >
+            Avbryt
+          </button>
+        </div>
+      </div>
 
       <ConnectSidebar
         exclude={editId ? { kind: "resource", id: editId } : undefined}
@@ -1750,7 +1853,7 @@ function ResourceForm({
         onAcceptSuggested={acceptRelatedSuggestion}
         onDismissSuggested={dismissRelatedSuggestion}
       />
-    </>
+    </form>
   );
 }
 
@@ -1793,12 +1896,10 @@ function WpPanel() {
     });
     return groups;
   }, [rows]);
-  return <div className="[display:grid] [grid-template-columns:repeat(auto-fit,_minmax(320px,_1fr))] [gap:32px]">
-    <section>
-      <SectionHeading>{editId ? "Rediger rapport" : "Ny rapport"}</SectionHeading>
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(300px, 1fr)", gap: 32, alignItems: "flex-start" }}>
       <WpReportForm key={editId ?? "new"} editId={editId} onSaved={() => { setEditId(null); load(); }} onCancel={() => setEditId(null)} />
-    </section>
-    <section>
+      <section>
       <SectionHeading>Eksisterende rapporter</SectionHeading>
       {loading && rows.length === 0 && <p className="[font-size:14px] [color:#9a9a9a]">Laster…</p>}
       <div className="[display:flex] [flex-direction:column] [gap:24px]">
@@ -1840,7 +1941,8 @@ function WpPanel() {
         </div>)}
       </div>
     </section>
-  </div>;
+    </div>
+  );
 }
 
 function formatMonth(isoDate: string): string {
@@ -1932,44 +2034,152 @@ function WpReportForm({
     onSaved();
   }
 
-  return <Form onSubmit={submit}>
-    <FormRow>
-      <FormField label="Arbeidspakke">
-        <select style={inputStyle} value={wpId} onChange={e => setWpId(e.target.value as WpId)}>
-          {WP_IDS.map(k => <option key={k} value={k}>{WP_LABELS[k].label}</option>)}
-        </select>
-      </FormField>
-      <FormField label="Måned">
-        <input style={inputStyle} type="month" value={monthStr} onChange={e => setMonthStr(e.target.value)} required />
-      </FormField>
-    </FormRow>
-    <FormField label="Sammendrag">
-      <textarea style={inputStyle} value={summary} onChange={e => setSummary(e.target.value)} className="[min-height:110px]" />
-    </FormField>
-    <FormField label="Høydepunkter">
-      <div className="[display:flex] [flex-direction:column] [gap:8px]">
-        {highlights.map((h, i) => <div key={i} className="[display:flex] [gap:8px]">
-          <input style={inputStyle} value={h} onChange={e => setHighlights(highlights.map((x, j) => j === i ? e.target.value : x))} placeholder="Ett høydepunkt…" />
-          <button type="button" onClick={() => setHighlights(highlights.filter((_, j) => j !== i))} className="[padding:8px_12px] [font-size:12px] [color:#a83f34] [background:transparent] [border:1px_solid_#e6e6e6] [border-radius:8px] [cursor:pointer]">Fjern</button>
-        </div>)}
-        <button type="button" onClick={() => setHighlights([...highlights, ""])} className="[align-self:flex-start] [padding:6px_12px] [font-size:12px] [color:#1f42aa] [background:transparent] [border:1px_dashed_#1f42aa] [border-radius:8px] [cursor:pointer]">+ Legg til høydepunkt</button>
+  return (
+    <form
+      onSubmit={submit}
+      style={{ display: "flex", flexDirection: "column", gap: space.s24 }}
+    >
+      <FormHeader
+        title={editId ? "Rediger rapport" : "Ny rapport"}
+        onBack={onCancel}
+      />
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: space.s12 }}>
+        <label style={{ display: "flex", flexDirection: "column", gap: space.s4 }}>
+          <span style={sharedLabelStyle}>Arbeidspakke</span>
+          <select style={sharedInputStyle} value={wpId} onChange={(e) => setWpId(e.target.value as WpId)}>
+            {WP_IDS.map((k) => (
+              <option key={k} value={k}>
+                {WP_LABELS[k].label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label style={{ display: "flex", flexDirection: "column", gap: space.s4 }}>
+          <span style={sharedLabelStyle}>Måned</span>
+          <input
+            style={sharedInputStyle}
+            type="month"
+            value={monthStr}
+            onChange={(e) => setMonthStr(e.target.value)}
+            required
+          />
+        </label>
       </div>
-    </FormField>
-    <FormField label="Neste steg">
-      <textarea style={inputStyle} value={nextSteps} onChange={e => setNextSteps(e.target.value)} className="[min-height:80px]" />
-    </FormField>
-    <FormRow>
-      <FormField label="Intervjuer">
-        <input style={inputStyle} value={interviewer} onChange={e => setInterviewer(e.target.value)} />
-      </FormField>
-      <FormField label="Intervjuobjekt">
-        <input style={inputStyle} value={interviewee} onChange={e => setInterviewee(e.target.value)} placeholder="Navn (valgfritt)" />
-      </FormField>
-    </FormRow>
-    <PublishToggle value={published} onChange={setPublished} />
-    <SubmitBar status={status} submitting={submitting} label={editId ? "Oppdater rapport" : "Lagre rapport"} />
-    {editId && <button type="button" onClick={onCancel} className="[font-size:12px] [color:#666666] [background:transparent] [border:none] [cursor:pointer] [padding:0px] [align-self:flex-start]">Avbryt redigering</button>}
-  </Form>;
+
+      <label style={{ display: "flex", flexDirection: "column", gap: space.s4 }}>
+        <span style={sharedLabelStyle}>Sammendrag</span>
+        <textarea
+          value={summary}
+          onChange={(e) => setSummary(e.target.value)}
+          placeholder="Kort oppsummering av måneden…"
+          style={{ ...sharedInputStyle, minHeight: 160, lineHeight: 1.55 }}
+        />
+      </label>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: space.s8 }}>
+        <span style={sharedLabelStyle}>Høydepunkter</span>
+        <div style={{ display: "flex", flexDirection: "column", gap: space.s8 }}>
+          {highlights.map((h, i) => (
+            <div key={i} style={{ display: "flex", gap: space.s8 }}>
+              <input
+                style={sharedInputStyle}
+                value={h}
+                onChange={(e) => setHighlights(highlights.map((x, j) => (j === i ? e.target.value : x)))}
+                placeholder="Ett høydepunkt…"
+              />
+              <button
+                type="button"
+                onClick={() => setHighlights(highlights.filter((_, j) => j !== i))}
+                style={{
+                  ...typography.sizes.t12,
+                  padding: `${space.s8} ${space.s12}`,
+                  color: colors.textBody,
+                  background: colors.bgCard,
+                  border: `1px solid ${colors.borderSubtle}`,
+                  borderRadius: 4,
+                  cursor: "pointer",
+                  fontFamily: FONT_STACK,
+                  flexShrink: 0,
+                }}
+              >
+                Fjern
+              </button>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={() => setHighlights([...highlights, ""])}
+            style={{
+              alignSelf: "flex-start",
+              ...typography.sizes.t12,
+              padding: `${space.s8} ${space.s12}`,
+              color: colors.brandWarmBlue,
+              background: "transparent",
+              border: `1px dashed ${colors.brandWarmBlue}`,
+              borderRadius: 4,
+              cursor: "pointer",
+              fontFamily: FONT_STACK,
+              fontWeight: typography.weights.medium,
+            }}
+          >
+            + Legg til høydepunkt
+          </button>
+        </div>
+      </div>
+
+      <label style={{ display: "flex", flexDirection: "column", gap: space.s4 }}>
+        <span style={sharedLabelStyle}>Neste steg</span>
+        <textarea
+          value={nextSteps}
+          onChange={(e) => setNextSteps(e.target.value)}
+          placeholder="Hva skjer videre?"
+          style={{ ...sharedInputStyle, minHeight: 100, lineHeight: 1.55 }}
+        />
+      </label>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: space.s12 }}>
+        <label style={{ display: "flex", flexDirection: "column", gap: space.s4 }}>
+          <span style={sharedLabelStyle}>Intervjuer</span>
+          <input style={sharedInputStyle} value={interviewer} onChange={(e) => setInterviewer(e.target.value)} />
+        </label>
+        <label style={{ display: "flex", flexDirection: "column", gap: space.s4 }}>
+          <span style={sharedLabelStyle}>Intervjuobjekt</span>
+          <input
+            style={sharedInputStyle}
+            value={interviewee}
+            onChange={(e) => setInterviewee(e.target.value)}
+            placeholder="Navn (valgfritt)"
+          />
+        </label>
+      </div>
+
+      <PublishToggle value={published} onChange={setPublished} />
+      <StatusBanner status={status} />
+      <div style={{ display: "flex", gap: space.s8 }}>
+        <PrimarySubmit
+          label={editId ? "Oppdater rapport" : "Lagre rapport"}
+          submitting={submitting}
+        />
+        <button
+          type="button"
+          onClick={onCancel}
+          style={{
+            ...typography.sizes.t14,
+            padding: `${space.s12} ${space.s24}`,
+            background: colors.bgCard,
+            color: colors.brandWarmBlue,
+            border: `1px solid ${colors.brandWarmBlue}`,
+            cursor: "pointer",
+            fontFamily: FONT_STACK,
+            fontWeight: typography.weights.medium,
+          }}
+        >
+          Avbryt
+        </button>
+      </div>
+    </form>
+  );
 }
 
 // ─── Shared form pieces ───
