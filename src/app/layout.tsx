@@ -15,6 +15,11 @@ export const metadata: Metadata = {
   title: "safe@home — Aldring, migrasjon og betydningen av hjem",
   description:
     "Utforsk hvordan eldre innvandrere i Norge navigerer omsorg, teknologi og tilhørighet — gjennom et interaktivt kart av historier.",
+  icons: {
+    icon: "/images/Safe@Home_favicon.png",
+    shortcut: "/images/Safe@Home_favicon.png",
+    apple: "/images/Safe@Home_favicon.png",
+  },
 };
 
 export default function RootLayout({

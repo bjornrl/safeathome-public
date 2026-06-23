@@ -389,7 +389,7 @@ export function FormHeader({
           color: colors.textBody,
           margin: 0,
           paddingRight: space.s16,
-          letterSpacing: "0.01em",
+          letterSpacing: 0,
           lineHeight: 1.3,
         }}
       >

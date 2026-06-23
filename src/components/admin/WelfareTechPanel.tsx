@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { colors, space, typography } from "@/lib/design-tokens";
 import { uploadWelfareTechImage, validateWelfareTechImage } from "@/lib/welfare-tech-storage";
 import type { WelfareTechnology } from "@/lib/types";
+import { FormHeader } from "@/components/admin/FormPrimitives";
 
 const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
 
@@ -245,41 +246,12 @@ export function WelfareTechPanel({ currentUserId }: { currentUserId: string | nu
         alignItems: "flex-start",
       }}
     >
-      <section style={{ display: "flex", flexDirection: "column", gap: space.s16 }}>
-        <header
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: space.s8,
-          }}
-        >
-          <h2
-            style={{
-              ...typography.sizes.t22,
-              fontWeight: typography.weights.bold,
-              color: colors.textBody,
-            }}
-          >
-            {editId ? "Rediger oppføring" : "Ny oppføring"}
-          </h2>
-          {editId && (
-            <button
-              type="button"
-              onClick={startCreate}
-              style={{
-                ...typography.sizes.t12,
-                background: "transparent",
-                border: "none",
-                color: colors.textMuted,
-                cursor: "pointer",
-                fontFamily: FONT_STACK,
-              }}
-            >
-              + Ny i stedet
-            </button>
-          )}
-        </header>
+      <section style={{ display: "flex", flexDirection: "column", gap: space.s24 }}>
+        <FormHeader
+          title={editId ? "Rediger oppføring" : "Ny oppføring"}
+          onBack={editId ? startCreate : undefined}
+          backLabel="+ Ny i stedet"
+        />
 
         <form
           onSubmit={submit}
