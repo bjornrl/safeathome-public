@@ -1379,6 +1379,7 @@ function ResourceForm({
   const [fileUrl, setFileUrl] = useState("");
   const [fileName, setFileName] = useState("");
   const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [mapScale, setMapScale] = useState<MapScale | "">("");
   const [frictions, setFrictions] = useState<CareFriction[]>([]);
@@ -1469,18 +1470,29 @@ function ResourceForm({
     return () => { cancelled = true; };
   }, [editId]);
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  function acceptFile(file: File): boolean {
     const validationError = validateResourceFile(file);
     if (validationError) {
       setStatus({ kind: "err", msg: validationError });
-      e.target.value = "";
-      return;
+      return false;
     }
     setStatus(null);
     setPendingFile(file);
     setFileName(file.name);
+    return true;
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!acceptFile(file)) e.target.value = "";
+  }
+
+  function handleDrop(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setDragActive(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) acceptFile(file);
   }
 
   function removeFile() {
@@ -1681,24 +1693,46 @@ function ResourceForm({
             onChange={handleFileChange}
             style={{ display: "none" }}
           />
-          <button
-            type="button"
+          <div
+            role="button"
+            tabIndex={0}
             onClick={() => fileInputRef.current?.click()}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                fileInputRef.current?.click();
+              }
+            }}
+            onDragOver={(e) => {
+              e.preventDefault();
+              if (!dragActive) setDragActive(true);
+            }}
+            onDragLeave={(e) => {
+              e.preventDefault();
+              setDragActive(false);
+            }}
+            onDrop={handleDrop}
             style={{
-              alignSelf: "flex-start",
               ...typography.sizes.t14,
-              padding: `${space.s8} ${space.s16}`,
-              border: `1px solid ${colors.borderSubtle}`,
-              borderRadius: 4,
-              background: colors.bgSubtle,
+              padding: `${space.s24} ${space.s16}`,
+              border: `1px dashed ${dragActive ? "#034b45" : colors.borderSubtle}`,
+              borderRadius: 8,
+              background: dragActive ? "#c7fde9" : colors.bgSubtle,
               color: colors.textBody,
               fontFamily: FONT_STACK,
-              fontWeight: typography.weights.medium,
+              textAlign: "center",
               cursor: "pointer",
+              transition: "background 0.15s, border-color 0.15s",
             }}
           >
-            {pendingFile || fileUrl ? "Bytt fil" : "Velg fil"}
-          </button>
+            <span style={{ fontWeight: typography.weights.medium }}>
+              {dragActive
+                ? "Slipp filen for å laste opp"
+                : pendingFile || fileUrl
+                  ? "Bytt fil"
+                  : "Dra filen hit eller klikk for å velge"}
+            </span>
+          </div>
           {(pendingFile || fileUrl) && (
             <div style={{ display: "flex", alignItems: "center", gap: space.s12, ...typography.sizes.t12 }}>
               <span style={{ color: colors.textBody, overflowWrap: "anywhere" }}>{fileName || "Vedlagt fil"}</span>
