@@ -504,22 +504,8 @@ function StoriesPanel({ currentUserId }: { currentUserId: string | null }) {
           id: r.id,
           title: r.title,
           subtitle: `${SCALES[r.map_scale]?.label ?? r.map_scale}${r.field_site ? ` · ${r.field_site}` : ""}${r.work_package ? ` · ${r.work_package}` : ""}`,
-          published: r.published,
           tags: r.frictions
-        }))} onTogglePublish={async (id, next) => {
-          const {
-            error
-          } = await supabase.from("public_stories").update({
-            published: next,
-            published_at: next ? new Date().toISOString() : null
-          }).eq("id", id);
-          if (error) {
-            showToast(error.message, "err");
-          } else {
-            showToast(next ? "Innsikt publisert." : "Innsikt satt som utkast.");
-            load();
-          }
-        }} onDelete={async id => {
+        }))} onDelete={async id => {
           const {
             error
           } = await supabase.from("public_stories").delete().eq("id", id);
@@ -581,13 +567,9 @@ function ConnectionsSection({ stories }: { stories: { id: string; title: string 
           id: r.id,
           title: `${titleFor(r.from_story_id)} → ${titleFor(r.to_story_id)}`,
           subtitle: `${r.category_kind === "friction" ? "Friksjon" : "Kvalitet"} · ${label} · ${r.connection_type}`,
-          published: r.published,
           tags: r.description ? [r.description.slice(0, 60)] : []
         };
-      })} onTogglePublish={async (id, next) => {
-        const { error } = await supabase.from("public_connections").update({ published: next }).eq("id", id);
-        if (error) { showToast(error.message, "err"); } else { showToast(next ? "Kobling publisert." : "Kobling skjult."); load(); }
-      }} onDelete={async id => {
+      })} onDelete={async id => {
         const { error } = await supabase.from("public_connections").delete().eq("id", id);
         if (error) { showToast(error.message, "err"); } else { showToast("Kobling slettet."); load(); }
       }} />
@@ -603,7 +585,6 @@ function ConnectionForm({ stories, onCreated }: { stories: { id: string; title: 
   const [qualityKey, setQualityKey] = useState<CareQuality>(QUALITY_KEYS[0]);
   const [connectionType, setConnectionType] = useState<"direct" | "indirect">("direct");
   const [description, setDescription] = useState("");
-  const [published, setPublished] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [status, setStatus] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
   async function submit(e: React.FormEvent) {
@@ -628,7 +609,7 @@ function ConnectionForm({ stories, onCreated }: { stories: { id: string; title: 
       friction: categoryKind === "friction" ? frictionKey : null,
       connection_type: connectionType,
       description: description.trim() || null,
-      published
+      published: true
     };
     const { error } = await supabase.from("public_connections").insert(row);
     setSubmitting(false);
@@ -684,7 +665,6 @@ function ConnectionForm({ stories, onCreated }: { stories: { id: string; title: 
       <textarea style={inputStyle} value={description} onChange={e => setDescription(e.target.value)} className="[min-height:80px]" placeholder="Én setning som beskriver hvorfor disse er koblet." />
     </FormField>
 
-    <PublishToggle value={published} onChange={setPublished} />
     <SubmitBar status={status} submitting={submitting} label="Lagre kobling" />
   </Form>;
 }
@@ -706,7 +686,6 @@ function StoryForm({
   const [latitude, setLatitude] = useState("");
   const [longitude, setLongitude] = useState("");
   const [author, setAuthor] = useState("safe@home fieldwork team");
-  const [published, setPublished] = useState(true);
   const [linked, setLinked] = useState<Set<string>>(() => new Set());
   const [submitting, setSubmitting] = useState(false);
   const [status, setStatus] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
@@ -782,8 +761,8 @@ function StoryForm({
       latitude: latitude ? Number(latitude) : null,
       longitude: longitude ? Number(longitude) : null,
       author_credit: author.trim() || null,
-      published,
-      published_at: published ? new Date().toISOString() : null,
+      published: true,
+      published_at: new Date().toISOString(),
       sort_order: 0,
       media_urls: [],
     };
@@ -1017,7 +996,6 @@ function StoryForm({
         />
       </label>
 
-      <PublishToggle value={published} onChange={setPublished} />
       <StatusBanner status={status} />
       <PrimarySubmit submitting={submitting} label="Publiser innsikt" />
       </div>
@@ -1081,16 +1059,8 @@ function ChallengesPanel() {
         id: r.id,
         title: r.title,
         subtitle: STAGES.find(s => s.key === r.stage)?.label ?? r.stage,
-        published: r.published,
         tags: [...(r.frictions ?? []), ...(r.qualities ?? [])]
-      }))} onTogglePublish={async (id, next) => {
-        const {
-          error
-        } = await supabase.from("public_design_responses").update({
-          published: next
-        }).eq("id", id);
-        if (error) { showToast(error.message, "err"); } else { showToast(next ? "Utfordring publisert." : "Utfordring satt som utkast."); load(); }
-      }} onDelete={async id => {
+      }))} onDelete={async id => {
         const {
           error
         } = await supabase.from("public_design_responses").delete().eq("id", id);
@@ -1114,7 +1084,6 @@ function ChallengeForm({
   const [qualities, setQualities] = useState<CareQuality[]>([]);
   const [sourceStories, setSourceStories] = useState<string[]>([]);
   const [outcome, setOutcome] = useState("");
-  const [published, setPublished] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [status, setStatus] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
 
@@ -1151,8 +1120,8 @@ function ChallengeForm({
       qualities,
       source_stories: sourceStories,
       outcome: outcome.trim() || null,
-      published,
-      published_at: published ? new Date().toISOString() : null,
+      published: true,
+      published_at: new Date().toISOString(),
       sort_order: 0,
     };
     const { error } = await supabase.from("public_design_responses").insert(row);
@@ -1306,7 +1275,6 @@ function ChallengeForm({
         />
       </label>
 
-      <PublishToggle value={published} onChange={setPublished} />
       <StatusBanner status={status} />
       <PrimarySubmit submitting={submitting} label="Publiser utfordring" />
     </form>
@@ -1381,16 +1349,8 @@ function ResourcesPanel({ currentUserId }: { currentUserId: string | null }) {
           r.authors,
           r.map_scale ? SCALES[r.map_scale]?.label : null,
         ].filter(Boolean).join(" · "),
-        published: r.published,
         tags: []
-      }))} onTogglePublish={async (id, next) => {
-        const {
-          error
-        } = await supabase.from("public_resources").update({
-          published: next
-        }).eq("id", id);
-        if (error) { showToast(error.message, "err"); } else { showToast(next ? "Ressurs publisert." : "Ressurs satt som utkast."); load(); }
-      }} onDelete={async id => {
+      }))} onDelete={async id => {
         const {
           error
         } = await supabase.from("public_resources").delete().eq("id", id);
@@ -1419,12 +1379,12 @@ function ResourceForm({
   const [fileUrl, setFileUrl] = useState("");
   const [fileName, setFileName] = useState("");
   const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [mapScale, setMapScale] = useState<MapScale | "">("");
   const [frictions, setFrictions] = useState<CareFriction[]>([]);
   const [qualities, setQualities] = useState<CareQuality[]>([]);
   const [linked, setLinked] = useState<Set<string>>(() => new Set());
-  const [published, setPublished] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [status, setStatus] = useState<{
     kind: "ok" | "err";
@@ -1498,7 +1458,6 @@ function ResourceForm({
       setFileUrl(r.file_url ?? "");
       setFileName(r.file_name ?? "");
       setMapScale(r.map_scale ?? "");
-      setPublished(r.published);
       setFrictions(((fRes.data ?? []) as { friction_key: CareFriction }[]).map(x => x.friction_key));
       setQualities(((qRes.data ?? []) as { quality_key: CareQuality }[]).map(x => x.quality_key));
 
@@ -1511,18 +1470,29 @@ function ResourceForm({
     return () => { cancelled = true; };
   }, [editId]);
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  function acceptFile(file: File): boolean {
     const validationError = validateResourceFile(file);
     if (validationError) {
       setStatus({ kind: "err", msg: validationError });
-      e.target.value = "";
-      return;
+      return false;
     }
     setStatus(null);
     setPendingFile(file);
     setFileName(file.name);
+    return true;
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!acceptFile(file)) e.target.value = "";
+  }
+
+  function handleDrop(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setDragActive(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) acceptFile(file);
   }
 
   function removeFile() {
@@ -1561,7 +1531,7 @@ function ResourceForm({
       file_url: savedFileUrl,
       file_name: savedFileName,
       theme: null,
-      published
+      published: true
     };
     const { error: upsertErr } = await supabase.from("public_resources").upsert(row, { onConflict: "id" });
     if (upsertErr) {
@@ -1723,24 +1693,46 @@ function ResourceForm({
             onChange={handleFileChange}
             style={{ display: "none" }}
           />
-          <button
-            type="button"
+          <div
+            role="button"
+            tabIndex={0}
             onClick={() => fileInputRef.current?.click()}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                fileInputRef.current?.click();
+              }
+            }}
+            onDragOver={(e) => {
+              e.preventDefault();
+              if (!dragActive) setDragActive(true);
+            }}
+            onDragLeave={(e) => {
+              e.preventDefault();
+              setDragActive(false);
+            }}
+            onDrop={handleDrop}
             style={{
-              alignSelf: "flex-start",
               ...typography.sizes.t14,
-              padding: `${space.s8} ${space.s16}`,
-              border: `1px solid ${colors.borderSubtle}`,
-              borderRadius: 4,
-              background: colors.bgSubtle,
+              padding: `${space.s24} ${space.s16}`,
+              border: `1px dashed ${dragActive ? "#034b45" : colors.borderSubtle}`,
+              borderRadius: 8,
+              background: dragActive ? "#c7fde9" : colors.bgSubtle,
               color: colors.textBody,
               fontFamily: FONT_STACK,
-              fontWeight: typography.weights.medium,
+              textAlign: "center",
               cursor: "pointer",
+              transition: "background 0.15s, border-color 0.15s",
             }}
           >
-            {pendingFile || fileUrl ? "Bytt fil" : "Velg fil"}
-          </button>
+            <span style={{ fontWeight: typography.weights.medium }}>
+              {dragActive
+                ? "Slipp filen for å laste opp"
+                : pendingFile || fileUrl
+                  ? "Bytt fil"
+                  : "Dra filen hit eller klikk for å velge"}
+            </span>
+          </div>
           {(pendingFile || fileUrl) && (
             <div style={{ display: "flex", alignItems: "center", gap: space.s12, ...typography.sizes.t12 }}>
               <span style={{ color: colors.textBody, overflowWrap: "anywhere" }}>{fileName || "Vedlagt fil"}</span>
@@ -1819,7 +1811,6 @@ function ResourceForm({
           )}
         </div>
 
-        <PublishToggle value={published} onChange={setPublished} />
         <StatusBanner status={status} />
         <div style={{ display: "flex", gap: space.s8 }}>
           <PrimarySubmit
@@ -1914,18 +1905,6 @@ function WpPanel() {
                 {r.summary && <p className="[font-size:12px] [color:#2c2c2c] [margin-top:6px] [line-height:1.5]">{r.summary.slice(0, 140)}{r.summary.length > 140 ? "…" : ""}</p>}
               </div>
               <div className="[display:flex] [flex-direction:column] [gap:6px] [align-items:flex-end]">
-                <button type="button" onClick={async () => {
-                  const next = !r.published;
-                  const { error } = await supabase.from("public_wp_reports").update({ published: next, updated_at: new Date().toISOString() }).eq("id", r.id);
-                  if (error) { showToast(error.message, "err"); } else { showToast(next ? "Rapport publisert." : "Rapport satt som utkast."); load(); }
-                }} style={{
-                  border: `1px solid ${r.published ? "#034b45" : "#e6e6e6"}`,
-                  background: r.published ? "#034b45" : "#ffffff",
-                  color: r.published ? "#ffffff" : "#666666",
-                  fontFamily: FONT_STACK
-                }} className="[font-size:11px] [padding:4px_10px] [border-radius:4px] [cursor:pointer] [font-weight:600]">
-                  {r.published ? "Publisert" : "Utkast"}
-                </button>
                 <button type="button" onClick={() => setEditId(r.id)} className="[font-size:11px] [color:#1f42aa] [background:transparent] [border:none] [cursor:pointer] [padding:0px] [font-weight:500]">Rediger</button>
                 <InlineConfirm
                   label="Slett"
@@ -1967,7 +1946,6 @@ function WpReportForm({
   const [nextSteps, setNextSteps] = useState("");
   const [interviewer, setInterviewer] = useState("Comte");
   const [interviewee, setInterviewee] = useState("");
-  const [published, setPublished] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [status, setStatus] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
 
@@ -1989,7 +1967,6 @@ function WpReportForm({
       setNextSteps(r.next_steps);
       setInterviewer(r.interviewer);
       setInterviewee(r.interviewee ?? "");
-      setPublished(r.published);
     })();
     return () => { cancelled = true; };
   }, [editId]);
@@ -2011,7 +1988,7 @@ function WpReportForm({
       next_steps: nextSteps.trim(),
       interviewer: interviewer.trim() || "Comte",
       interviewee: interviewee.trim() || null,
-      published,
+      published: true,
       updated_at: new Date().toISOString()
     };
     const { error } = await supabase.from("public_wp_reports").upsert(row, { onConflict: "id" });
@@ -2154,7 +2131,6 @@ function WpReportForm({
         </label>
       </div>
 
-      <PublishToggle value={published} onChange={setPublished} />
       <StatusBanner status={status} />
       <div style={{ display: "flex", gap: space.s8 }}>
         <PrimarySubmit
@@ -2252,23 +2228,6 @@ function CheckboxGroup<T extends string>({
     })}
   </div>;
 }
-function PublishToggle({
-  value,
-  onChange
-}: {
-  value: boolean;
-  onChange: (v: boolean) => void;
-}) {
-  return <label style={{
-    background: value ? "#c7fde9" : "#f2f2f2",
-    border: `1px solid ${value ? "#43f8b6" : "#e6e6e6"}`
-  }} className="[display:flex] [align-items:center] [gap:8px] [padding:8px_16px] [border-radius:8px] [cursor:pointer]">
-    <input type="checkbox" checked={value} onChange={e => onChange(e.target.checked)} className="[accent-color:#034b45]" />
-    <span className="[font-size:13px] [color:#2c2c2c]">
-      Publiser umiddelbart{value ? "" : " (lagre som utkast)"}
-    </span>
-  </label>;
-}
 function SubmitBar({
   submitting,
   status,
@@ -2304,7 +2263,6 @@ function SubmitBar({
 function ItemList({
   loading,
   rows,
-  onTogglePublish,
   onDelete,
   onEdit
 }: {
@@ -2313,10 +2271,8 @@ function ItemList({
     id: string;
     title: string;
     subtitle: string;
-    published: boolean;
     tags: string[];
   }[];
-  onTogglePublish: (id: string, next: boolean) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
   onEdit?: (id: string) => void;
 }) {
@@ -2347,14 +2303,6 @@ function ItemList({
         </div>}
       </div>
       <div className="[display:flex] [flex-direction:column] [gap:8px] [align-items:flex-end]">
-        <button type="button" onClick={() => onTogglePublish(r.id, !r.published)} style={{
-          border: `1px solid ${r.published ? "#034b45" : "#e6e6e6"}`,
-          background: r.published ? "#034b45" : "#ffffff",
-          color: r.published ? "#ffffff" : "#666666",
-          fontFamily: FONT_STACK
-        }} className="[font-size:11px] [padding:4px_10px] [border-radius:4px] [cursor:pointer] [font-weight:600]">
-          {r.published ? "Publisert" : "Utkast"}
-        </button>
         {onEdit && <button type="button" onClick={() => onEdit(r.id)} style={{
           fontFamily: FONT_STACK
         }} className="[font-size:11px] [color:#1f42aa] [background:transparent] [border:none] [cursor:pointer] [padding:0px] [font-weight:500]">
