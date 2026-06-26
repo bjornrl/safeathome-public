@@ -50,7 +50,7 @@ const EMPTY_FORM: FormState = {
   manufacturer: "",
   country_availability: "",
   notes: "",
-  published: false,
+  published: true,
 };
 
 function splitList(raw: string): string[] {
@@ -184,7 +184,7 @@ export function WelfareTechPanel({ currentUserId }: { currentUserId: string | nu
       manufacturer: form.manufacturer.trim() || null,
       country_availability: splitList(form.country_availability),
       notes: form.notes.trim() || null,
-      published: form.published,
+      published: true,
       updated_at: new Date().toISOString(),
     };
 
@@ -211,18 +211,6 @@ export function WelfareTechPanel({ currentUserId }: { currentUserId: string | nu
       clearPendingImage();
     }
     setSubmitting(false);
-    await reload();
-  }
-
-  async function togglePublish(item: WelfareTechnology) {
-    const { error } = await supabase
-      .from("welfare_technologies")
-      .update({ published: !item.published, updated_at: new Date().toISOString() })
-      .eq("id", item.id);
-    if (error) {
-      alert(error.message);
-      return;
-    }
     await reload();
   }
 
@@ -341,28 +329,6 @@ export function WelfareTechPanel({ currentUserId }: { currentUserId: string | nu
             />
           </Field>
 
-          <label
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: space.s8,
-              padding: `${space.s8} ${space.s12}`,
-              background: form.published ? "#c7fde9" : colors.bgSubtle,
-              border: `1px solid ${form.published ? "#43f8b6" : colors.borderSubtle}`,
-              cursor: "pointer",
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={form.published}
-              onChange={(e) => setForm((f) => ({ ...f, published: e.target.checked }))}
-              style={{ accentColor: "#034b45" }}
-            />
-            <span style={{ ...typography.sizes.t14, color: colors.textBody }}>
-              Publisert{form.published ? "" : " (lagre som utkast)"}
-            </span>
-          </label>
-
           {status && (
             <p
               style={{
@@ -438,22 +404,6 @@ export function WelfareTechPanel({ currentUserId }: { currentUserId: string | nu
                   </p>
                 </div>
                 <div style={{ display: "flex", flexDirection: "column", gap: space.s4, alignItems: "flex-end" }}>
-                  <button
-                    type="button"
-                    onClick={() => togglePublish(item)}
-                    style={{
-                      ...typography.sizes.t12,
-                      padding: `2px ${space.s8}`,
-                      background: item.published ? "#034b45" : colors.bgCard,
-                      color: item.published ? colors.textLight : colors.textMuted,
-                      border: `1px solid ${item.published ? "#034b45" : colors.borderSubtle}`,
-                      cursor: "pointer",
-                      fontFamily: FONT_STACK,
-                      fontWeight: typography.weights.medium,
-                    }}
-                  >
-                    {item.published ? "Publisert" : "Utkast"}
-                  </button>
                   <button
                     type="button"
                     onClick={() => startEdit(item)}
