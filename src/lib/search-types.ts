@@ -26,6 +26,7 @@ export type SearchHitDetail = {
   body: string;
   href: string | null;
   external: boolean; // href should open in a new tab
+  isFile: boolean; // href points to an uploaded document, not an external link
   workPackage: WorkPackage | null;
   fieldSite: FieldSite | null;
   frictions: CareFriction[];

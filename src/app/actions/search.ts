@@ -233,6 +233,7 @@ export async function getSearchHitDetail(
       body: r.body ?? "",
       href: null,
       external: false,
+      isFile: false,
       workPackage: r.work_package,
       fieldSite: r.field_site,
       frictions: r.care_frictions ?? [],
@@ -261,6 +262,7 @@ export async function getSearchHitDetail(
       body: r.body ?? "",
       href: null,
       external: false,
+      isFile: false,
       workPackage: r.work_package,
       fieldSite: r.field_site,
       frictions: [],
@@ -290,6 +292,7 @@ export async function getSearchHitDetail(
       body: r.body ?? "",
       href: `/story/${sourceId}`,
       external: false,
+      isFile: false,
       workPackage: r.work_package,
       fieldSite: r.field_site,
       frictions: r.frictions ?? [],
@@ -301,7 +304,7 @@ export async function getSearchHitDetail(
   // resource
   const { data } = await supabase
     .from("public_resources")
-    .select("id, title, description, type, url, field_site, map_scale")
+    .select("id, title, description, type, url, file_url, field_site, map_scale")
     .eq("id", sourceId)
     .maybeSingle();
   if (!data) return null;
@@ -310,6 +313,7 @@ export async function getSearchHitDetail(
     description: string | null;
     type: ResourceType;
     url: string | null;
+    file_url: string | null;
     field_site: FieldSite | null;
     map_scale: MapScale | null;
   };
@@ -317,12 +321,16 @@ export async function getSearchHitDetail(
     r.type ? (RESOURCE_TYPE_LABELS[r.type] ?? r.type) : null,
     r.map_scale ? SCALES[r.map_scale].label : null,
   ].filter((t): t is string => Boolean(t));
+  // Prefer an external link; fall back to an uploaded document so members can
+  // open and download files attached to a resource, not just titled-only rows.
+  const resourceHref = r.url ?? r.file_url;
   return {
     ...base,
     title: r.title,
     body: r.description ?? "",
-    href: r.url,
-    external: Boolean(r.url && r.url.startsWith("http")),
+    href: resourceHref,
+    external: Boolean(resourceHref && resourceHref.startsWith("http")),
+    isFile: Boolean(!r.url && r.file_url),
     workPackage: null,
     fieldSite: r.field_site,
     frictions: [],

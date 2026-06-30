@@ -478,7 +478,7 @@ function DetailPanel({
                   rel="noreferrer"
                   style={{ ...typography.sizes.t14, color: BADGE_COLOR[hit.sourceType], fontWeight: typography.weights.medium }}
                 >
-                  Åpne lenke ↗
+                  {detail.isFile ? "Last ned ↓" : "Åpne lenke ↗"}
                 </a>
               ) : (
                 <Link
