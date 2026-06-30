@@ -222,8 +222,8 @@ export default function HomePage() {
                     lineHeight: 1.55,
                   }}
                 >
-                  SAFE@HOME undersøker hvordan reformen Bo trygt hjemme møter hverdagen i transnasjonale
-                  husholdninger. Vi følger tre skalaer — fra soverom til bystyresal — og kartlegger
+                  SAFE@HOME er et forskningsprosjekt initiert av Marit Haldar og Carolina Borges Rau Steuernagel. Det skal undersøke hvordan reformen Bo trygt hjemme møter hverdagen i transnasjonale
+                  husholdninger.  Vi følger tre skalaer — fra soverom til bystyresal — og kartlegger
                   friksjonene og kvalitetene som oppstår når kommunal omsorg møter mangfoldige
                   eldreliv.
                 </p>
