@@ -177,6 +177,7 @@ export function QuickNotesPanel() {
     setView({ kind: "create" });
   }, []);
   const goEdit = useCallback((id: string) => setView({ kind: "edit", id }), []);
+  const goDetail = useCallback((id: string) => setView({ kind: "detail", id }), []);
 
   if (view.kind === "edit") {
     return <NoteForm noteId={view.id} currentProfile={profile} onDone={reset} onCancel={reset} />;
@@ -184,7 +185,154 @@ export function QuickNotesPanel() {
   if (view.kind === "detail") {
     return <NoteDetail noteId={view.id} currentProfile={profile} onEdit={goEdit} onBack={reset} />;
   }
-  return <NoteForm key={formKey} currentProfile={profile} onDone={reset} onCancel={reset} />;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: space.s48 }}>
+      <NoteForm key={formKey} currentProfile={profile} onDone={reset} onCancel={reset} />
+      <NoteList refreshKey={formKey} onOpen={goDetail} />
+    </div>
+  );
+}
+
+// ─── Note list (entry point to the detail view) ───
+
+function NoteList({
+  refreshKey,
+  onOpen,
+}: {
+  refreshKey: number;
+  onOpen: (id: string) => void;
+}) {
+  const [notes, setNotes] = useState<QuickNote[]>([]);
+  const [authors, setAuthors] = useState<Record<string, Profile>>({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("quick_notes")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(30);
+      if (cancelled) return;
+      if (error || !data) {
+        setNotes([]);
+        setLoading(false);
+        return;
+      }
+      const rows = data as QuickNote[];
+      setNotes(rows);
+      const authorIds = Array.from(
+        new Set(rows.map((n) => n.author_id).filter(Boolean)),
+      ) as string[];
+      if (authorIds.length > 0) {
+        const { data: profileRows } = await supabase
+          .from("profiles")
+          .select("*")
+          .in("id", authorIds);
+        if (!cancelled) {
+          const map: Record<string, Profile> = {};
+          for (const p of (profileRows as Profile[] | null) ?? []) map[p.id] = p;
+          setAuthors(map);
+        }
+      }
+      if (!cancelled) setLoading(false);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshKey]);
+
+  return (
+    <section style={{ display: "flex", flexDirection: "column", gap: space.s12 }}>
+      <h2
+        style={{
+          ...typography.sizes.t18,
+          fontWeight: typography.weights.bold,
+          color: colors.textBody,
+          margin: 0,
+          paddingBottom: space.s8,
+          borderBottom: `1px solid ${colors.borderSubtle}`,
+        }}
+      >
+        Siste notater
+      </h2>
+      {loading ? (
+        <p style={{ ...typography.sizes.t14, color: colors.textMuted }}>Laster notater…</p>
+      ) : notes.length === 0 ? (
+        <p style={{ ...typography.sizes.t14, color: colors.textMuted }}>
+          Ingen notater ennå. Det første du publiserer dukker opp her.
+        </p>
+      ) : (
+        <ul
+          style={{
+            listStyle: "none",
+            margin: 0,
+            padding: 0,
+            display: "flex",
+            flexDirection: "column",
+            gap: space.s8,
+          }}
+        >
+          {notes.map((n) => {
+            const noteAuthor = n.author_id ? authors[n.author_id] ?? null : null;
+            const title = n.headline?.trim() || n.body.slice(0, 80) || "(Uten tittel)";
+            return (
+              <li key={n.id}>
+                <button
+                  type="button"
+                  onClick={() => onOpen(n.id)}
+                  style={{
+                    width: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: space.s12,
+                    textAlign: "left",
+                    padding: `${space.s12} ${space.s16}`,
+                    background: colors.bgCard,
+                    border: `1px solid ${colors.borderSubtle}`,
+                    cursor: "pointer",
+                    fontFamily: FONT_STACK,
+                  }}
+                >
+                  <Avatar profile={noteAuthor} size={28} />
+                  <span style={{ minWidth: 0, flex: 1 }}>
+                    <span
+                      style={{
+                        ...typography.sizes.t14,
+                        display: "block",
+                        color: colors.textBody,
+                        fontWeight: typography.weights.medium,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {title}
+                    </span>
+                    <span style={{ ...typography.sizes.t12, color: colors.textMuted }}>
+                      {noteAuthor?.full_name ?? "Ukjent forfatter"} · {formatTimestamp(n.created_at)}
+                    </span>
+                  </span>
+                  <span
+                    style={{
+                      ...typography.sizes.t12,
+                      color: colors.brandWarmBlue,
+                      fontWeight: typography.weights.medium,
+                      flexShrink: 0,
+                    }}
+                  >
+                    Åpne →
+                  </span>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
+  );
 }
 
 // ─── Pill toggle ───

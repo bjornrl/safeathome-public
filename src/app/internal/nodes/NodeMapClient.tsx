@@ -1199,6 +1199,22 @@ function DetailPanel({
               </a>
             </p>
           )}
+          {resource?.file_url && (
+            <p style={{ marginTop: resource.url ? space.s8 : space.s16 }}>
+              <a
+                href={resource.file_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  ...typography.sizes.t14,
+                  color: colors.brandWarmBlue,
+                  fontWeight: typography.weights.medium,
+                }}
+              >
+                {resource.file_name ? `Last ned ${resource.file_name} →` : "Last ned fil →"}
+              </a>
+            </p>
+          )}
           {resource?.authors && (
             <p style={{ ...typography.sizes.t12, color: colors.textMuted, marginTop: space.s8 }}>
               {resource.authors}

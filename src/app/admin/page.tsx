@@ -1349,7 +1349,9 @@ function ResourcesPanel({ currentUserId }: { currentUserId: string | null }) {
           r.authors,
           r.map_scale ? SCALES[r.map_scale]?.label : null,
         ].filter(Boolean).join(" · "),
-        tags: []
+        tags: [],
+        openHref: r.url ?? r.file_url ?? undefined,
+        openLabel: r.url ? "Åpne →" : "Last ned →"
       }))} onDelete={async id => {
         const {
           error
@@ -2272,6 +2274,8 @@ function ItemList({
     title: string;
     subtitle: string;
     tags: string[];
+    openHref?: string;
+    openLabel?: string;
   }[];
   onDelete: (id: string) => Promise<void>;
   onEdit?: (id: string) => void;
@@ -2303,6 +2307,11 @@ function ItemList({
         </div>}
       </div>
       <div className="[display:flex] [flex-direction:column] [gap:8px] [align-items:flex-end]">
+        {r.openHref && <a href={r.openHref} target="_blank" rel="noopener noreferrer" style={{
+          fontFamily: FONT_STACK
+        }} className="[font-size:11px] [color:#1f42aa] [background:transparent] [text-decoration:none] [font-weight:500]">
+          {r.openLabel ?? "Åpne →"}
+        </a>}
         {onEdit && <button type="button" onClick={() => onEdit(r.id)} style={{
           fontFamily: FONT_STACK
         }} className="[font-size:11px] [color:#1f42aa] [background:transparent] [border:none] [cursor:pointer] [padding:0px] [font-weight:500]">
