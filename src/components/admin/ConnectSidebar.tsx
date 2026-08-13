@@ -50,13 +50,26 @@ export function ConnectSidebar({
           .select("id, title, body, updated_at")
           .order("updated_at", { ascending: false })
           .limit(200),
+        // public_resources has no updated_at — only created_at. Selecting or
+        // ordering by updated_at makes PostgREST reject the whole query, and
+        // every resource silently disappears from the list.
         supabase
           .from("public_resources")
-          .select("id, title, description, updated_at")
-          .order("updated_at", { ascending: false })
+          .select("id, title, description, created_at")
+          .order("created_at", { ascending: false })
           .limit(200),
       ]);
       if (!active) return;
+
+      // Surface query failures instead of rendering a silently shorter list.
+      for (const [label, res] of [
+        ["quick_notes", notesRes],
+        ["insights", insightsRes],
+        ["public_stories", storiesRes],
+        ["public_resources", resourcesRes],
+      ] as const) {
+        if (res.error) console.warn(`[ConnectSidebar] ${label} failed:`, res.error.message);
+      }
 
       const all: LinkableEntity[] = [];
 
@@ -90,7 +103,7 @@ export function ConnectSidebar({
           updated_at: s.updated_at,
         });
       }
-      for (const r of (resourcesRes.data as { id: string; title: string; description: string | null; updated_at: string }[] | null) ?? []) {
+      for (const r of (resourcesRes.data as { id: string; title: string; description: string | null; created_at: string }[] | null) ?? []) {
         if (exclude?.kind === "resource" && exclude.id === r.id) continue;
         all.push({
           kind: "resource",
@@ -101,7 +114,8 @@ export function ConnectSidebar({
               ? `${r.description.slice(0, 80)}…`
               : r.description
             : null,
-          updated_at: r.updated_at,
+          // Resources only carry created_at; it feeds the same sort.
+          updated_at: r.created_at,
         });
       }
 

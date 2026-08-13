@@ -145,7 +145,9 @@ export async function fetchLinkedEntities(
       ? supabase.from("public_stories").select("id, title, body, updated_at").in("id", byKind.story)
       : Promise.resolve({ data: [] }),
     byKind.resource.length
-      ? supabase.from("public_resources").select("id, title, description, updated_at").in("id", byKind.resource)
+      // No updated_at on public_resources — asking for it fails the query and
+      // linked resources vanish from "Koblet til".
+      ? supabase.from("public_resources").select("id, title, description, created_at").in("id", byKind.resource)
       : Promise.resolve({ data: [] }),
   ]);
 
@@ -176,7 +178,7 @@ export async function fetchLinkedEntities(
       updated_at: s.updated_at,
     });
   }
-  for (const r of (resourcesRes.data as { id: string; title: string; description: string | null; updated_at: string }[] | null) ?? []) {
+  for (const r of (resourcesRes.data as { id: string; title: string; description: string | null; created_at: string }[] | null) ?? []) {
     items.push({
       kind: "resource",
       id: r.id,
@@ -186,7 +188,7 @@ export async function fetchLinkedEntities(
           ? `${r.description.slice(0, 80)}…`
           : r.description
         : null,
-      updated_at: r.updated_at,
+      updated_at: r.created_at,
     });
   }
 

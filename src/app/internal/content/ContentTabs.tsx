@@ -34,8 +34,8 @@ const TAB_COPY: Record<Tab, { title: string; lead: string }> = {
     lead: "Friksjoner navngir de gjentakende mekanismene der velmenende omsorg likevel skader.",
   },
   qualities: {
-    title: "Hvordan folk faktisk lever og mestrer",
-    lead: "Kvalitetene — det som gjør omsorg god når den treffer.",
+    title: "Kvaliteter",
+    lead: "Hvordan folk faktisk lever og mestrer — det som gjør omsorg god når den treffer.",
   },
 };
 

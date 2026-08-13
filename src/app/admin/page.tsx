@@ -204,6 +204,8 @@ function useAiSuggest({
         excludeSourceId,
         relatedSourceTypes,
       });
+      // TEMPORARY diagnostic — console.error so it reaches the dev log.
+      console.error("[DEBUG-aiSuggest] response:", JSON.stringify(res), "currentFrictions:", JSON.stringify(currentFrictions), "currentQualities:", JSON.stringify(currentQualities));
       if (res.status === "ok") {
         setFrictions(res.suggestions.frictions.filter((f) => !currentFrictions.includes(f)));
         setQualities(res.suggestions.qualities.filter((q) => !currentQualities.includes(q)));
@@ -516,11 +518,11 @@ function StoriesPanel({ currentUserId }: { currentUserId: string | null }) {
     load();
   }, [load]);
   return <div className="[display:flex] [flex-direction:column] [gap:48px]">
-    <div className="[display:grid] [grid-template-columns:repeat(auto-fit,_minmax(320px,_1fr))] [gap:32px]">
-      <section>
-        <SectionHeading>Ny innsikt</SectionHeading>
-        <StoryForm onCreated={load} currentUserId={currentUserId} />
-      </section>
+      {/* Same shape as notes and resources: the form owns the full width (it
+          lays out its own connect sidebar), and the list sits below it. Side by
+          side, the list ate half the row and squeezed the form. StoryForm
+          renders its own "Ny innsikt" header, so no SectionHeading here. */}
+      <StoryForm onCreated={load} currentUserId={currentUserId} />
 
       <section>
         <SectionHeading>Siste innsikter</SectionHeading>
@@ -542,10 +544,9 @@ function StoriesPanel({ currentUserId }: { currentUserId: string | null }) {
           }
         }} />
       </section>
-    </div>
 
-    <ConnectionsSection stories={rows.map(r => ({ id: r.id, title: r.title }))} />
-  </div>;
+      <ConnectionsSection stories={rows.map(r => ({ id: r.id, title: r.title }))} />
+    </div>;
 }
 
 // ─── Connections (between insights) ───
