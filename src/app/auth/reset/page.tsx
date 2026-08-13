@@ -6,7 +6,7 @@ import Link from "next/link";
 import Nav from "@/components/Nav";
 import { supabase } from "@/lib/supabase";
 import { authErrorMessage } from "@/lib/auth-messages";
-const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
+import { FONT_STACK } from "@/lib/design-tokens";
 export default function ResetPasswordPage() {
   const router = useRouter();
   const [password, setPassword] = useState("");

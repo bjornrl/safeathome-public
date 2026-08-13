@@ -3,13 +3,18 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import Nav from "@/components/Nav";
-import { FRICTIONS, WP_LABELS, type WpId } from "@/lib/constants";
-import { STAGES, type SolutionStage } from "@/lib/seed-solutions";
+import {
+  FRICTIONS,
+  STAGES,
+  WP_LABELS,
+  type SolutionStage,
+  type WpId,
+} from "@/lib/constants";
 import { getDesignResponses, getAllStories, getPublishedWpReports, type SolutionItem } from "@/lib/queries";
 import type { PublicStory, WpReport } from "@/lib/types";
+import { FONT_STACK } from "@/lib/design-tokens";
 
 const WP_ORDER: WpId[] = ["wp1", "wp2", "wp3", "wp4"];
-const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
 export default function SolutionsPage() {
   const [solutions, setSolutions] = useState<SolutionItem[]>([]);
   const [stories, setStories] = useState<PublicStory[]>([]);
@@ -36,6 +41,10 @@ export default function SolutionsPage() {
         <h1 className="[font-size:clamp(38px,_6vw,_60px)] [font-weight:700] [line-height:1.05] [letter-spacing:-0.02em] [color:#2a2859] [margin-bottom:24px]">
           Fra observasjon til tiltak.
         </h1>
+        <p className="[font-size:19px] [line-height:1.7] [color:#666666] [max-width:680px] [margin-bottom:16px]">
+          Designresponser blir til i WP4 når feltmaterialet fra WP1–3 peker på
+          utfordringer verdt å jobbe med.
+        </p>
         <p className="[font-size:19px] [line-height:1.7] [color:#666666] [max-width:680px] [margin-bottom:48px]">
           Når forskningen avdekker en friksjon, svarer designteamet. Dette er
           tiltakene som utvikles, testes og foredles — fra observasjon i felt

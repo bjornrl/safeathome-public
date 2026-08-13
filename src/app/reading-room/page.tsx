@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import Nav from "@/components/Nav";
 import { getAllResourceLinks, getAllStories, getResources } from "@/lib/queries";
-import { READING_ROOM_TYPES } from "@/lib/seed-resources";
+import { READING_ROOM_TYPES } from "@/lib/constants";
 import ReadingRoomClient from "./ReadingRoomClient";
 import type { PublicStory } from "@/lib/types";
+import { FONT_STACK } from "@/lib/design-tokens";
 
-const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
 
 export const metadata: Metadata = {
   title: "Lesesal — safe@home",

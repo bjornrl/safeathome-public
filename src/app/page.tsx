@@ -145,7 +145,6 @@ const FIELD_SITES = [
 
 const FOOTER_LINKS = [
   { href: "/about", label: "Om prosjektet" },
-  { href: "/explore", label: "Utforsk" },
   { href: "/welfare-tech", label: "Velferdsteknologi" },
   { href: "/for-municipalities", label: "For kommuner" },
   { href: "/reading-room", label: "Lesesal" },
@@ -306,7 +305,7 @@ export default function HomePage() {
               <Card padding="md">
                 <p style={{ ...eyebrow, marginBottom: space.s12 }}>Finansiering</p>
                 <p style={{ ...typography.sizes.t14, color: clay.colors.muted, lineHeight: 1.5 }}>
-                  Prosjektet er finansiert av Norsk Forskningsråd (NORFOK). Du kan lese om prosjektet her: <a href="https://www.forskningsradet.no/nyheter/2025/277-millioner-kroner-til-helseforskning-og-helseinnovasjon/" style={{ color: clay.colors.ink, textDecoration: "underline" }}>SAFE@HOME</a>
+                  Prosjektet er finansiert av Norges forskningsråd. Du kan lese om prosjektet her: <a href="https://www.forskningsradet.no/nyheter/2025/277-millioner-kroner-til-helseforskning-og-helseinnovasjon/" style={{ color: clay.colors.ink, textDecoration: "underline" }}>SAFE@HOME</a>
                 </p>
               </Card>
             </div>

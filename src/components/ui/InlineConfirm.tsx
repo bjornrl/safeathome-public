@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { FONT_STACK } from "@/lib/design-tokens";
 
-const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
 
 /**
  * A two-stage destructive button. First click reveals a "Bekreft"-button next

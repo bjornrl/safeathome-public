@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import type { SuggestedCategory } from "@/lib/types";
-import { colors, space, typography } from "@/lib/design-tokens";
+import { FONT_STACK, colors, space, typography } from "@/lib/design-tokens";
 import { CategoryBadge } from "./CategoryBadge";
 
 interface Props {
@@ -12,7 +12,6 @@ interface Props {
   authorId: string | null;
 }
 
-const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
 
 const inputStyle: React.CSSProperties = {
   padding: `${space.s8} ${space.s12}`,

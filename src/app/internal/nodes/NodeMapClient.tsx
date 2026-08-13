@@ -15,9 +15,8 @@ import {
 } from "d3";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
-import { colors, space, typography } from "@/lib/design-tokens";
-import { FRICTIONS, QUALITIES, SCALES } from "@/lib/constants";
-import { RESOURCE_TYPE_LABELS } from "@/lib/seed-resources";
+import { FONT_STACK, colors, space, typography } from "@/lib/design-tokens";
+import { FRICTIONS, QUALITIES, RESOURCE_TYPE_LABELS, SCALES } from "@/lib/constants";
 import type {
   CareFriction,
   CareQuality,
@@ -31,7 +30,6 @@ import type {
   WorkPackage,
 } from "@/lib/types";
 
-const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
 
 const INSIGHT_COLOR = "#C45D3E";
 const NOTE_COLOR = "#5B6AAF";

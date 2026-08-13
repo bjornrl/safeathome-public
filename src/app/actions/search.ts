@@ -10,8 +10,7 @@ import {
   type EmbeddableSourceType,
 } from "@/lib/embeddings";
 import type { SearchHit, SearchHitDetail, SearchResponse } from "@/lib/search-types";
-import { RESOURCE_TYPE_LABELS } from "@/lib/seed-resources";
-import { SCALES } from "@/lib/constants";
+import { RESOURCE_TYPE_LABELS, SCALES } from "@/lib/constants";
 import type {
   CareFriction,
   CareQuality,

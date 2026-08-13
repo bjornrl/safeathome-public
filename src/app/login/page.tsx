@@ -9,9 +9,8 @@ import {
   CODE_LENGTH,
   authErrorMessage,
 } from "@/lib/auth-messages";
-import { colors, space, typography } from "@/lib/design-tokens";
+import { FONT_STACK, colors, space, typography } from "@/lib/design-tokens";
 
-const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
 
 const SAFE_REDIRECT = /^\/(?!\/)/;
 

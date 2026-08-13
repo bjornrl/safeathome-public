@@ -4,8 +4,8 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { FRICTIONS, QUALITIES } from "@/lib/constants";
 import type { CareFriction, CareQuality, PublicConnection, PublicStory } from "@/lib/types";
+import { FONT_STACK } from "@/lib/design-tokens";
 
-const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
 const SECTION_CAP = 6;
 
 interface Group {

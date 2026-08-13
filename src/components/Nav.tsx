@@ -5,7 +5,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { motion as fm, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
-import { EXPLORE_MAP_ENABLED } from "@/lib/feature-flags";
 import { clay, colors, motion, space, typography } from "@/lib/design-tokens";
 import { Button } from "@/components/ui";
 
@@ -24,7 +23,6 @@ const INTERNAL_LINKS: NavLink[] = [
   { href: "/internal/search", label: "Søk", description: "Semantisk søk på tvers av hele korpuset." },
   { href: "/welfare-tech", label: "Velferdsteknologi", description: "Bla gjennom teknologi-oppføringer med detaljer." },
   { href: "/internal/nodes", label: "Nodekart", description: "Visuelt kart over koblinger mellom innholdet." },
-  ...(EXPLORE_MAP_ENABLED ? [{ href: "/explore", label: "Utforsk", description: "Interaktivt kart over prosjektet." }] : []),
   { href: "/frictions", label: "Friksjoner", description: "Oversikt over friksjonskategoriene." },
   { href: "/qualities", label: "Kvaliteter", description: "Oversikt over kvalitetskategoriene." },
 ];

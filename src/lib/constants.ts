@@ -1,43 +1,51 @@
-import type { CareFriction, CareQuality, MapScale, HouseTheme } from "./types";
+import type { CareFriction, CareQuality, MapScale, HouseTheme, ResourceType } from "./types";
 
-// ─── Map Configuration ───
-export const MAP_CONFIG = {
-  center: [10.8155, 59.8976] as [number, number], // Alna, Oslo
-  initialZoom: 19,
-  minZoom: 9,
-  maxZoom: 19,
-  microToMesoZoom: 17,
-  mesoToMacroZoom: 13,
+// MAP_CONFIG, MAP_STYLE og DISTRICTS er fjernet sammen med MapLibre-kartet.
+// Nodekartet (/internal/nodes) er primærvisningen nå og er ikke geografisk.
+
+// ─── Resource taxonomy ───
+// Lå tidligere i seed-resources.ts sammen med oppdiktede ressurser. Selve
+// taksonomien er ekte og i aktiv bruk; fiksjonen er slettet.
+export const RESOURCE_TYPE_LABELS: Record<ResourceType, string> = {
+  publication:     "Publikasjon",
+  policy_brief:    "Policy-notat",
+  toolkit:         "Verktøykasse",
+  practice_guide:  "Praksisguide",
+  teaching_guide:  "Undervisningsguide",
+  experience:      "Kommunal erfaring",
 };
 
-// ─── Inline MapLibre style (raster OSM tiles — proven to work) ───
-export const MAP_STYLE: maplibregl.StyleSpecification = {
-  version: 8 as const,
-  sources: {
-    osm: {
-      type: "raster" as const,
-      tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
-      tileSize: 256,
-      maxzoom: 19,
-      attribution: "&copy; OpenStreetMap contributors",
-    },
-  },
-  layers: [
-    {
-      id: "osm-tiles",
-      type: "raster" as const,
-      source: "osm",
-      minzoom: 0,
-      maxzoom: 19,
-    },
-  ],
-};
+export const READING_ROOM_TYPES: ResourceType[] = [
+  "publication",
+  "policy_brief",
+  "teaching_guide",
+];
 
-// ─── District Coordinates ───
-export const DISTRICTS: Record<string, { center: [number, number]; zoom: number; label: string }> = {
-  alna: { center: [10.8155, 59.8976], zoom: 14, label: "Alna, Oslo" },
-  sondre_nordstrand: { center: [10.7920, 59.8340], zoom: 14, label: "Søndre Nordstrand, Oslo" },
-};
+export const MUNICIPAL_TYPES: ResourceType[] = [
+  "toolkit",
+  "practice_guide",
+  "experience",
+];
+
+// ─── Design response pipeline (WP4) ───
+// Lå tidligere i seed-solutions.ts. Pipelinen beholdes urørt, jf.
+// prosjektbeslutning — kun de oppdiktede responsene er fjernet.
+export type SolutionStage =
+  | "mapping"
+  | "ideation"
+  | "prototyping"
+  | "testing"
+  | "implementing";
+
+// Stage colors use Oslo kommune tones. Pipeline reads left-to-right:
+// dark blue → warm blue → teal accent → yellow (attention) → green (shipped).
+export const STAGES: { key: SolutionStage; label: string; color: string }[] = [
+  { key: "mapping",      label: "Kartlegging",  color: "#2a2859" },
+  { key: "ideation",     label: "Idéutvikling", color: "#1f42aa" },
+  { key: "prototyping",  label: "Prototyping",  color: "#4a8a83" },
+  { key: "testing",      label: "Testing",      color: "#f9c66b" },
+  { key: "implementing", label: "Implementering", color: "#034b45" },
+];
 
 // ─── Care Frictions ───
 // Friksjoner = mekanismer i tjenesteapparatet som gjør at velmenende omsorg

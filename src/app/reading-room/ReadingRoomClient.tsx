@@ -5,8 +5,8 @@ import ResourceList from "@/components/ResourceList";
 import { FRICTIONS, QUALITIES } from "@/lib/constants";
 import type { CareFriction, CareQuality, PublicResource, PublicStory } from "@/lib/types";
 import type { ResourceLinksByResource } from "@/lib/queries";
+import { FONT_STACK } from "@/lib/design-tokens";
 
-const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
 const FRICTION_KEYS = Object.keys(FRICTIONS) as CareFriction[];
 const QUALITY_KEYS = Object.keys(QUALITIES) as CareQuality[];
 
@@ -75,12 +75,12 @@ export default function ReadingRoomClient({
                 fontFamily: FONT_STACK,
               }}
             >
-              Clear filters ({activeFilters})
+              Nullstill filtre ({activeFilters})
             </button>
           )}
         </div>
 
-        <p style={{ fontSize: 11, fontWeight: 600, color: "#666666", marginBottom: 8 }}>Frictions</p>
+        <p style={{ fontSize: 11, fontWeight: 600, color: "#666666", marginBottom: 8 }}>Friksjoner</p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
           {FRICTION_KEYS.map((k) => {
             const active = selectedFrictions.includes(k);
@@ -108,7 +108,7 @@ export default function ReadingRoomClient({
           })}
         </div>
 
-        <p style={{ fontSize: 11, fontWeight: 600, color: "#666666", marginBottom: 8 }}>Qualities</p>
+        <p style={{ fontSize: 11, fontWeight: 600, color: "#666666", marginBottom: 8 }}>Kvaliteter</p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
           {QUALITY_KEYS.map((k) => {
             const active = selectedQualities.includes(k);
@@ -156,13 +156,13 @@ export default function ReadingRoomClient({
               padding: 0,
             }}
           >
-            Clear filters
+            Nullstill filtre
           </button>
         </div>
       ) : (
         <ResourceList
           resources={filtered}
-          emptyMessage="No publications yet. Check back once the first working papers are out."
+          emptyMessage="Ingen publikasjoner ennå. De første arbeidsnotatene og policy-tekstene legges ut etter hvert som de blir til."
           groupByType={activeFilters === 0}
           links={links}
           storiesById={storiesById}

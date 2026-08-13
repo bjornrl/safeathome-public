@@ -6,8 +6,8 @@ import { chord as d3chord, arc as d3arc, ribbon as d3ribbon } from "d3";
 import Nav from "@/components/Nav";
 import { FRICTIONS } from "@/lib/constants";
 import type { CareFriction, PublicStory } from "@/lib/types";
-import { getMapStories } from "@/lib/queries";
-const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
+import { getAllStories } from "@/lib/queries";
+import { FONT_STACK } from "@/lib/design-tokens";
 const FRICTION_KEYS = Object.keys(FRICTIONS) as CareFriction[];
 type Selection = {
   kind: "none";
@@ -62,7 +62,7 @@ export default function FrictionsPage() {
     kind: "none"
   });
   useEffect(() => {
-    getMapStories().then(setStories);
+    getAllStories().then(setStories);
   }, []);
   const matrix = useMemo(() => buildMatrix(stories), [stories]);
   const results = useMemo(() => storiesMatchingSelection(stories, selection), [stories, selection]);
@@ -85,7 +85,11 @@ export default function FrictionsPage() {
         </p>
 
         <div className="[display:grid] [grid-template-columns:minmax(280px,_1fr)_minmax(260px,_320px)] [gap:48px] [align-items:start]">
-          <ChordDiagram matrix={matrix} selection={selection} onSelect={setSelection} />
+          {/* Akkord-diagrammet trenger et korpus å tegne. Med null historier blir
+              matrisen bare nuller, alle buene får bredde 0 og etikettene stables
+              oppå hverandre — et diagram som ser ødelagt ut, ikke tomt. Da viser
+              vi tegnforklaringen alene og forklarer hva som kommer. */}
+          {stories.length === 0 ? <CorpusEmpty /> : <ChordDiagram matrix={matrix} selection={selection} onSelect={setSelection} />}
 
           <aside>
             <p className="[font-size:11px] [font-weight:600] [text-transform:uppercase] [letter-spacing:0.14em] [color:#808080] [margin-bottom:16px]">
@@ -133,7 +137,9 @@ export default function FrictionsPage() {
               </button>}
           </div>
 
-          {selection.kind === "none" ? <GroupedByFriction stories={stories} /> : <StoryGrid stories={results} />}
+          {/* Tomtilstanden står allerede der diagrammet skulle vært; å gjenta den
+              her ville sagt det samme to ganger på én skjerm. */}
+          {stories.length === 0 ? null : selection.kind === "none" ? <GroupedByFriction stories={stories} /> : <StoryGrid stories={results} />}
         </section>
       </main>
     </>;
@@ -322,6 +328,16 @@ function SelectionHeading({
 }
 
 // ─── Story list layouts ───
+
+// Skilles fra StoryGrids tomtilstand med vilje: der betyr tomt «filteret traff
+// ingenting», her betyr det «korpuset er tomt ennå». De to krever ulikt svar.
+function CorpusEmpty() {
+  return <p className="[font-size:17px] [line-height:1.7] [color:#666666] [padding:24px_0] [max-width:620px]">
+      Her kommer feltmaterialet. Datainnsamlingen i Alna, Søndre Nordstrand og
+      Skien starter høsten 2026 — etter hvert som notater tagges med friksjoner,
+      dukker de opp her.
+    </p>;
+}
 
 function StoryGrid({
   stories

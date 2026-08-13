@@ -5,8 +5,8 @@ import Link from "next/link";
 import Nav from "@/components/Nav";
 import { QUALITIES, FRICTIONS, QUALITY_COPY } from "@/lib/constants";
 import type { CareFriction, CareQuality, CategoryDescription, PublicStory } from "@/lib/types";
-import { getMapStories, getQualityDescriptions } from "@/lib/queries";
-const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
+import { getAllStories, getQualityDescriptions } from "@/lib/queries";
+import { FONT_STACK } from "@/lib/design-tokens";
 const QUALITY_KEYS = Object.keys(QUALITIES) as CareQuality[];
 
 /**
@@ -41,7 +41,7 @@ export default function QualitiesPage() {
   const [hoverCapable, setHoverCapable] = useState(false);
 
   useEffect(() => {
-    getMapStories().then(setStories);
+    getAllStories().then(setStories);
     getQualityDescriptions().then((rows) => {
       const map: Record<string, CategoryDescription> = {};
       for (const r of rows) map[r.key] = r;
@@ -83,6 +83,12 @@ export default function QualitiesPage() {
             disse erfaringene er.
           </p>
         </header>
+
+        {stories.length === 0 && <p className="[font-size:17px] [line-height:1.7] [color:#666666] [max-width:620px] [padding:0px_24px_24px]">
+            Her kommer feltmaterialet. Datainnsamlingen i Alna, Søndre Nordstrand
+            og Skien starter høsten 2026 — etter hvert som notater tagges med
+            kvaliteter, dukker de opp her.
+          </p>}
 
         <div className="[padding-left:max(24px,_env(safe-area-inset-left))]">
           <div className="qualities-scroll [display:flex] [gap:16px] [overflow-x:auto] [scroll-snap-type:x_mandatory] [padding-bottom:32px] [padding-right:24px]">

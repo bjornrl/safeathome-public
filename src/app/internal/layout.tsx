@@ -4,9 +4,8 @@ import { Suspense, useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Nav from "@/components/Nav";
 import { supabase } from "@/lib/supabase";
-import { colors, space, typography } from "@/lib/design-tokens";
+import { FONT_STACK, colors, space, typography } from "@/lib/design-tokens";
 
-const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
 
 function buildLoginRedirect(pathname: string | null, search: string): string {
   const path = pathname ?? "/internal";

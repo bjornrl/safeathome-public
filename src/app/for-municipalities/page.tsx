@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import Nav from "@/components/Nav";
 import ResourceList from "@/components/ResourceList";
 import { getResources } from "@/lib/queries";
-import { MUNICIPAL_TYPES } from "@/lib/seed-resources";
-const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
+import { MUNICIPAL_TYPES } from "@/lib/constants";
+import { FONT_STACK } from "@/lib/design-tokens";
 export const metadata: Metadata = {
   title: "For kommuner — safe@home",
   description: "Verktøykasser, praksisguider og kommunale erfaringer fra safe@home-prosjektet."

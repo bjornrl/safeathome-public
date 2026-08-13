@@ -12,10 +12,24 @@ function isPublicPath(pathname: string): boolean {
   return false;
 }
 
+// Analysevisningene. Offentlig = prosjektinformasjon; historier, taksonomi-
+// grupperinger og designresponser er analyse og hører bak innlogging
+// (strategidokumentets §3 og beslutning 8). Gjelder uavhengig av dev-låsen.
+const ALWAYS_PROTECTED = [
+  "/admin",
+  "/internal",
+  "/frictions",
+  "/qualities",
+  "/reading-room",
+  "/welfare-tech",
+  "/story",
+  "/solutions",
+];
+
 function isInternalPath(pathname: string): boolean {
-  if (pathname === "/admin" || pathname.startsWith("/admin/")) return true;
-  if (pathname === "/internal" || pathname.startsWith("/internal/")) return true;
-  return false;
+  return ALWAYS_PROTECTED.some(
+    (base) => pathname === base || pathname.startsWith(`${base}/`),
+  );
 }
 
 function loginRedirect(request: NextRequest): URL {
@@ -68,6 +82,6 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     // Run on everything except Next internals, static assets, and favicon.
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|glb|gltf)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };

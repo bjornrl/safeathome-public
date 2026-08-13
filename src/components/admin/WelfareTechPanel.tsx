@@ -2,12 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { colors, space, typography } from "@/lib/design-tokens";
+import { FONT_STACK, colors, space, typography } from "@/lib/design-tokens";
 import { uploadWelfareTechImage, validateWelfareTechImage } from "@/lib/welfare-tech-storage";
 import type { WelfareTechnology } from "@/lib/types";
 import { FormHeader } from "@/components/admin/FormPrimitives";
 
-const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
 
 const inputStyle: React.CSSProperties = {
   padding: `${space.s8} ${space.s12}`,

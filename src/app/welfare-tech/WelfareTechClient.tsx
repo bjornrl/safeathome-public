@@ -3,12 +3,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import { colors, space, typography } from "@/lib/design-tokens";
+import { FONT_STACK, colors, space, typography } from "@/lib/design-tokens";
 import { supabase } from "@/lib/supabase";
 import type { WelfareTechnology } from "@/lib/types";
 import "./welfare-tech.css";
 
-const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
 const ALL = "__all__";
 
 function uniqCategories(items: WelfareTechnology[]): string[] {
