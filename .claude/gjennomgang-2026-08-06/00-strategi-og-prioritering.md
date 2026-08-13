@@ -292,3 +292,25 @@ Rekkefølgen er styrt av to ting: hva som må være på plass **før datainnsaml
 6. **E-postagentens skriverettigheter** (§10): kan jeg stramme instruksen til branch+PR-only i en senere kjøring?
 7. **Netlify-miljøvariabler:** kunne ikke leses herfra — bekreft at `ANTHROPIC_API_KEY` (og evt. `OPENAI_API_KEY`) er satt i produksjon, ellers er AI-forslag og semantisk søk stille av der.
 8. **Navnene på forsiden:** «NORFOK» som finansiør-betegnelse ser ut som en feil (Forskningsrådet bekrefter tildelingen under eget navn); og Sandset-rollen må rettes. Vil du at prompt 02 retter tekstene, eller vil du formulere dem selv?
+
+---
+
+## 12. Beslutninger — status 13. august 2026
+
+Avklart med Bjørn i økten 13. august. Prompt 02 er ikke lenger blokkert.
+
+| § | Spørsmål | Beslutning |
+|---|---|---|
+| 11.1 | Offentlig taksonomi? | **Alternativ A — alt bak innlogging.** `/frictions`, `/qualities`, `/reading-room`, `/welfare-tech`, `/story/[id]`, `/solutions` flyttes til `/internal`. Revurderes i 2027. |
+| 11.2 | Lesesalen og buckets | **Alt privat i én operasjon.** `resource-files` gjøres privat i sin helhet; filer serveres med signerte URL-er. Ingen splitt i to buckets. |
+| 11.5 | `welfare-tech`-katalogen | **Intern.** Flyttes til `/internal` som arbeidsverktøy. |
+| 11.8 | Tekstrettelser på forsiden | **Agenten retter etter søknaden** («Transnational homecare.Final»): Sandset-navn og -rolle, NORFOK-betegnelsen. Diffen legges fram for godkjenning før commit. |
+
+**Fortsatt åpne** (blokkerer ikke prompt 02): 11.3 RLS for flat redigering, 11.4 skala-etikettene, 11.6 e-postagentens skriverettigheter, 11.7 Netlify-miljøvariabler.
+
+### Allerede utført siden gjennomgangen
+
+- **Prompt 01 (OTP) er ferdig og committet** på `feat/otp-login`, basert på `main` — ikke på `agent/aapne-innganger`. Ukjent-e-post-flyten er verifisert mot produksjons-Supabase: den returnerer faktisk en distinguerbar feil, så teksten «Vi fant ingen bruker» lyver ikke (lukker usikkerhet 1 i `99-kjorerapport.md`). De to manuelle dashboard-stegene og SMTP gjenstår hos Bjørn.
+- **`.git/index.lock`** (§10, ny løs tråd) er fjernet.
+- **Duplikat-id-en i `People.tsx`** (§10, «Kontaktdata») er rettet — Carolina og Tony har nå egne id-er, og React-advarselen er borte. Merk: kun *id-ene* er rettet. Navneformen «Tony Sandseth» og rollen «WP1-leder» står fortsatt feil begge steder (`People.tsx:28`, `page.tsx:97` har «Tony Joakim Ananiassen Sandset», WP1) og hører til prompt 02 sammen med de øvrige tekstrettelsene.
+- **Branch-spørsmålet** (§10) er delvis avklart: OTP ligger på egen branch. Om agent-commiten `5ceb495` på `agent/aapne-innganger` skal PR-es inn i `main` er fortsatt uavklart.
