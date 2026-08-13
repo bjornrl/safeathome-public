@@ -9,8 +9,8 @@ import {
   type WorkPackageId,
 } from "@/lib/constants";
 import type { CareFriction, CareQuality, MapScale } from "@/lib/types";
+import { FONT_STACK } from "@/lib/design-tokens";
 
-const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
 
 type Kind = "friction" | "quality" | "scale" | "work_package";
 

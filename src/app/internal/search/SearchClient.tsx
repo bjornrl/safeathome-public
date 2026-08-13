@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { colors, motion as motionTokens, radius, space, typography } from "@/lib/design-tokens";
 import { FRICTIONS, QUALITIES } from "@/lib/constants";
-import { getSearchHitDetail, semanticSearch } from "@/app/actions/search";
+import { browseAll, getSearchHitDetail, semanticSearch } from "@/app/actions/search";
 import {
   sourceLabel,
   type EmbeddableSourceType,
@@ -43,17 +43,43 @@ export default function SearchClient() {
   // detail of the hit that's open now.
   const reqRef = useRef(0);
 
+  // The tab opens on the whole corpus rather than an empty box: with a small
+  // corpus, "here is everything" is more useful than "type something". A query
+  // narrows it; clearing the box widens it back out.
+  const showEverything = useCallback(
+    (types: EmbeddableSourceType[]) => {
+      startTransition(async () => {
+        setResponse(await browseAll(types));
+      });
+    },
+    [startTransition],
+  );
+
+  useEffect(() => {
+    showEverything(selected);
+    // Runs once on mount; filter changes are handled in toggle().
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   function toggle(key: EmbeddableSourceType) {
-    setSelected((prev) =>
-      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
-    );
+    const next = selected.includes(key)
+      ? selected.filter((k) => k !== key)
+      : [...selected, key];
+    setSelected(next);
+    // Keep the list in step with the filters whether or not a query is active.
+    const q = query.trim();
+    if (q) {
+      startTransition(async () => setResponse(await semanticSearch(q, next)));
+    } else {
+      showEverything(next);
+    }
   }
 
   function run(e: React.FormEvent) {
     e.preventDefault();
     const q = query.trim();
     if (!q) {
-      setResponse({ status: "empty" });
+      showEverything(selected);
       return;
     }
     startTransition(async () => {
@@ -88,8 +114,7 @@ export default function SearchClient() {
   }, []);
 
   return (
-    <main
-      id="main-content"
+    <div
       style={{ background: colors.bg, color: colors.textBody, minHeight: "70vh" }}
     >
       <div style={{ maxWidth: "880px", margin: "0 auto", padding: `${space.s64} ${space.s24} ${space.s32}` }}>
@@ -107,7 +132,12 @@ export default function SearchClient() {
             <input
               type="search"
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                // Clearing the box returns to the full list without needing
+                // a second Enter press.
+                if (!e.target.value.trim()) showEverything(selected);
+              }}
               placeholder="f.eks. isolasjon og digitalt utenforskap i Alna"
               aria-label="Søk"
               style={{
@@ -172,7 +202,7 @@ export default function SearchClient() {
           </div>
         </form>
 
-        <Results response={response} pending={pending} onOpen={openHit} activeId={activeHit?.sourceId ?? null} />
+        <Results response={response} pending={pending} browsing={!query.trim()} onOpen={openHit} activeId={activeHit?.sourceId ?? null} />
       </div>
 
       <AnimatePresence>
@@ -185,23 +215,25 @@ export default function SearchClient() {
           />
         )}
       </AnimatePresence>
-    </main>
+    </div>
   );
 }
 
 function Results({
   response,
   pending,
+  browsing,
   onOpen,
   activeId,
 }: {
   response: SearchResponse | null;
   pending: boolean;
+  browsing: boolean;
   onOpen: (hit: SearchHit) => void;
   activeId: string | null;
 }) {
   if (pending) {
-    return <p style={{ ...typography.sizes.t14, color: colors.textMuted }}>Søker…</p>;
+    return <p style={{ ...typography.sizes.t14, color: colors.textMuted }}>{browsing ? "Laster…" : "Søker…"}</p>;
   }
   if (!response) {
     return null;
@@ -216,14 +248,14 @@ function Results({
     return <Note>Søket feilet. Prøv igjen.</Note>;
   }
   if (response.hits.length === 0) {
-    return <Note>Ingen treff.</Note>;
+    return <Note>{browsing ? "Ingenting her ennå. Det første som legges inn, dukker opp her." : "Ingen treff."}</Note>;
   }
 
   return (
     <>
       <p style={{ ...typography.sizes.t14, color: colors.textMuted, marginBottom: space.s16 }}>
-        {response.hits.length} treff
-        {response.mode === "keyword" ? " · nøkkelordsøk (semantikk utilgjengelig)" : ""}
+        {response.hits.length} {browsing ? (response.hits.length === 1 ? "oppføring" : "oppføringer") : "treff"}
+        {!browsing && response.mode === "keyword" ? " · nøkkelordsøk (semantikk utilgjengelig)" : ""}
       </p>
       <ul style={{ listStyle: "none", margin: 0, padding: 0, borderTop: `1px solid ${colors.borderSubtle}` }}>
         {response.hits.map((h) => (

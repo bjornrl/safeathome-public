@@ -10,36 +10,18 @@ import type {
   WpReport,
   WelfareTechnology,
 } from "./types";
-import { SEED_STORIES, SEED_CONNECTIONS } from "./seed-data";
-import { SEED_SOLUTIONS } from "./seed-solutions";
-import { SEED_RESOURCES } from "./seed-resources";
-
 // ──────────────────────────────────────────────────────────────
-// Seed-fallback policy
+// Ingen fiksjon som fallback
 // ──────────────────────────────────────────────────────────────
-// Seed data should only be shown when the database genuinely has no
-// published rows yet — never when a query errored. An editor who just
-// unpublished their last insight needs to see an empty state, not the
-// six fictional seed stories suddenly reappearing as if their save failed.
-// We therefore fall back on (no error AND empty data), and on error we
-// log + return [] so the page renders its empty-state copy.
+// Tidligere falt disse spørringene tilbake på oppdiktede seed-historier når
+// databasen var tom. Datainnsamlingen starter høsten 2026, så databasen *er*
+// tom — resultatet var at plattformen viste fiksjon som funn, blandet med
+// ekte navngitte kommunalt ansatte. All seed er slettet.
+//
+// Regelen nå: feilet spørring → [] og en logglinje (siden viser feiltilstand);
+// tom spørring → [] (siden viser tomtilstand som forklarer hva som kommer).
+// Ingen av delene skal noen gang gi innhold som ser ut som materiale.
 // ──────────────────────────────────────────────────────────────
-
-export async function getMapStories(): Promise<PublicStory[]> {
-  const { data, error } = await supabase
-    .from("public_stories")
-    .select("*")
-    .eq("published", true)
-    .not("latitude", "is", null)
-    .order("sort_order", { ascending: true });
-
-  if (error) {
-    console.warn("[queries] getMapStories failed:", error.message);
-    return [];
-  }
-  if (!data || data.length === 0) return SEED_STORIES;
-  return data;
-}
 
 export async function getAllStories(): Promise<PublicStory[]> {
   const { data, error } = await supabase
@@ -52,8 +34,7 @@ export async function getAllStories(): Promise<PublicStory[]> {
     console.warn("[queries] getAllStories failed:", error.message);
     return [];
   }
-  if (!data || data.length === 0) return SEED_STORIES;
-  return data;
+  return data ?? [];
 }
 
 export async function getConnections(): Promise<PublicConnection[]> {
@@ -66,7 +47,6 @@ export async function getConnections(): Promise<PublicConnection[]> {
     console.warn("[queries] getConnections failed:", error.message);
     return [];
   }
-  if (!data || data.length === 0) return SEED_CONNECTIONS;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return data.map((r: any) => ({
     ...r,
@@ -97,19 +77,6 @@ export async function getDesignResponses(): Promise<SolutionItem[]> {
     console.warn("[queries] getDesignResponses failed:", error.message);
     return [];
   }
-  if (!data || data.length === 0) {
-    return SEED_SOLUTIONS.map((s) => ({
-      id: s.id,
-      title: s.title,
-      description: s.description,
-      stage: s.stage,
-      frictions: s.frictions,
-      qualities: [],
-      outcome: s.outcome || null,
-      source_stories: s.source_stories,
-    }));
-  }
-
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return data.map((r: any) => ({
     id: r.id,
@@ -140,13 +107,7 @@ export async function getResources(types?: ResourceType[]): Promise<PublicResour
     console.warn("[queries] getResources failed:", error.message);
     return [];
   }
-  if (!data || data.length === 0) {
-    const seed = SEED_RESOURCES.filter((r) => r.published);
-    return types && types.length > 0
-      ? seed.filter((r) => types.includes(r.type))
-      : seed;
-  }
-  return data as PublicResource[];
+  return (data ?? []) as PublicResource[];
 }
 
 export async function getFrictionDescriptions(): Promise<CategoryDescription[]> {

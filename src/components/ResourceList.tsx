@@ -3,11 +3,10 @@
 import Link from "next/link";
 import { useState } from "react";
 import type { PublicResource, PublicStory, ResourceType, CareFriction, CareQuality } from "@/lib/types";
-import { RESOURCE_TYPE_LABELS } from "@/lib/seed-resources";
-import { FRICTIONS, QUALITIES, SCALES } from "@/lib/constants";
+import { FRICTIONS, QUALITIES, RESOURCE_TYPE_LABELS, SCALES } from "@/lib/constants";
 import type { ResourceLinksByResource } from "@/lib/queries";
+import { FONT_STACK } from "@/lib/design-tokens";
 
-const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
 
 // Oslo tones used to distinguish resource types at a glance.
 const TYPE_ACCENT: Record<ResourceType, string> = {

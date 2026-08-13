@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -14,24 +15,19 @@ import {
   forceSimulation,
 } from "d3";
 import { motion, AnimatePresence } from "framer-motion";
-import { supabase } from "@/lib/supabase";
-import { colors, space, typography } from "@/lib/design-tokens";
-import { FRICTIONS, QUALITIES, SCALES } from "@/lib/constants";
-import { RESOURCE_TYPE_LABELS } from "@/lib/seed-resources";
+import { FONT_STACK, colors, space, typography } from "@/lib/design-tokens";
+import { FRICTIONS, QUALITIES, RESOURCE_TYPE_LABELS, SCALES } from "@/lib/constants";
+import { loadCorpus, type CorpusNode } from "@/lib/corpus";
 import type {
   CareFriction,
   CareQuality,
   FieldSite,
   HouseTheme,
-  Insight,
   MapScale,
   PublicResource,
-  QuickNote,
-  ResourceType,
   WorkPackage,
 } from "@/lib/types";
 
-const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
 
 const INSIGHT_COLOR = "#C45D3E";
 const NOTE_COLOR = "#5B6AAF";
@@ -44,21 +40,8 @@ const MANUAL_EDGE = "#2a2859";
 
 type NodeKind = "quick_note" | "insight" | "resource";
 
-interface GraphNode {
-  id: string;
-  kind: NodeKind;
-  title: string;
-  body: string;
-  frictions: CareFriction[];
-  qualities: CareQuality[];
-  workPackage: WorkPackage | null;
-  fieldSite: FieldSite | null;
-  houseThemes: HouseTheme[];
-  mapScale: MapScale | null;
-  resourceType: ResourceType | null;
-  degree: number;
-  raw: QuickNote | Insight | PublicResource;
-}
+/** A corpus node plus the one field only the graph cares about. */
+type GraphNode = CorpusNode & { degree: number };
 
 type EdgeCategory =
   | { kind: "friction"; key: CareFriction }
@@ -339,63 +322,6 @@ function nodeKindLabel(kind: NodeKind, short = false): string {
   return short ? "Notat" : "Hurtignotat";
 }
 
-function noteToNode(n: QuickNote): GraphNode {
-  return {
-    id: `note:${n.id}`,
-    kind: "quick_note",
-    title: (n.headline?.trim() || (n.body ? n.body.slice(0, 60) : "(uten tittel)")).trim(),
-    body: n.body ?? "",
-    frictions: n.care_frictions ?? [],
-    qualities: n.care_qualities ?? [],
-    workPackage: n.work_package,
-    fieldSite: n.field_site,
-    houseThemes: n.house_themes ?? [],
-    mapScale: n.map_scale,
-    resourceType: null,
-    degree: 0,
-    raw: n,
-  };
-}
-
-function insightToNode(i: Insight): GraphNode {
-  return {
-    id: `insight:${i.id}`,
-    kind: "insight",
-    title: i.title,
-    body: i.body ?? "",
-    frictions: [],
-    qualities: [],
-    workPackage: i.work_package,
-    fieldSite: i.field_site,
-    houseThemes: [],
-    mapScale: null,
-    resourceType: null,
-    degree: 0,
-    raw: i,
-  };
-}
-
-function resourceToNode(
-  r: PublicResource,
-  links: { frictions: CareFriction[]; qualities: CareQuality[] },
-): GraphNode {
-  return {
-    id: `resource:${r.id}`,
-    kind: "resource",
-    title: r.title,
-    body: r.description ?? "",
-    frictions: links.frictions,
-    qualities: links.qualities,
-    workPackage: null,
-    fieldSite: r.field_site,
-    houseThemes: r.theme ? [r.theme] : [],
-    mapScale: r.map_scale,
-    resourceType: r.type,
-    degree: 0,
-    raw: r,
-  };
-}
-
 function findShared(a: GraphNode, b: GraphNode): EdgeCategory | null {
   for (const f of a.frictions) if (b.frictions.includes(f)) return { kind: "friction", key: f };
   for (const q of a.qualities) if (b.qualities.includes(q)) return { kind: "quality", key: q };
@@ -405,10 +331,10 @@ function findShared(a: GraphNode, b: GraphNode): EdgeCategory | null {
   if (a.fieldSite && a.fieldSite === b.fieldSite) {
     return { kind: "field_site", key: a.fieldSite };
   }
-  if (a.mapScale && a.mapScale === b.mapScale) {
-    return { kind: "map_scale", key: a.mapScale };
-  }
-  for (const t of a.houseThemes) if (b.houseThemes.includes(t)) return { kind: "house_theme", key: t };
+  // Scale and room deliberately do NOT create edges. With three possible
+  // scales, "both are meso" linked two unrelated notes and would turn the graph
+  // into a hairball as the corpus grows. Scale is shown as vertical position
+  // instead; room stays a tag (prompt 03, punkt 6).
   return null;
 }
 
@@ -483,7 +409,12 @@ export default function NodeMapClient() {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selectedIdRef = useRef<string | null>(null);
-  selectedIdRef.current = selectedId;
+  // Assigning during render is a side effect React may run twice; keep it in an
+  // effect so the pinned-node id is written once per commit (prompt 03, punkt 10).
+  useEffect(() => {
+    selectedIdRef.current = selectedId;
+  }, [selectedId]);
+  const [partial, setPartial] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -500,79 +431,28 @@ export default function NodeMapClient() {
     return () => window.removeEventListener("resize", update);
   }, [sidebarOpen]);
 
-  // ── Load nodes + build edges ──
-  useEffect(() => {
-    let active = true;
-    (async () => {
-      const [notesRes, insightsRes, resourcesRes, resFrictionsRes, resQualitiesRes, connRes] =
-        await Promise.all([
-        supabase.from("quick_notes").select("*"),
-        supabase.from("insights").select("*"),
-        supabase.from("public_resources").select("*"),
-        supabase.from("public_resource_frictions").select("resource_id, friction_key"),
-        supabase.from("public_resource_qualities").select("resource_id, quality_key"),
-        // Manual links the editor created via "Koble til andre" in the note
-        // editor. Surface them as strong edges that don't get dimmed by the
-        // category filters.
-        supabase
-          .from("note_connections")
-          .select("from_note_id, from_insight_id, to_note_id, to_insight_id"),
-      ]);
-      if (!active) return;
-      if (notesRes.error || insightsRes.error) {
-        setError(notesRes.error?.message ?? insightsRes.error?.message ?? "Klarte ikke å hente data.");
-        setLoading(false);
-        return;
-      }
-      if (resourcesRes.error) {
-        console.warn("[NodeMap] public_resources failed:", resourcesRes.error.message);
-      }
-      if (resFrictionsRes.error) {
-        console.warn("[NodeMap] public_resource_frictions failed:", resFrictionsRes.error.message);
-      }
-      if (resQualitiesRes.error) {
-        console.warn("[NodeMap] public_resource_qualities failed:", resQualitiesRes.error.message);
-      }
-
-      const resourceLinks = new Map<string, { frictions: CareFriction[]; qualities: CareQuality[] }>();
-      for (const row of (resFrictionsRes.data ?? []) as { resource_id: string; friction_key: CareFriction }[]) {
-        const entry = resourceLinks.get(row.resource_id) ?? { frictions: [], qualities: [] };
-        entry.frictions.push(row.friction_key);
-        resourceLinks.set(row.resource_id, entry);
-      }
-      for (const row of (resQualitiesRes.data ?? []) as { resource_id: string; quality_key: CareQuality }[]) {
-        const entry = resourceLinks.get(row.resource_id) ?? { frictions: [], qualities: [] };
-        entry.qualities.push(row.quality_key);
-        resourceLinks.set(row.resource_id, entry);
-      }
-
-      const noteNodes = ((notesRes.data as QuickNote[] | null) ?? []).map(noteToNode);
-      const insightNodes = ((insightsRes.data as Insight[] | null) ?? []).map(insightToNode);
-      const resourceNodes = ((resourcesRes.data as PublicResource[] | null) ?? []).map((r) =>
-        resourceToNode(r, resourceLinks.get(r.id) ?? { frictions: [], qualities: [] }),
-      );
-      const all = [...noteNodes, ...insightNodes, ...resourceNodes];
+  // ── Load the corpus + build edges ──
+  // `isRetry` exists so the mount path does not call setState synchronously
+  // inside an effect (cascading renders). `loading` already starts true; only
+  // the retry button needs to put it back.
+  const load = useCallback(async (isRetry = false) => {
+    if (isRetry) {
+      setLoading(true);
+      setError(null);
+      setPartial([]);
+    }
+    try {
+      const corpus = await loadCorpus();
+      const all: GraphNode[] = corpus.nodes.map((n) => ({ ...n, degree: 0 }));
       const byId = new Map(all.map((n) => [n.id, n] as const));
 
       const builtEdges: GraphEdge[] = [];
       const degree: Record<string, number> = {};
 
-      // 1) Manual links first — these take precedence over auto-derived edges
-      //    between the same two nodes (we de-dupe below).
+      // 1) Manual links first — they take precedence over auto-derived edges
+      //    between the same pair, and never count against MAX_DEGREE.
       const manualPairs = new Set<string>();
-      type ConnRow = {
-        from_note_id: string | null;
-        from_insight_id: string | null;
-        to_note_id: string | null;
-        to_insight_id: string | null;
-      };
-      const rawConns = ((connRes.data as ConnRow[] | null) ?? []).filter(
-        () => !connRes.error,
-      );
-      if (connRes.error) {
-        console.warn("[NodeMap] note_connections failed:", connRes.error.message);
-      }
-      for (const c of rawConns) {
+      for (const c of corpus.connections) {
         const sourceId = c.from_note_id
           ? `note:${c.from_note_id}`
           : c.from_insight_id
@@ -585,7 +465,6 @@ export default function NodeMapClient() {
             : null;
         if (!sourceId || !targetId || sourceId === targetId) continue;
         if (!byId.has(sourceId) || !byId.has(targetId)) continue;
-        // Normalise the pair key so A→B and B→A collapse.
         const pairKey = [sourceId, targetId].sort().join("|");
         if (manualPairs.has(pairKey)) continue;
         manualPairs.add(pairKey);
@@ -599,33 +478,56 @@ export default function NodeMapClient() {
         degree[targetId] = (degree[targetId] ?? 0) + 1;
       }
 
-      // 2) Auto-derived shared-category edges, skipping any pair that already
-      //    has a manual link.
+      // 2) Auto-derived edges: score every candidate, then let each node keep
+      //    only its MAX_DEGREE strongest. Without the cap one popular category
+      //    links everything to everything, and the graph claims a density the
+      //    material does not have.
+      const candidates: { a: GraphNode; b: GraphNode; cat: EdgeCategory; score: number }[] = [];
       for (let i = 0; i < all.length; i++) {
         for (let j = i + 1; j < all.length; j++) {
           const pairKey = [all[i].id, all[j].id].sort().join("|");
           if (manualPairs.has(pairKey)) continue;
           const cat = findShared(all[i], all[j]);
           if (!cat) continue;
-          builtEdges.push({
-            id: `${all[i].id}--${all[j].id}--${cat.kind}:${cat.key}`,
-            source: all[i].id,
-            target: all[j].id,
-            category: cat,
-          });
-          degree[all[i].id] = (degree[all[i].id] ?? 0) + 1;
-          degree[all[j].id] = (degree[all[j].id] ?? 0) + 1;
+          candidates.push({ a: all[i], b: all[j], cat, score: categorySimilarity(all[i], all[j]) });
         }
       }
+      candidates.sort((x, y) => y.score - x.score);
+
+      const autoDegree: Record<string, number> = {};
+      for (const c of candidates) {
+        if ((autoDegree[c.a.id] ?? 0) >= MAX_DEGREE) continue;
+        if ((autoDegree[c.b.id] ?? 0) >= MAX_DEGREE) continue;
+        autoDegree[c.a.id] = (autoDegree[c.a.id] ?? 0) + 1;
+        autoDegree[c.b.id] = (autoDegree[c.b.id] ?? 0) + 1;
+        builtEdges.push({
+          id: `${c.a.id}--${c.b.id}--${c.cat.kind}:${c.cat.key}`,
+          source: c.a.id,
+          target: c.b.id,
+          category: c.cat,
+        });
+        degree[c.a.id] = (degree[c.a.id] ?? 0) + 1;
+        degree[c.b.id] = (degree[c.b.id] ?? 0) + 1;
+      }
+
       for (const n of all) n.degree = degree[n.id] ?? 0;
       setNodes(all);
       setEdges(builtEdges);
+      setPartial(corpus.partial);
       setLoading(false);
-    })();
-    return () => {
-      active = false;
-    };
+    } catch (err) {
+      setError((err as Error).message);
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    // Every setState inside `load` runs after `await loadCorpus()`, so none of
+    // them are synchronous with this effect — the rule cannot see across the
+    // await boundary.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void load();
+  }, [load]);
 
   // ── Filter visibility ──
   const visibleNodeIds = useMemo(() => {
@@ -780,7 +682,7 @@ export default function NodeMapClient() {
   }
 
   return (
-    <main
+    <div
       style={{
         fontFamily: FONT_STACK,
         background: colors.bg,
@@ -956,7 +858,7 @@ export default function NodeMapClient() {
           />
         )}
       </AnimatePresence>
-    </main>
+    </div>
   );
 }
 

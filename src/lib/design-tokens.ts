@@ -151,3 +151,9 @@ export const typography = {
     bold: 700,
   },
 } as const;
+
+/**
+ * Oslo Sans med fallbacks. Lå tidligere duplisert som en lokal `FONT_STACK`
+ * i 20 filer; importer den herfra i stedet for å deklarere den på nytt.
+ */
+export const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';

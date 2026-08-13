@@ -5,7 +5,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { motion as fm, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
-import { EXPLORE_MAP_ENABLED } from "@/lib/feature-flags";
 import { clay, colors, motion, space, typography } from "@/lib/design-tokens";
 import { Button } from "@/components/ui";
 
@@ -16,17 +15,14 @@ type NavLink = { href: string; label: string; description: string };
 
 const PUBLIC_LINKS: NavLink[] = [
   { href: "/about", label: "Om", description: "Om prosjektet safe@home og forskningen bak." },
-  { href: "/reading-room", label: "Lesesal", description: "Offentlig samling av publikasjoner og ressurser." },
 ];
 
+// Søk, nodekart, friksjoner, kvaliteter og lesesalen er slått sammen til faner
+// under «Innhold» — samme korpus, ulike innganger, én inngang i menyen.
 const INTERNAL_LINKS: NavLink[] = [
-  { href: "/admin", label: "Innholdsredigering", description: "Skriv og rediger notater, innsikter, ressurser og mer." },
-  { href: "/internal/search", label: "Søk", description: "Semantisk søk på tvers av hele korpuset." },
+  { href: "/admin", label: "Redigering", description: "Skriv og rediger notater, innsikter, ressurser og mer." },
+  { href: "/internal/content", label: "Innhold", description: "Søk, nodekart, friksjoner, kvaliteter og ressurser." },
   { href: "/welfare-tech", label: "Velferdsteknologi", description: "Bla gjennom teknologi-oppføringer med detaljer." },
-  { href: "/internal/nodes", label: "Nodekart", description: "Visuelt kart over koblinger mellom innholdet." },
-  ...(EXPLORE_MAP_ENABLED ? [{ href: "/explore", label: "Utforsk", description: "Interaktivt kart over prosjektet." }] : []),
-  { href: "/frictions", label: "Friksjoner", description: "Oversikt over friksjonskategoriene." },
-  { href: "/qualities", label: "Kvaliteter", description: "Oversikt over kvalitetskategoriene." },
 ];
 
 function useAuthState() {

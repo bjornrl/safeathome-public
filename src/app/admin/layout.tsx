@@ -5,8 +5,8 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import Nav from "@/components/Nav";
 import Greeting from "@/components/Greeting";
 import { supabase } from "@/lib/supabase";
+import { FONT_STACK } from "@/lib/design-tokens";
 
-const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
 
 function buildLoginRedirect(pathname: string | null, search: string): string {
   const path = pathname ?? "/admin";

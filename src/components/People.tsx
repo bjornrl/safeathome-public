@@ -22,15 +22,9 @@ interface TeamMember {
   role: string;
 }
 
-const FALLBACK_TEAM: TeamMember[] = [
-  { id: "marit-haldar", name: "Marit Haldar", institution: "OsloMet", role: "Prosjektleder (PI)" },
-  { id: "carolina-rau", name: "Carolina Borges Rau Steuernagel", institution: "OsloMet", role: "Prosjektleder (PI)" },
-  { id: "tony-sandseth", name: "Tony Sandseth", institution: "UiO", role: "WP1-leder — Hjem og fellesskap" },
-  { id: "jonas-debesay", name: "Jonas Debesay", institution: "OsloMet", role: "WP2-leder — Helse- og omsorgsinstitusjoner" },
-  { id: "erika-gubrium", name: "Erika Gubrium", institution: "OsloMet", role: "WP3-leder — Transnasjonale kontekster" },
-  { id: "alejandro-miranda", name: "Alejandro Miranda Nieto", institution: "OsloMet", role: "WP4 med-leder — Innovasjon og tjenestedesign" },
-  { id: "oystein-evensen", name: "Øystein Evensen", institution: "Comte Bureau", role: "WP4 med-leder — Plattform og tjenestedesign" },
-];
+// Ingen hardkodet reserveliste. Den forrige inneholdt feil roller og
+// duplikate id-er, og en liste med feil er verre enn en ærlig tomtilstand —
+// `profiles` er fasit for hvem som er med i prosjektgruppen.
 
 function normalize(rows: ProfileRow[]): TeamMember[] {
   return rows
@@ -59,19 +53,30 @@ export default function People() {
         .select("id, full_name, name, institution, role, wp, bio")
         .order("full_name", { ascending: true });
       if (!active) return;
-      if (error || !data || data.length === 0) {
-        setMembers(FALLBACK_TEAM);
+      if (error || !data) {
+        setMembers([]);
         return;
       }
-      const normalized = normalize(data as ProfileRow[]);
-      setMembers(normalized.length > 0 ? normalized : FALLBACK_TEAM);
+      setMembers(normalize(data as ProfileRow[]));
     })();
     return () => {
       active = false;
     };
   }, []);
 
-  const list = members ?? FALLBACK_TEAM;
+  // `null` = spørringen er ikke ferdig. Ingenting vises før vi vet svaret,
+  // slik at tomtilstanden ikke blinker forbi på hver sidelast.
+  if (members === null) return null;
+
+  if (members.length === 0) {
+    return (
+      <p style={{ ...typography.sizes.t16, color: colors.textMuted }}>
+        Prosjektgruppen presenteres her.
+      </p>
+    );
+  }
+
+  const list = members;
 
   return (
     <div

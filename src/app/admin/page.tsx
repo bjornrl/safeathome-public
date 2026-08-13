@@ -3,16 +3,23 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { FRICTIONS, HOUSE_HOTSPOTS, QUALITIES, SCALES, WP_LABELS, type WpId } from "@/lib/constants";
-import { RESOURCE_TYPE_LABELS } from "@/lib/seed-resources";
-import { STAGES } from "@/lib/seed-solutions";
+import {
+  FRICTIONS,
+  HOUSE_HOTSPOTS,
+  QUALITIES,
+  RESOURCE_TYPE_LABELS,
+  SCALES,
+  STAGES,
+  WP_LABELS,
+  type WpId,
+} from "@/lib/constants";
 import type { CareFriction, CareQuality, FieldSite, HouseTheme, MapScale, ResourceType, WorkPackage } from "@/lib/types";
 import { QuickNotesPanel } from "@/components/admin/QuickNotesPanel";
 import { ConnectSidebar } from "@/components/admin/ConnectSidebar";
 import { WelfareTechPanel } from "@/components/admin/WelfareTechPanel";
 import { RESOURCE_FILE_ACCEPT, uploadResourceFile, validateResourceFile } from "@/lib/resource-file-storage";
 import { AdminHome } from "@/components/admin/AdminHome";
-import { colors, space, typography } from "@/lib/design-tokens";
+import { FONT_STACK, colors, space, typography } from "@/lib/design-tokens";
 import { EmbeddingsPanel } from "@/components/admin/EmbeddingsPanel";
 import { embedSource, removeEmbedding } from "@/app/actions/embed";
 import {
@@ -41,7 +48,6 @@ import {
   type RelatedSourceType,
   type SuggestionRelated,
 } from "@/app/actions/suggest";
-const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
 type Tab = "home" | "notes" | "stories" | "challenges" | "resources" | "wp" | "welfare-tech" | "search-index";
 const TAB_VALUES: Tab[] = ["home", "notes", "stories", "challenges", "resources", "wp", "welfare-tech", "search-index"];
 
@@ -333,7 +339,7 @@ export default function AdminPage() {
     }} className="[max-width:1200px] [margin:0_auto] [padding:40px_24px_96px]">
       <header className="[margin-bottom:40px]">
         <h1 className="[font-size:40px] [font-weight:700] [letter-spacing:-0.02em] [color:#2a2859] [margin:0_0_12px]">
-          Innholdsredigering
+          Redigering
         </h1>
         <br />
         <p className="[font-size:15px] [color:#666666] [margin:0] [line-height:1.6] [max-width:720px]">

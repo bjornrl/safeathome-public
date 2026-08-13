@@ -2,12 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import Nav from "@/components/Nav";
-import { FRICTIONS, QUALITIES, SCALES } from "@/lib/constants";
+import { FRICTIONS, QUALITIES, SCALES, STAGES } from "@/lib/constants";
 import { getAllStories, getConnections, getDesignResponses, type SolutionItem } from "@/lib/queries";
-import { STAGES } from "@/lib/seed-solutions";
 import type { PublicStory } from "@/lib/types";
 import ConnectedStories from "./ConnectedStories";
-const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
+import { FONT_STACK } from "@/lib/design-tokens";
 interface PageProps {
   params: Promise<{
     id: string;
@@ -57,8 +56,8 @@ export default async function StoryPage({
       <main style={{
       fontFamily: FONT_STACK
     }} className="[max-width:760px] [margin:0_auto] [padding:56px_24px_96px]">
-        <Link href="/explore" className="[display:inline-flex] [align-items:center] [gap:6px] [font-size:13px] [color:#1f42aa] [text-decoration:none] [margin-bottom:32px] [font-weight:500]">
-          ← Tilbake til kartet
+        <Link href="/internal/content?tab=frictions" className="[display:inline-flex] [align-items:center] [gap:6px] [font-size:13px] [color:#1f42aa] [text-decoration:none] [margin-bottom:32px] [font-weight:500]">
+          ← Tilbake til friksjoner
         </Link>
 
         <p className="[font-size:12px] [font-weight:600] [text-transform:uppercase] [letter-spacing:0.14em] [color:#808080] [margin-bottom:16px]">
@@ -77,7 +76,7 @@ export default async function StoryPage({
         }} className="[font-size:11px] [padding:3px_10px] [border-radius:4px] [font-weight:500] [text-decoration:none]">
               {FRICTIONS[f]?.label}
             </Link>)}
-          {story.qualities?.map(q => <Link key={q} href="/qualities" style={{
+          {story.qualities?.map(q => <Link key={q} href="/internal/content?tab=qualities" style={{
           background: QUALITIES[q]?.color + "18",
           color: QUALITIES[q]?.color
         }} className="[font-size:11px] [padding:3px_10px] [border-radius:4px] [font-weight:500] [text-decoration:none]">

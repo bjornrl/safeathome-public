@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import "maplibre-gl/dist/maplibre-gl.css";
 
 /* ───────────────────────────────────────────────────────────────────
    Inter (Clay's Plain Black substitute) is loaded via next/font in
