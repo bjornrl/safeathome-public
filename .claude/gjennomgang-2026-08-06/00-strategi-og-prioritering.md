@@ -176,7 +176,7 @@ Til møtene med WP-lederne, ett ark. Et notat er brukbart i analysen når det ha
 | Felt | Krav | Hvorfor |
 |---|---|---|
 | **Hva skjedde** (fritekst) | Obligatorisk | Selve materialet. Konkret situasjon, ikke oppsummering. Anonymisert etter regelen i §6.3. |
-| **Feltsted** (Alna / Søndre Nordstrand / Skien) | Obligatorisk | Uten dette kan ingenting sammenlignes på tvers — prosjektets kjernespørsmål. |
+| **Feltsted** (Alna / Søndre Nordstrand) | Obligatorisk | Uten dette kan ingenting sammenlignes på tvers — prosjektets kjernespørsmål. |
 | **Kildetype** (intervju / observasjon / møte / dokument) | Obligatorisk (én av fire) | Analysen må vite hva slags belegg dette er. Matcher `material_type`-enumen som allerede finnes. |
 | **WP** | Auto fra forfatterens profil, kan overstyres | Gir gratis skala-tilordning (§6.1). |
 | Friksjoner, kvaliteter, skala, rom | **Valgfritt** | Tagging er analysearbeid og kan gjøres av dere i etterkant. Å kreve det av innleverer hever terskelen og senker kvaliteten (gale tagger er verre enn ingen). |

@@ -7,8 +7,7 @@ Place Oslo kommune's Oslo Sans font files here:
 - `OsloSans-Bold.woff2`
 
 Obtain them from Oslo kommune's design team or from the municipal partners:
-Elisabeth Lie Arulnesar (Alna), Lillian Rognstad (Søndre Nordstrand),
-or Frøydis Straume (Skien).
+Elisabeth Lie Arulnesar (Alna) or Lillian Rognstad (Søndre Nordstrand).
 
 Until the files are in place, the site falls back to Helvetica Neue / Arial,
 which is visually close enough for development.

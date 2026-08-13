@@ -12,8 +12,8 @@ Dagens innlogging bruker e-post + passord. De 11 teambrukerne er opprettet på f
 et midlertidig passord, men de fleste har aldri logget inn — passordflyten er for tungvint,
 og «glemt passord» har ikke fungert i produksjon.
 
-Brukerne jobber i norske universiteter og kommuner (oslomet.no, uio.no, oslo.kommune.no,
-skien.kommune.no). De har ikke Google-kontoer på jobb. Derfor: passordløs innlogging med
+Brukerne jobber i norske universiteter og kommuner (oslomet.no, uio.no, oslo.kommune.no).
+De har ikke Google-kontoer på jobb. Derfor: passordløs innlogging med
 6-sifret engangskode på e-post.
 
 ## Mål

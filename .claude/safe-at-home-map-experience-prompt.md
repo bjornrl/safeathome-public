@@ -153,7 +153,7 @@ Use a custom MapLibre style that feels warm, not clinical. Mute the standard map
 
 #### Stage 3: Macro — The City (zoom out further)
 
-At the widest zoom, the full geography is visible. For Oslo: both Alna and Søndre Nordstrand districts. Skien appears if the map extent is wide enough (it's in a different county).
+At the widest zoom, the full geography is visible. For Oslo: both Alna and Søndre Nordstrand districts.
 
 - District boundaries highlighted as polygon overlays
 - `map_scale = 'macro'` nodes appear: policy institutions, municipal buildings, reform-related locations
@@ -210,7 +210,7 @@ Clicking any node opens a **slide-in panel** from the right (or bottom on mobile
 - Standard MapLibre zoom/pan (scroll wheel, pinch, drag)
 - A **zoom level indicator** showing current scale: "Inside the home" / "Neighborhood" / "City" with a subtle vertical bar
 - **Home button** — always visible, returns to the house at max zoom
-- **Districts dropdown** — jump to Alna, Søndre Nordstrand, or Skien
+- **Districts dropdown** — jump to Alna or Søndre Nordstrand
 
 ---
 
@@ -298,7 +298,6 @@ export const MAP_CONFIG = {
 export const DISTRICTS = {
   alna: { center: [10.8155, 59.8976], zoom: 14, label: "Alna, Oslo" },
   sondre_nordstrand: { center: [10.7920, 59.8340], zoom: 14, label: "Søndre Nordstrand, Oslo" },
-  skien: { center: [9.6089, 59.2094], zoom: 14, label: "Skien, Telemark" },
 };
 
 // ─── Care Frictions (connection line colors) ───

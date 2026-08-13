@@ -203,7 +203,7 @@ export default function InternalHome() {
             </ul>
           )}
           <p style={{ ...typography.sizes.t14, color: colors.textMuted, marginTop: space.s16 }}>
-            Datainnsamlingen i Alna, Søndre Nordstrand og Skien starter høsten
+            Datainnsamlingen i Alna og Søndre Nordstrand starter høsten
             2026. Tallene her vokser i takt med den.
           </p>
         </section>

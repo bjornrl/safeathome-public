@@ -47,7 +47,7 @@ Stack: Next.js 16 (App Router, TypeScript), Supabase, Tailwind 4, Punkt (Oslo ko
 
 **D. Ærlige tomtilstander — ferdig tekst (bokmål, kan justeres i tone, ikke i innhold)**
 
-- `/frictions` og `/qualities` (historieseksjonene): «Her kommer feltmaterialet. Datainnsamlingen i Alna, Søndre Nordstrand og Skien starter høsten 2026 — etter hvert som notater tagges med {friksjoner/kvaliteter}, dukker de opp her.»
+- `/frictions` og `/qualities` (historieseksjonene): «Her kommer feltmaterialet. Datainnsamlingen i Alna og Søndre Nordstrand starter høsten 2026 — etter hvert som notater tagges med {friksjoner/kvaliteter}, dukker de opp her.»
 - `/reading-room`: «Ingen publikasjoner ennå. De første arbeidsnotatene og policy-tekstene legges ut etter hvert som de blir til.» (erstatter dagens engelske «No publications yet…»; «Clear filters» → «Nullstill filtre»; filteroverskriftene «Frictions»/«Qualities» → «Friksjoner»/«Kvaliteter»)
 - `/solutions`: behold dagens gode tekster; legg til én innledende linje: «Designresponser blir til i WP4 når feltmaterialet fra WP1–3 peker på utfordringer verdt å jobbe med.»
 - `/for-municipalities`: behold dagens ærlige tekst.

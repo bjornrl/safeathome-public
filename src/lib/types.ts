@@ -174,8 +174,7 @@ export type Institution =
   | "Durham"
   | "comte"
   | "Alna District"
-  | "Søndre Nordstrand"
-  | "Skien Municipality";
+  | "Søndre Nordstrand";
 
 export type UserRole = "researcher" | "municipal_partner" | "designer" | "admin";
 

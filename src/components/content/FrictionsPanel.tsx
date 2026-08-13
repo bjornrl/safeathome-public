@@ -403,8 +403,8 @@ function FrictionCounts({
 
 function CorpusEmpty() {
   return <p className="[font-size:17px] [line-height:1.7] [color:#666666] [padding:24px_0] [max-width:620px]">
-      Her kommer feltmaterialet. Datainnsamlingen i Alna, Søndre Nordstrand og
-      Skien starter høsten 2026 — etter hvert som notater tagges med friksjoner,
+      Her kommer feltmaterialet. Datainnsamlingen i Alna og Søndre Nordstrand
+      starter høsten 2026 — etter hvert som notater tagges med friksjoner,
       dukker de opp her.
     </p>;
 }
