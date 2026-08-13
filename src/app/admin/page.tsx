@@ -16,11 +16,9 @@ import {
 import type { CareFriction, CareQuality, FieldSite, HouseTheme, MapScale, ResourceType, WorkPackage } from "@/lib/types";
 import { QuickNotesPanel } from "@/components/admin/QuickNotesPanel";
 import { ConnectSidebar } from "@/components/admin/ConnectSidebar";
-import { WelfareTechPanel } from "@/components/admin/WelfareTechPanel";
 import { RESOURCE_FILE_ACCEPT, uploadResourceFile, validateResourceFile } from "@/lib/resource-file-storage";
 import { AdminHome } from "@/components/admin/AdminHome";
 import { FONT_STACK, colors, space, typography } from "@/lib/design-tokens";
-import { EmbeddingsPanel } from "@/components/admin/EmbeddingsPanel";
 import { embedSource, removeEmbedding } from "@/app/actions/embed";
 import {
   FormHeader,
@@ -48,8 +46,8 @@ import {
   type RelatedSourceType,
   type SuggestionRelated,
 } from "@/app/actions/suggest";
-type Tab = "home" | "notes" | "stories" | "challenges" | "resources" | "wp" | "welfare-tech" | "search-index";
-const TAB_VALUES: Tab[] = ["home", "notes", "stories", "challenges", "resources", "wp", "welfare-tech", "search-index"];
+type Tab = "home" | "notes" | "stories" | "resources";
+const TAB_VALUES: Tab[] = ["home", "notes", "stories", "resources"];
 
 // "home" carries its own copy (AdminHome), so it has no banner description.
 const TAB_DESCRIPTIONS: Record<Exclude<Tab, "home">, string> = {
@@ -57,15 +55,8 @@ const TAB_DESCRIPTIONS: Record<Exclude<Tab, "home">, string> = {
     "Kladdebok for pågående observasjoner, ideer og spørsmål fra feltet. Merk med arbeidspakke, friksjon, kvalitet, tema eller skala slik at notatene dukker opp i nodekartet og i AI-forslagene.",
   stories:
     "Ferdige, publiserte funn — det som blir det offentlige historiekartet. Knytt en innsikt til arbeidspakken den kommer fra, feltstedet og friksjonene/kvalitetene den illustrerer. Bruk koblingsskjemaet under for å trekke typede linjer mellom to publiserte innsikter.",
-  challenges:
-    "Åpne problemer designteamet jobber med, basert på én eller flere innsikter og merket med friksjonene eller kvalitetene de adresserer. Hver utfordring beveger seg gjennom fasene: rammer inn → utforsker → tester → tatt i bruk.",
   resources:
     "Oppføringer for lesesalen og kommunale ressurser — publikasjoner, verktøykasser, policy-notater, undervisningsguider. Koble til innsiktene de hører sammen med og merk med friksjoner/kvaliteter slik at de dukker opp på de matchende offentlige sidene.",
-  wp: "Månedlige statusrapporter, én rad per arbeidspakke per måned. Fanger opp intervjuet, høydepunktene og neste steg. Setter rytmen for WP-framdriftsoversikten.",
-  "welfare-tech":
-    "Teknologi-oppføringer med produsent, tilgjengelighet per land og beskrivelse. Vises på den offentlige velferdsteknologi-siden når de publiseres.",
-  "search-index":
-    "Status for den semantiske søkeindeksen. Embeddings lages automatisk ved lagring; her ser du hva som mangler og kan fylle hullene manuelt.",
 };
 const WP_IDS = Object.keys(WP_LABELS) as WpId[];
 const FRICTION_KEYS = Object.keys(FRICTIONS) as CareFriction[];
@@ -286,7 +277,6 @@ export default function AdminPage() {
   })();
   const [tab, setTab] = useState<Tab>(initialTab);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [toast, setToastState] = useState<{ message: string; kind: "ok" | "err"; nonce: number } | null>(null);
   const showToast = useCallback<ToastFn>((message, kind = "ok") => {
     setToastState({ message, kind, nonce: Date.now() });
@@ -299,17 +289,7 @@ export default function AdminPage() {
       const userId = sessionData.session?.user?.id ?? null;
       if (!active) return;
       setCurrentUserId(userId);
-      if (!userId) {
-        setIsAdmin(false);
-        return;
-      }
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", userId)
-        .maybeSingle();
-      if (!active) return;
-      setIsAdmin((profile as { role?: string } | null)?.role === "admin");
+      if (!userId) return;
     })();
     return () => {
       active = false;
@@ -358,25 +338,9 @@ export default function AdminPage() {
         <TabButton active={tab === "stories"} onClick={() => selectTab("stories")}>
           Innsikter
         </TabButton>
-        <TabButton active={tab === "challenges"} onClick={() => selectTab("challenges")}>
-          Designutfordringer
-        </TabButton>
         <TabButton active={tab === "resources"} onClick={() => selectTab("resources")}>
           Ressurser
         </TabButton>
-        <TabButton active={tab === "wp"} onClick={() => selectTab("wp")}>
-          WP-framdrift
-        </TabButton>
-        {isAdmin && (
-          <TabButton active={tab === "welfare-tech"} onClick={() => selectTab("welfare-tech")}>
-            Velferdsteknologi
-          </TabButton>
-        )}
-        {isAdmin && (
-          <TabButton active={tab === "search-index"} onClick={() => selectTab("search-index")}>
-            Search index
-          </TabButton>
-        )}
       </nav>
 
       {tab === "home" && <AdminHome onOpenTab={(t) => selectTab(t as Tab)} />}
@@ -397,23 +361,7 @@ export default function AdminPage() {
           <div>
             {tab === "notes" && <QuickNotesPanel />}
             {tab === "stories" && <StoriesPanel currentUserId={currentUserId} />}
-            {tab === "challenges" && <ChallengesPanel />}
             {tab === "resources" && <ResourcesPanel currentUserId={currentUserId} />}
-            {tab === "wp" && <WpPanel />}
-            {tab === "welfare-tech" && (isAdmin ? (
-              <WelfareTechPanel currentUserId={currentUserId} />
-            ) : (
-              <p className="[font-size:14px] [color:#a83f34]">
-                Du må være administrator for å redigere velferdsteknologi.
-              </p>
-            ))}
-            {tab === "search-index" && (isAdmin ? (
-              <EmbeddingsPanel />
-            ) : (
-              <p className="[font-size:14px] [color:#a83f34]">
-                Du må være administrator for å se søkeindeksen.
-              </p>
-            ))}
           </div>
         </div>
       )}
@@ -1032,6 +980,9 @@ interface ResponseRow {
   published: boolean;
   created_at?: string;
 }
+// Fanene for designutfordringer og WP-framdrift er fjernet fra grensesnittet,
+// men panelene beholdes: challenges-pipelinen skal stå urørt til WP4-fasen.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function ChallengesPanel() {
   const showToast = useToast();
   const [rows, setRows] = useState<ResponseRow[]>([]);
@@ -1870,6 +1821,7 @@ interface WpReportRow {
   updated_at?: string;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function WpPanel() {
   const showToast = useToast();
   const [rows, setRows] = useState<WpReportRow[]>([]);
