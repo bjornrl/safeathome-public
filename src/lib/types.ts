@@ -172,7 +172,7 @@ export type Institution =
   | "OsloMet"
   | "UiO"
   | "Durham"
-  | "Comte Bureau"
+  | "comte"
   | "Alna District"
   | "Søndre Nordstrand"
   | "Skien Municipality";

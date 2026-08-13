@@ -13,6 +13,7 @@ import {
   forceLink,
   forceManyBody,
   forceSimulation,
+  forceY,
 } from "d3";
 import { motion, AnimatePresence } from "framer-motion";
 import { FONT_STACK, colors, space, typography } from "@/lib/design-tokens";
@@ -156,6 +157,21 @@ function clampInCanvas(
   };
 }
 
+/** Vertical centre of each scale band, as a fraction of canvas height. */
+const BAND_FRACTION: Record<MapScale, number> = {
+  macro: 0.2,
+  meso: 0.5,
+  micro: 0.8,
+};
+
+/** Band order top-to-bottom, for the margin labels. */
+export const SCALE_BANDS: MapScale[] = ["macro", "meso", "micro"];
+
+function bandY(scale: MapScale | null, height: number): number {
+  if (!scale) return height / 2;
+  return BAND_FRACTION[scale] * height;
+}
+
 function computeForceLayout(
   nodes: GraphNode[],
   edges: GraphEdge[],
@@ -210,6 +226,17 @@ function computeForceLayout(
     .force("charge", forceManyBody<SimNode>().strength(-165))
     .force("collide", forceCollide<SimNode>(28))
     .force("center", forceCenter(cx, cy).strength(0.08))
+    // Scale as vertical position rather than as an edge: makro on top, mikro at
+    // the bottom. A link crossing bands then *shows* propagation — a policy
+    // decision up top tied to a medicine dispenser down below. Weak (0.10) and
+    // three soft bands, not hard rows: nodes without a scale float free, and
+    // the bands must not read as a hierarchy (makro is not "more important").
+    .force(
+      "scaleBand",
+      forceY<SimNode>((d) => bandY(d.mapScale, height)).strength((d) =>
+        d.mapScale ? 0.1 : 0,
+      ),
+    )
     .stop();
 
   for (let i = 0; i < LAYOUT_TICKS; i++) simulation.tick();
@@ -288,6 +315,7 @@ interface FilterState {
   frictions: Set<CareFriction>;
   qualities: Set<CareQuality>;
   workPackages: Set<WorkPackage>;
+  scales: Set<MapScale>;
 }
 
 const EMPTY_FILTERS: FilterState = {
@@ -295,6 +323,7 @@ const EMPTY_FILTERS: FilterState = {
   frictions: new Set(),
   qualities: new Set(),
   workPackages: new Set(),
+  scales: new Set(),
 };
 
 const WP_OPTIONS: WorkPackage[] = ["WP1", "WP2", "WP3", "WP4"];
@@ -539,6 +568,7 @@ export default function NodeMapClient() {
       if (filters.frictions.size > 0 && !n.frictions.some((f) => filters.frictions.has(f))) continue;
       if (filters.qualities.size > 0 && !n.qualities.some((q) => filters.qualities.has(q))) continue;
       if (filters.workPackages.size > 0 && (!n.workPackage || !filters.workPackages.has(n.workPackage))) continue;
+      if (filters.scales.size > 0 && (!n.mapScale || !filters.scales.has(n.mapScale))) continue;
       set.add(n.id);
     }
     return set;
@@ -736,7 +766,8 @@ export default function NodeMapClient() {
             </p>
           )}
           {error && (
-            <p
+            <div
+              role="alert"
               style={{
                 position: "absolute",
                 top: space.s24,
@@ -746,10 +777,78 @@ export default function NodeMapClient() {
                 border: "1px solid #ffdfdc",
                 padding: space.s12,
                 ...typography.sizes.t14,
+                display: "flex",
+                alignItems: "center",
+                gap: space.s12,
               }}
             >
-              {error}
+              <span>Klarte ikke å hente materialet. {error}</span>
+              <button
+                type="button"
+                onClick={() => void load(true)}
+                style={{
+                  fontFamily: FONT_STACK,
+                  ...typography.sizes.t14,
+                  fontWeight: 600,
+                  padding: `${space.s4} ${space.s12}`,
+                  background: "transparent",
+                  border: "1px solid #a83f34",
+                  color: "#a83f34",
+                  cursor: "pointer",
+                }}
+              >
+                Prøv igjen
+              </button>
+            </div>
+          )}
+          {/* Resources and links are secondary: losing them degrades the graph
+              rather than blanking it — but staying silent about it would let a
+              half-loaded graph pass for a complete one (U4). */}
+          {!loading && !error && partial.length > 0 && (
+            <p
+              role="status"
+              style={{
+                position: "absolute",
+                top: space.s24,
+                left: space.s24,
+                color: "#7a5c00",
+                background: "#fff8e1",
+                border: "1px solid #ffe3a3",
+                padding: space.s12,
+                ...typography.sizes.t12,
+                margin: 0,
+              }}
+            >
+              Noe av materialet kunne ikke lastes ({partial.join(", ")}). Grafen
+              er ufullstendig.
             </p>
+          )}
+          {/* An empty corpus and an empty filter result look identical on a
+              blank canvas but mean opposite things, so they are separated. */}
+          {!loading && !error && nodes.length === 0 && (
+            <div
+              style={{
+                position: "absolute",
+                inset: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                padding: space.s32,
+              }}
+            >
+              <p
+                style={{
+                  maxWidth: 420,
+                  textAlign: "center",
+                  color: colors.textMuted,
+                  ...typography.sizes.t16,
+                  lineHeight: 1.6,
+                }}
+              >
+                Ingen notater ennå. Datainnsamlingen starter høsten 2026. Det som
+                legges inn, dukker opp her som noder.
+              </p>
+            </div>
           )}
           <svg
             ref={svgRef}
@@ -759,6 +858,25 @@ export default function NodeMapClient() {
             role="img"
             aria-label="Konstellasjonsgraf over hurtignotater, innsikter og ressurser"
           >
+            {/* Band labels in the left margin. Purely orienting — the bands are
+                soft, so these name the regions without drawing lines that would
+                imply hard boundaries or a ranking. */}
+            <g aria-hidden>
+              {SCALE_BANDS.map((sc) => (
+                <text
+                  key={sc}
+                  x={16}
+                  y={bandY(sc, size.height)}
+                  fontSize={11}
+                  fontWeight={600}
+                  letterSpacing="0.14em"
+                  fill={colors.textMuted}
+                  style={{ fontFamily: FONT_STACK, textTransform: "uppercase" }}
+                >
+                  {SCALES[sc].label}
+                </text>
+              ))}
+            </g>
             <g>
               {visibleEdges.map((e) => {
                 const sNode = nodes.find((n) => n.id === e.source);
@@ -1422,7 +1540,9 @@ function FilterSidebar({
                   fontStyle: "italic",
                 }}
               >
-                Ingen noder matcher filtrene.
+                {totalNodes === 0
+                  ? "Ingen notater ennå. Det første som legges inn, dukker opp her."
+                  : "Ingen noder matcher filtrene."}
               </p>
             ) : (
               <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
@@ -1539,6 +1659,16 @@ function FilterSidebar({
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: space.s8 }}>
+                <SidebarLabel>Skala</SidebarLabel>
+                <ToggleSet<MapScale>
+                  keys={SCALE_BANDS}
+                  labelOf={(k) => SCALES[k].label}
+                  selected={filters.scales}
+                  onChange={(next) => setFilters({ ...filters, scales: next })}
+                />
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: space.s8 }}>
                 <SidebarLabel>Arbeidspakke</SidebarLabel>
                 <ToggleSet<WorkPackage>
                   keys={WP_OPTIONS}
@@ -1552,12 +1682,7 @@ function FilterSidebar({
                 <button
                   type="button"
                   onClick={() =>
-                    setFilters({
-                      type: "all",
-                      frictions: new Set(),
-                      qualities: new Set(),
-                      workPackages: new Set(),
-                    })
+                    setFilters(EMPTY_FILTERS)
                   }
                   style={{
                     ...typography.sizes.t12,

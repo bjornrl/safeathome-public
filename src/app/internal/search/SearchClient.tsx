@@ -114,19 +114,8 @@ export default function SearchClient() {
   }, []);
 
   return (
-    <div
-      style={{ background: colors.bg, color: colors.textBody, minHeight: "70vh" }}
-    >
-      <div style={{ maxWidth: "880px", margin: "0 auto", padding: `${space.s64} ${space.s24} ${space.s32}` }}>
-        <p className="pkt-eyebrow" style={{ marginBottom: space.s16 }}>Søk</p>
-        <h1 style={{ marginBottom: space.s16, maxWidth: "18ch" }}>
-          Semantisk søk i materialet.
-        </h1>
-        <p style={{ ...typography.sizes.t18, color: colors.textMuted, maxWidth: "640px", marginBottom: space.s32 }}>
-          Søk på mening, ikke bare ord. Skriv på norsk eller engelsk — treffene
-          dekker innsikter, notater, historier og ressurser.
-        </p>
-
+    <div style={{ color: colors.textBody }}>
+      <div style={{ maxWidth: 880 }}>
         <form onSubmit={run} style={{ marginBottom: space.s24 }}>
           <div style={{ display: "flex", gap: space.s8, maxWidth: "640px" }}>
             <input

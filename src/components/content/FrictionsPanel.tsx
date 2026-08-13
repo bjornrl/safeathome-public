@@ -66,22 +66,18 @@ export default function FrictionsPanel() {
   const matrix = useMemo(() => buildMatrix(stories), [stories]);
   const represented = useMemo(() => representedFrictions(stories), [stories]);
   const results = useMemo(() => storiesMatchingSelection(stories, selection), [stories, selection]);
-  return <div style={{
-      fontFamily: FONT_STACK
-    }} className="[max-width:1120px] [margin:0_auto] [padding:72px_24px_96px]">
-        <p className="[font-size:12px] [font-weight:600] [text-transform:uppercase] [letter-spacing:0.18em] [color:#808080] [margin-bottom:16px]">
-          Omsorgsfriksjoner
-        </p>
-        <h1 className="[font-size:clamp(38px,_6vw,_60px)] [font-weight:700] [line-height:1.05] [letter-spacing:-0.02em] [color:#2a2859] [margin-bottom:24px]">
-          Syv måter systemet kolliderer med virkeligheten på.
-        </h1>
-        <p className="[font-size:19px] [line-height:1.7] [color:#666666] [max-width:680px] [margin-bottom:48px]">
-          Friksjoner navngir de gjentakende mekanismene der velmenende omsorg
-          likevel skader.
-          {represented.length >= MIN_FRICTIONS_FOR_CHORD
-            ? " Dette akkord-diagrammet viser hvordan de fletter seg sammen på tvers av historier — jo tykkere bånd, jo flere liv deler den samme kollisjonen."
-            : " Når materialet vokser, viser et akkord-diagram her hvordan de fletter seg sammen på tvers av historier."}
-        </p>
+  return <div style={{ fontFamily: FONT_STACK }}>
+        {represented.length >= MIN_FRICTIONS_FOR_CHORD ? (
+          <p className="[font-size:15px] [line-height:1.6] [color:#666666] [max-width:680px] [margin-bottom:32px]">
+            Dette akkord-diagrammet viser hvordan friksjonene fletter seg sammen på
+            tvers av historier — jo tykkere bånd, jo flere liv deler den samme kollisjonen.
+          </p>
+        ) : stories.length > 0 ? (
+          <p className="[font-size:15px] [line-height:1.6] [color:#666666] [max-width:680px] [margin-bottom:32px]">
+            Når materialet vokser, viser et akkord-diagram her hvordan friksjonene fletter
+            seg sammen på tvers av historier.
+          </p>
+        ) : null}
 
         <div className="[display:grid] [grid-template-columns:minmax(280px,_1fr)_minmax(260px,_320px)] [gap:48px] [align-items:start]">
           {/* Tre tilstander, ikke to: tomt korpus forklares, tynt korpus telles,

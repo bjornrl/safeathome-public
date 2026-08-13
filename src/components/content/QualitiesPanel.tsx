@@ -64,32 +64,17 @@ export default function QualitiesPanel() {
   );
 
   return <>
-      <div style={{
-      fontFamily: FONT_STACK
-    }} className="[padding-top:72px] [padding-bottom:96px]">
-        <header className="[max-width:1120px] [margin:0_auto] [padding:0_24px_48px]">
-          <p className="[font-size:12px] [font-weight:600] [text-transform:uppercase] [letter-spacing:0.18em] [color:#808080] [margin-bottom:16px]">
-            Omsorgskvaliteter
+      <div style={{ fontFamily: FONT_STACK }}>
+        {stories.length === 0 && (
+          <p className="[font-size:16px] [line-height:1.65] [color:#666666] [max-width:620px] [margin-bottom:24px]">
+            Her kommer feltmaterialet. Datainnsamlingen i Alna og Søndre Nordstrand
+            starter høsten 2026 — etter hvert som notater tagges med kvaliteter,
+            dukker de opp her.
           </p>
-          <h1 className="[font-size:clamp(38px,_6vw,_60px)] [font-weight:700] [line-height:1.05] [letter-spacing:-0.02em] [color:#2a2859] [margin-bottom:24px]">
-            Hvordan folk faktisk lever og mestrer.
-          </h1>
-          <p className="[font-size:19px] [line-height:1.7] [color:#666666] [max-width:680px]">
-            Disse beskriver virkeligheten, strategiene og styrkene til eldre
-            innvandrere og deres familier. Historier dukker opp i hver kolonne
-            der en kvalitet er til stede — gjentakelsen viser hvor tett vevd
-            disse erfaringene er.
-          </p>
-        </header>
+        )}
 
-        {stories.length === 0 && <p className="[font-size:17px] [line-height:1.7] [color:#666666] [max-width:620px] [padding:0px_24px_24px]">
-            Her kommer feltmaterialet. Datainnsamlingen i Alna, Søndre Nordstrand
-            og Skien starter høsten 2026 — etter hvert som notater tagges med
-            kvaliteter, dukker de opp her.
-          </p>}
-
-        <div className="[padding-left:max(24px,_env(safe-area-inset-left))]">
-          <div className="qualities-scroll [display:flex] [gap:16px] [overflow-x:auto] [scroll-snap-type:x_mandatory] [padding-bottom:32px] [padding-right:24px]">
+        <div>
+          <div className="qualities-scroll [display:flex] [gap:16px] [overflow-x:auto] [scroll-snap-type:x_mandatory] [padding-bottom:32px]">
             {QUALITY_KEYS.map(k => {
             const q = QUALITIES[k];
             const bucket = stories.filter(s => s.qualities?.includes(k));
