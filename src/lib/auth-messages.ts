@@ -5,7 +5,12 @@ import type { AuthError } from "@supabase/supabase-js";
  * apart — and so no raw English Supabase string reaches a user.
  */
 
-export const CODE_LENGTH = 6;
+/**
+ * Må matche «Email OTP Length» i Supabase-dashboardet. Alt i grensesnittet —
+ * placeholder, `maxLength`, `pattern` og feilmeldingen — utledes herfra, så en
+ * framtidig endring i dashboardet krever bare at dette tallet følger etter.
+ */
+export const CODE_LENGTH = 8;
 
 export const AUTH_MSG = {
   unknownEmail:
