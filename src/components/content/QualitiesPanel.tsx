@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { QUALITIES, FRICTIONS, QUALITY_COPY } from "@/lib/constants";
-import type { CareFriction, CareQuality, CategoryDescription, PublicStory } from "@/lib/types";
-import { getAllStories, getQualityDescriptions } from "@/lib/queries";
+import type { CareFriction, CareQuality, CategoryDescription } from "@/lib/types";
+import { getQualityDescriptions } from "@/lib/queries";
+import { loadCorpus, type CorpusNode } from "@/lib/corpus";
 import { FONT_STACK } from "@/lib/design-tokens";
 const QUALITY_KEYS = Object.keys(QUALITIES) as CareQuality[];
 
@@ -14,7 +15,7 @@ const QUALITY_KEYS = Object.keys(QUALITIES) as CareQuality[];
  * so friction ribbons dominate the hover signal — match the chord diagram on
  * /frictions rather than the quality column that contains the hovered card.
  */
-function firstSharedCategory(a: PublicStory, b: PublicStory): { key: string; color: string } | null {
+function firstSharedCategory(a: CorpusNode, b: CorpusNode): { key: string; color: string } | null {
   const bFrictions = new Set<CareFriction>(b.frictions ?? []);
   for (const f of a.frictions ?? []) {
     if (bFrictions.has(f)) {
@@ -33,14 +34,14 @@ function firstSharedCategory(a: PublicStory, b: PublicStory): { key: string; col
 }
 
 export default function QualitiesPanel() {
-  const [stories, setStories] = useState<PublicStory[]>([]);
+  const [stories, setStories] = useState<CorpusNode[]>([]);
   const [descriptions, setDescriptions] = useState<Record<string, CategoryDescription>>({});
   const [expandedKey, setExpandedKey] = useState<CareQuality | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [hoverCapable, setHoverCapable] = useState(false);
 
   useEffect(() => {
-    getAllStories().then(setStories);
+    loadCorpus().then((c) => setStories(c.nodes)).catch(() => setStories([]));
     getQualityDescriptions().then((rows) => {
       const map: Record<string, CategoryDescription> = {};
       for (const r of rows) map[r.key] = r;
@@ -227,7 +228,7 @@ function QualityStoryCard({
   onEnter,
   onLeave
 }: {
-  story: PublicStory;
+  story: CorpusNode;
   highlightColor: string;
   dimmed: boolean;
   highlighted: boolean;
@@ -236,7 +237,7 @@ function QualityStoryCard({
   onLeave?: () => void;
 }) {
   const preview = story.body.split("\n\n")[0].slice(0, 120);
-  return <Link href={`/story/${story.id}`} onMouseEnter={onEnter} onMouseLeave={onLeave} style={{
+  return <Link href={`/internal/content?tab=nodes&focus=${encodeURIComponent(story.id)}`} onMouseEnter={onEnter} onMouseLeave={onLeave} style={{
     background: highlighted ? highlightColor + "10" : "#f9f9f9",
     border: `1px solid ${isOrigin ? highlightColor : highlighted ? highlightColor + "88" : "#e6e6e6"}`,
     boxShadow: isOrigin ? `0 0 0 1px ${highlightColor}` : undefined,
@@ -250,8 +251,8 @@ function QualityStoryCard({
         {story.body.length > 120 ? "…" : ""}
       </p>
       <div className="[display:flex] [flex-wrap:wrap] [gap:4px]">
-        {story.field_site && <span className="[font-size:10px] [padding:2px_8px] [border-radius:4px] [background:#f2f2f2] [color:#666666] [font-weight:500]">
-            {story.field_site}
+        {story.fieldSite && <span className="[font-size:10px] [padding:2px_8px] [border-radius:4px] [background:#f2f2f2] [color:#666666] [font-weight:500]">
+            {story.fieldSite}
           </span>}
         {story.frictions?.slice(0, 2).map(f => <span key={f} style={{
         background: FRICTIONS[f]?.color + "18",

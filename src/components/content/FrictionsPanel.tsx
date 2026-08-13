@@ -4,8 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { chord as d3chord, arc as d3arc, ribbon as d3ribbon } from "d3";
 import { FRICTIONS } from "@/lib/constants";
-import type { CareFriction, PublicStory } from "@/lib/types";
-import { getAllStories } from "@/lib/queries";
+import type { CareFriction } from "@/lib/types";
+import { loadCorpus, type CorpusNode } from "@/lib/corpus";
 import { FONT_STACK } from "@/lib/design-tokens";
 const FRICTION_KEYS = Object.keys(FRICTIONS) as CareFriction[];
 type Selection = {
@@ -18,7 +18,7 @@ type Selection = {
   a: CareFriction;
   b: CareFriction;
 };
-function buildMatrix(stories: PublicStory[]): number[][] {
+function buildMatrix(stories: CorpusNode[]): number[][] {
   const n = FRICTION_KEYS.length;
   const matrix: number[][] = Array.from({
     length: n
@@ -42,7 +42,7 @@ function buildMatrix(stories: PublicStory[]): number[][] {
   }
   return matrix;
 }
-function storiesMatchingSelection(stories: PublicStory[], sel: Selection): PublicStory[] {
+function storiesMatchingSelection(stories: CorpusNode[], sel: Selection): CorpusNode[] {
   if (sel.kind === "none") return stories;
   if (sel.kind === "friction") {
     return stories.filter(s => s.frictions?.includes(sel.friction));
@@ -56,12 +56,12 @@ function storiesMatchingSelection(stories: PublicStory[], sel: Selection): Publi
 // surface would be a dedicated `/frictions/[key]` page per friction
 // or a side drawer opened from the legend. Deferred for a later pass.
 export default function FrictionsPanel() {
-  const [stories, setStories] = useState<PublicStory[]>([]);
+  const [stories, setStories] = useState<CorpusNode[]>([]);
   const [selection, setSelection] = useState<Selection>({
     kind: "none"
   });
   useEffect(() => {
-    getAllStories().then(setStories);
+    loadCorpus().then((c) => setStories(c.nodes)).catch(() => setStories([]));
   }, []);
   const matrix = useMemo(() => buildMatrix(stories), [stories]);
   const represented = useMemo(() => representedFrictions(stories), [stories]);
@@ -336,7 +336,7 @@ function SelectionHeading({
  */
 const MIN_FRICTIONS_FOR_CHORD = 3;
 
-function representedFrictions(stories: PublicStory[]): CareFriction[] {
+function representedFrictions(stories: CorpusNode[]): CareFriction[] {
   const seen = new Set<CareFriction>();
   for (const s of stories) {
     for (const f of s.frictions ?? []) {
@@ -356,7 +356,7 @@ function FrictionCounts({
   selection,
   onSelect,
 }: {
-  stories: PublicStory[];
+  stories: CorpusNode[];
   selection: Selection;
   onSelect: (s: Selection) => void;
 }) {
@@ -412,7 +412,7 @@ function CorpusEmpty() {
 function StoryGrid({
   stories
 }: {
-  stories: PublicStory[];
+  stories: CorpusNode[];
 }) {
   if (stories.length === 0) {
     return <p className="[font-size:17px] [color:#808080] [padding:24px_0]">
@@ -426,7 +426,7 @@ function StoryGrid({
 function GroupedByFriction({
   stories
 }: {
-  stories: PublicStory[];
+  stories: CorpusNode[];
 }) {
   return <div>
       {FRICTION_KEYS.map(k => {
@@ -456,10 +456,10 @@ function GroupedByFriction({
 function StoryCard({
   story
 }: {
-  story: PublicStory;
+  story: CorpusNode;
 }) {
   const preview = story.body.split("\n\n")[0].slice(0, 140);
-  return <Link href={`/story/${story.id}`} className="[display:block] [padding:24px] [background:#ffffff] [border:1px_solid_#e6e6e6] [border-radius:8px] [text-decoration:none] [color:#2c2c2c]">
+  return <Link href={`/internal/content?tab=nodes&focus=${encodeURIComponent(story.id)}`} className="[display:block] [padding:24px] [background:#ffffff] [border:1px_solid_#e6e6e6] [border-radius:8px] [text-decoration:none] [color:#2c2c2c]">
       <h4 className="[font-size:17px] [font-weight:600] [line-height:1.3] [margin-bottom:8px] [color:#2a2859]">
         {story.title}
       </h4>

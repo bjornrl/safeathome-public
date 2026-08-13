@@ -140,56 +140,36 @@ export default function ContentTabs() {
       </nav>
 
       <section aria-labelledby="content-tab-heading">
-        {tab !== "nodes" && (
-          <div style={{ marginBottom: space.s32, maxWidth: 720 }}>
-            <h2
-              id="content-tab-heading"
-              style={{
-                ...typography.sizes.t26,
-                fontWeight: typography.weights.bold,
-                color: colors.brandDarkBlue,
-                letterSpacing: 0,
-                lineHeight: 1.25,
-                margin: `0 0 ${space.s12}`,
-              }}
-            >
-              {copy.title}
-            </h2>
-            <p
-              style={{
-                ...typography.sizes.t18,
-                color: colors.textMuted,
-                lineHeight: 1.6,
-                margin: 0,
-              }}
-            >
-              {copy.lead}
-            </p>
-          </div>
-        )}
+        <div style={{ marginBottom: tab === "nodes" ? space.s16 : space.s32, maxWidth: 720 }}>
+          <h2
+            id="content-tab-heading"
+            style={{
+              ...typography.sizes.t26,
+              fontWeight: typography.weights.bold,
+              color: colors.brandDarkBlue,
+              letterSpacing: 0,
+              lineHeight: 1.25,
+              margin: `0 0 ${space.s12}`,
+            }}
+          >
+            {copy.title}
+          </h2>
+          <p
+            style={{
+              ...typography.sizes.t18,
+              color: colors.textMuted,
+              lineHeight: 1.6,
+              margin: 0,
+            }}
+          >
+            {copy.lead}
+          </p>
+        </div>
 
         {/* Mounted only while selected: the node map runs a D3 force simulation
             and the search tab refetches the whole corpus. */}
         {tab === "search" && <SearchClient />}
-        {tab === "nodes" && (
-          <>
-            <h2 id="content-tab-heading" className="sr-only">
-              {copy.title}
-            </h2>
-            <p
-              style={{
-                ...typography.sizes.t16,
-                color: colors.textMuted,
-                margin: `0 0 ${space.s16}`,
-                maxWidth: 640,
-                lineHeight: 1.55,
-              }}
-            >
-              {copy.lead}
-            </p>
-            <NodeMapClient />
-          </>
-        )}
+        {tab === "nodes" && <NodeMapClient />}
         {tab === "frictions" && <FrictionsPanel />}
         {tab === "qualities" && <QualitiesPanel />}
         {tab === "resources" && <ResourcesPanel />}

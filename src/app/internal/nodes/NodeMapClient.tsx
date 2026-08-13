@@ -18,6 +18,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { FONT_STACK, colors, space, typography } from "@/lib/design-tokens";
 import { FRICTIONS, QUALITIES, RESOURCE_TYPE_LABELS, SCALES } from "@/lib/constants";
+import { useSearchParams } from "next/navigation";
 import { loadCorpus, type CorpusNode } from "@/lib/corpus";
 import type {
   CareFriction,
@@ -437,6 +438,21 @@ export default function NodeMapClient() {
   const [search, setSearch] = useState("");
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  // ?focus=<node id> lets the friksjoner/kvaliteter cards open a specific node
+  // here — "Vis i nodekart" (prompt 03, punkt 13). Applied once the corpus has
+  // loaded, since the node must exist before it can be selected.
+  const focusId = useSearchParams().get("focus");
+  const focusApplied = useRef(false);
+  useEffect(() => {
+    if (focusApplied.current || !focusId || nodes.length === 0) return;
+    if (nodes.some((n) => n.id === focusId)) {
+      focusApplied.current = true;
+      // Deliberate: this runs once, gated by focusApplied, only after the
+      // corpus has loaded — it cannot cascade.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSelectedId(focusId);
+    }
+  }, [focusId, nodes]);
   const selectedIdRef = useRef<string | null>(null);
   // Assigning during render is a side effect React may run twice; keep it in an
   // effect so the pinned-node id is written once per commit (prompt 03, punkt 10).
