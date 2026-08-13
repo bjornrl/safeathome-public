@@ -2,11 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import SearchClient from "@/app/internal/search/SearchClient";
+import ContentBrowser from "@/components/content/ContentBrowser";
 import NodeMapClient from "@/app/internal/nodes/NodeMapClient";
 import FrictionsPanel from "@/components/content/FrictionsPanel";
 import QualitiesPanel from "@/components/content/QualitiesPanel";
-import ResourcesPanel from "@/components/content/ResourcesPanel";
 import { FONT_STACK, colors, space, typography } from "@/lib/design-tokens";
 
 const TABS = [
@@ -14,7 +13,6 @@ const TABS = [
   { key: "nodes", label: "Nodekart" },
   { key: "frictions", label: "Friksjoner" },
   { key: "qualities", label: "Kvaliteter" },
-  { key: "resources", label: "Ressurser" },
 ] as const;
 
 type Tab = (typeof TABS)[number]["key"];
@@ -24,8 +22,8 @@ const TAB_KEYS = TABS.map((t) => t.key) as readonly string[];
 /** One clear content heading + lead per tab — the page title stays "Innhold". */
 const TAB_COPY: Record<Tab, { title: string; lead: string }> = {
   search: {
-    title: "Semantisk søk i materialet",
-    lead: "Alt materialet samlet. Listen viser hele korpuset til du søker — da smalner den inn.",
+    title: "Alt materialet",
+    lead: "Notater, innsikter og ressurser samlet. Filtrer på type, friksjon eller kvalitet — eller søk.",
   },
   nodes: {
     title: "Nodekart",
@@ -38,10 +36,6 @@ const TAB_COPY: Record<Tab, { title: string; lead: string }> = {
   qualities: {
     title: "Hvordan folk faktisk lever og mestrer",
     lead: "Kvalitetene — det som gjør omsorg god når den treffer.",
-  },
-  resources: {
-    title: "Ressurser",
-    lead: "Publikasjoner, policy-notater, verktøykasser og kommunale erfaringer.",
   },
 };
 
@@ -118,7 +112,7 @@ export default function ContentTabs() {
             maxWidth: 640,
           }}
         >
-          Alt materialet i prosjektet, sett fra fem vinkler — samme korpus, ulike innganger.
+          Alt materialet i prosjektet, sett fra fire vinkler — samme korpus, ulike innganger.
         </p>
       </header>
 
@@ -168,12 +162,11 @@ export default function ContentTabs() {
 
         {/* Mounted only while selected: the node map runs a D3 force simulation
             and the search tab refetches the whole corpus. */}
-        {tab === "search" && <SearchClient />}
+        {tab === "search" && <ContentBrowser />}
         {tab === "nodes" && <NodeMapClient />}
         {tab === "frictions" && <FrictionsPanel />}
         {tab === "qualities" && <QualitiesPanel />}
-        {tab === "resources" && <ResourcesPanel />}
-      </section>
+        </section>
     </main>
   );
 }
