@@ -239,21 +239,25 @@ export const QUALITY_COPY: Record<CareQuality, string> = {
 // ─── Map Scale Labels ───
 // Skala = hvilket nivå observasjonen handler om. Hver innsikt hører hjemme
 // på én skala — velg den skalaen der det viktigste skjer.
+// Etikettene er ikke lenger geografiske. Kartet er borte, og «Byen» rommet
+// uansett ikke WP3s transnasjonale bånd — makro er *hvor i systemet årsaken
+// bor*, ikke hvor langt unna den er. Nøklene micro/meso/macro står, så ingen
+// data endres. Godkjent 13. august 2026 (åpent spørsmål 4).
 export const SCALES: Record<MapScale, { label: string; longDescription: string }> = {
   micro: {
-    label: "Inne i hjemmet",
+    label: "Hjemmet",
     longDescription:
       "Observasjoner inne i én bestemt bolig — rommene, gjenstandene, rutinene, beboerens daglige liv. Bruk denne skalaen når situasjonen kunne pekt på et bestemt rom eller en bestemt person.",
   },
   meso: {
-    label: "Nabolaget",
+    label: "Tjenestene",
     longDescription:
       "Observasjoner i bydelen og dens tjenester eller møteplasser — legekontor, apotek, bibliotek, moské, hjemmetjeneste, frivillighet. Bruk denne skalaen når situasjonen handler om hvordan en tjeneste eller institusjon fungerer.",
   },
   macro: {
-    label: "Byen",
+    label: "Systemet",
     longDescription:
-      "Observasjoner på kommune- eller systemnivå — vedtak, budsjetter, politikk, digitale plattformer, regelverk. Bruk denne skalaen når årsaken ligger i en beslutning som rammer mange.",
+      "Observasjoner på system- og politikknivå — vedtak, budsjetter, regelverk, digitale plattformer, og de transnasjonale båndene i WP3. Bruk denne skalaen når årsaken ligger i en beslutning eller struktur som rammer mange.",
   },
 };
 

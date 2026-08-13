@@ -56,11 +56,7 @@ export function AdminHome({ onOpenTab }: { onOpenTab?: (tab: string) => void }) 
             Knytt en innsikt til arbeidspakken, feltstedet og friksjonene/kvalitetene
             den illustrerer, og trekk typede koblinger mellom innsikter.
           </Step>
-          <Step n={3} title="Designutfordringer" onClick={onOpenTab ? () => onOpenTab("challenges") : undefined}>
-            Åpne problemer designteamet jobber med, basert på én eller flere innsikter.
-            Beveger seg gjennom fasene: rammer inn → utforsker → tester → tatt i bruk.
-          </Step>
-          <Step n={4} title="Ressurser" onClick={onOpenTab ? () => onOpenTab("resources") : undefined}>
+          <Step n={3} title="Ressurser" onClick={onOpenTab ? () => onOpenTab("resources") : undefined}>
             Publikasjoner, verktøykasser, policy-notater og guider for lesesalen.
             Koble til innsiktene de hører sammen med, så vises de på de matchende
             offentlige sidene.
@@ -140,7 +136,7 @@ export function AdminHome({ onOpenTab }: { onOpenTab?: (tab: string) => void }) 
           <PrimaryContact
             name="Bjørn Ravlo-Leira"
             role="Plattform · WP4"
-            org="Comte Bureau"
+            org="comte"
             email="bjorn@comte.no"
             phone="+47 95463335"
             photoSrc="/images/bjorn.jpg"

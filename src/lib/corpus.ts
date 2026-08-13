@@ -40,6 +40,8 @@ export interface CorpusNode {
   houseThemes: HouseTheme[];
   mapScale: MapScale | null;
   resourceType: ResourceType | null;
+  /** Publisher / author line — resources only. */
+  authors: string | null;
   createdAt: string | null;
   raw: QuickNote | Insight | PublicResource;
 }
@@ -78,6 +80,7 @@ export function noteToNode(n: QuickNote): CorpusNode {
     houseThemes: n.house_themes ?? [],
     mapScale: n.map_scale,
     resourceType: null,
+    authors: null,
     createdAt: n.created_at ?? null,
     raw: n,
   };
@@ -102,6 +105,7 @@ export function insightToNode(i: Insight): CorpusNode {
     houseThemes: [],
     mapScale: null,
     resourceType: null,
+    authors: null,
     createdAt: i.created_at ?? null,
     raw: i,
   };
@@ -124,6 +128,7 @@ export function resourceToNode(
     houseThemes: r.theme ? [r.theme] : [],
     mapScale: r.map_scale,
     resourceType: r.type,
+    authors: r.authors?.trim() || null,
     createdAt: r.created_at ?? null,
     raw: r,
   };

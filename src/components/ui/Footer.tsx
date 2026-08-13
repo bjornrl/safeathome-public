@@ -4,7 +4,7 @@ const RESEARCH_PARTNERS = [
   "OsloMet",
   "Universitetet i Oslo",
   "Durham University",
-  "Comte Bureau",
+  "comte",
 ];
 
 const MUNICIPALITIES = [

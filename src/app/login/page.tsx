@@ -17,9 +17,11 @@ const SAFE_REDIRECT = /^\/(?!\/)/;
 /** Seconds the «Send ny kode»-button stays disabled after a code is sent. */
 const RESEND_SECONDS = 60;
 
+// Lander på /internal, ikke /admin: redigeringsverktøyet er en handling, ikke
+// et sted man bor (prompt 03, punkt 2).
 function safeRedirect(raw: string | null): string {
-  if (!raw) return "/admin";
-  if (!SAFE_REDIRECT.test(raw)) return "/admin";
+  if (!raw) return "/internal";
+  if (!SAFE_REDIRECT.test(raw)) return "/internal";
   return raw;
 }
 

@@ -22,6 +22,7 @@ const PUBLIC_LINKS: NavLink[] = [
 const INTERNAL_LINKS: NavLink[] = [
   { href: "/admin", label: "Redigering", description: "Skriv og rediger notater, innsikter, ressurser og mer." },
   { href: "/internal/content", label: "Innhold", description: "Søk, nodekart, friksjoner, kvaliteter og ressurser." },
+  { href: "/internal/threads", label: "Tråder", description: "Argumenter under arbeid — analyselaget." },
   { href: "/welfare-tech", label: "Velferdsteknologi", description: "Bla gjennom teknologi-oppføringer med detaljer." },
 ];
 
@@ -92,7 +93,7 @@ export default function Nav({
     setMenuOpen(false);
   }, [pathname]);
 
-  const homeHref = signedIn ? "/admin" : "/";
+  const homeHref = signedIn ? "/internal" : "/";
 
   if (variant === "minimal") {
     return (
@@ -136,7 +137,7 @@ export default function Nav({
 
         <div style={{ pointerEvents: "auto" }}>
           {signedIn ? (
-            <Link href="/admin" style={{ textDecoration: "none" }}>
+            <Link href={homeHref} style={{ textDecoration: "none" }}>
               <Button variant="primary" size="sm">Admin</Button>
             </Link>
           ) : (
@@ -325,6 +326,29 @@ function InternalNavRow({
   toggleRef: React.RefObject<HTMLButtonElement | null>;
 }) {
   return (
+    <div style={{ display: "inline-flex", alignItems: "center", gap: space.s8 }}>
+      {/* «Nytt notat» skal nås fra hele det interne området, ikke bare fra en
+          fane inne i /admin — å senke terskelen for å levere inn et notat er
+          den viktigste enkeltendringen for datainnsamlerne (prompt 03, punkt 3). */}
+      <Link
+        href="/admin?tab=notes"
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          padding: `${space.s8} ${space.s12}`,
+          background: clay.colors.ink,
+          color: clay.colors.onPrimary,
+          border: `1px solid ${clay.colors.ink}`,
+          borderRadius: "var(--clay-radius-md)",
+          textDecoration: "none",
+          fontFamily: clay.font.body,
+          ...typography.sizes.t14,
+          fontWeight: 600,
+          whiteSpace: "nowrap",
+        }}
+      >
+        Nytt notat
+      </Link>
     <button
       ref={toggleRef}
       type="button"
@@ -351,6 +375,7 @@ function InternalNavRow({
       <HamburgerIcon open={menuOpen} />
       <span>{menuOpen ? "Lukk" : "Meny"}</span>
     </button>
+    </div>
   );
 }
 
