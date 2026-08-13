@@ -24,8 +24,8 @@ interface TeamMember {
 
 const FALLBACK_TEAM: TeamMember[] = [
   { id: "marit-haldar", name: "Marit Haldar", institution: "OsloMet", role: "Prosjektleder (PI)" },
-  { id: "marit-haldar", name: "Carolina Borges Rau Steuernagel", institution: "OsloMet", role: "Prosjektleder (PI)" },
-  { id: "carolina-rau", name: "Tony Sandseth", institution: "UiO", role: "WP1-leder — Hjem og fellesskap" },
+  { id: "carolina-rau", name: "Carolina Borges Rau Steuernagel", institution: "OsloMet", role: "Prosjektleder (PI)" },
+  { id: "tony-sandseth", name: "Tony Sandseth", institution: "UiO", role: "WP1-leder — Hjem og fellesskap" },
   { id: "jonas-debesay", name: "Jonas Debesay", institution: "OsloMet", role: "WP2-leder — Helse- og omsorgsinstitusjoner" },
   { id: "erika-gubrium", name: "Erika Gubrium", institution: "OsloMet", role: "WP3-leder — Transnasjonale kontekster" },
   { id: "alejandro-miranda", name: "Alejandro Miranda Nieto", institution: "OsloMet", role: "WP4 med-leder — Innovasjon og tjenestedesign" },

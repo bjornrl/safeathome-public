@@ -1,14 +1,22 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import {
+  AUTH_MSG as MSG,
+  CODE_LENGTH,
+  authErrorMessage,
+} from "@/lib/auth-messages";
 import { colors, space, typography } from "@/lib/design-tokens";
 
 const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
 
 const SAFE_REDIRECT = /^\/(?!\/)/;
+
+/** Seconds the «Send ny kode»-button stays disabled after a code is sent. */
+const RESEND_SECONDS = 60;
 
 function safeRedirect(raw: string | null): string {
   if (!raw) return "/admin";
@@ -21,86 +29,206 @@ function LoginForm() {
   const params = useSearchParams();
   const target = safeRedirect(params.get("redirect"));
 
+  const [mode, setMode] = useState<"otp" | "password">("otp");
+  const [step, setStep] = useState<"email" | "code">("email");
+
   const [email, setEmail] = useState("");
+  const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
+
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [cooldown, setCooldown] = useState(0);
 
+  const codeInputRef = useRef<HTMLInputElement>(null);
+
+  // An already-signed-in visitor never needs the form. Redirects that follow a
+  // *successful* sign-in are issued explicitly below, after the profile check —
+  // an onAuthStateChange redirect would race that check and let a user without
+  // a `profiles` row through.
   useEffect(() => {
     let active = true;
     supabase.auth.getSession().then(({ data }) => {
       if (active && data.session) router.replace(target);
     });
-    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_IN" && session) router.replace(target);
-    });
     return () => {
       active = false;
-      sub.subscription.unsubscribe();
     };
   }, [router, target]);
 
-  async function onSubmit(e: React.FormEvent) {
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = setInterval(() => {
+      setCooldown((current) => (current <= 1 ? 0 : current - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [cooldown]);
+
+  /**
+   * The session alone is not enough: the internal platform is invite-only and
+   * every member is expected to have a `profiles` row. A session without one is
+   * signed straight back out rather than left half-authenticated.
+   */
+  const enterPlatform = useCallback(
+    async (userId: string): Promise<boolean> => {
+      const { data: profile, error: profileErr } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("id", userId)
+        .maybeSingle();
+
+      if (profileErr || !profile) {
+        await supabase.auth.signOut();
+        setError(MSG.noProfile);
+        return false;
+      }
+
+      router.replace(target);
+      return true;
+    },
+    [router, target],
+  );
+
+  async function sendCode(isResend: boolean) {
+    setError(null);
+    setNotice(null);
+
+    const address = email.trim();
+    if (!address) {
+      setError(MSG.missingEmail);
+      return;
+    }
+
+    setSubmitting(true);
+    const { error: sendErr } = await supabase.auth.signInWithOtp({
+      email: address,
+      // Invite-only platform: never let an unknown address create an account.
+      options: { shouldCreateUser: false },
+    });
+    setSubmitting(false);
+
+    if (sendErr) {
+      setError(authErrorMessage(sendErr, "send"));
+      return;
+    }
+
+    setEmail(address);
+    setStep("code");
+    setCode("");
+    setCooldown(RESEND_SECONDS);
+    // The first send needs no notice — the whole step changes, and the intro
+    // paragraph already states that a code was sent. A resend looks identical,
+    // so that one does need confirmation.
+    setNotice(isResend ? "Ny kode sendt. Bruk den nyeste koden i innboksen." : null);
+  }
+
+  async function onSubmitEmail(e: React.FormEvent) {
+    e.preventDefault();
+    await sendCode(false);
+  }
+
+  async function onSubmitCode(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setNotice(null);
+
+    if (code.length !== CODE_LENGTH) {
+      setError(MSG.shortCode);
+      return;
+    }
+
+    setSubmitting(true);
+    const { data, error: verifyErr } = await supabase.auth.verifyOtp({
+      email: email.trim(),
+      token: code,
+      type: "email",
+    });
+
+    if (verifyErr || !data.user) {
+      setSubmitting(false);
+      setError(authErrorMessage(verifyErr, "verify"));
+      setCode("");
+      codeInputRef.current?.focus();
+      return;
+    }
+
+    const entered = await enterPlatform(data.user.id);
+    if (!entered) {
+      setSubmitting(false);
+      setStep("email");
+      setCode("");
+    }
+  }
+
+  async function onSubmitPassword(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setNotice(null);
     setSubmitting(true);
-    const { error: signErr } = await supabase.auth.signInWithPassword({ email, password });
-    setSubmitting(false);
-    if (signErr) {
-      setError(signErr.message);
-      return;
-    }
-    router.replace(target);
-  }
 
-  async function onMagicLink() {
-    setError(null);
-    setNotice(null);
-    if (!email) {
-      setError("Skriv inn e-postadressen din først.");
-      return;
-    }
-    setSubmitting(true);
-    const { error: signErr } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        emailRedirectTo:
-          typeof window !== "undefined"
-            ? `${window.location.origin}/login?redirect=${encodeURIComponent(target)}`
-            : undefined,
-      },
+    const { data, error: signErr } = await supabase.auth.signInWithPassword({
+      email: email.trim(),
+      password,
     });
-    setSubmitting(false);
-    if (signErr) {
-      setError(signErr.message);
+
+    if (signErr || !data.user) {
+      setSubmitting(false);
+      setError(
+        signErr?.status === 400
+          ? MSG.wrongPassword
+          : authErrorMessage(signErr, "verify"),
+      );
       return;
     }
-    setNotice("Sjekk e-posten — vi har sendt en innloggingslenke.");
+
+    const entered = await enterPlatform(data.user.id);
+    if (!entered) setSubmitting(false);
   }
 
   async function onForgotPassword() {
     setError(null);
     setNotice(null);
-    if (!email) {
-      setError("Skriv inn e-postadressen din først.");
+
+    const address = email.trim();
+    if (!address) {
+      setError(MSG.missingEmail);
       return;
     }
+
     setSubmitting(true);
-    const { error: resetErr } = await supabase.auth.resetPasswordForEmail(email, {
+    const { error: resetErr } = await supabase.auth.resetPasswordForEmail(address, {
       redirectTo:
         typeof window !== "undefined"
           ? `${window.location.origin}/auth/reset`
           : undefined,
     });
     setSubmitting(false);
+
     if (resetErr) {
-      setError(resetErr.message);
+      setError(authErrorMessage(resetErr, "send"));
       return;
     }
     setNotice("Sjekk e-posten — vi har sendt en lenke for å sette nytt passord.");
   }
+
+  function changeEmail() {
+    setStep("email");
+    setCode("");
+    setError(null);
+    setNotice(null);
+  }
+
+  function switchMode(next: "otp" | "password") {
+    setMode(next);
+    setStep("email");
+    setCode("");
+    setPassword("");
+    setError(null);
+    setNotice(null);
+  }
+
+  const showCodeStep = mode === "otp" && step === "code";
 
   return (
     <main
@@ -129,7 +257,10 @@ function LoginForm() {
 
         <p
           className="pkt-eyebrow"
-          style={{ color: colors.textMuted, marginBottom: space.s16 }}
+          // `.pkt-eyebrow` is inline-block site-wide, which pulls the eyebrow up
+          // onto the back-link's line. Overridden here rather than in globals.css
+          // so the public pages keep the shared rule.
+          style={{ display: "block", color: colors.textMuted, marginBottom: space.s16 }}
         >
           Innlogging for prosjektgruppen
         </p>
@@ -151,12 +282,19 @@ function LoginForm() {
             marginBottom: space.s32,
           }}
         >
-          Medlemmer av SAFE@HOME-forskningsgruppen logger inn her for å publisere historier,
-          designforslag og ressurser.
+          {showCodeStep
+            ? `Vi har sendt en engangskode på ${CODE_LENGTH} siffer til ${email}. Koden er gyldig i kort tid — sjekk også søppelpost hvis den ikke dukker opp.`
+            : "Medlemmer av SAFE@HOME-forskningsgruppen logger inn her for å publisere historier, designforslag og ressurser."}
         </p>
 
         <form
-          onSubmit={onSubmit}
+          onSubmit={
+            mode === "password"
+              ? onSubmitPassword
+              : step === "email"
+                ? onSubmitEmail
+                : onSubmitCode
+          }
           style={{
             display: "flex",
             flexDirection: "column",
@@ -166,37 +304,63 @@ function LoginForm() {
             border: `1px solid ${colors.borderSubtle}`,
           }}
         >
-          <label style={{ display: "flex", flexDirection: "column", gap: space.s8 }}>
-            <span style={{ ...typography.sizes.t12, fontWeight: typography.weights.medium, color: colors.textBody }}>
-              E-post
-            </span>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="navn@oslomet.no"
-              style={inputStyle}
-              autoComplete="email"
-            />
-          </label>
+          {!showCodeStep && (
+            <label style={{ display: "flex", flexDirection: "column", gap: space.s8 }}>
+              <span style={labelStyle}>E-post</span>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="navn@oslomet.no"
+                style={inputStyle}
+                autoComplete="email"
+                autoFocus
+              />
+            </label>
+          )}
 
-          <label style={{ display: "flex", flexDirection: "column", gap: space.s8 }}>
-            <span style={{ ...typography.sizes.t12, fontWeight: typography.weights.medium, color: colors.textBody }}>
-              Passord
-            </span>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              style={inputStyle}
-              autoComplete="current-password"
-            />
-          </label>
+          {mode === "password" && (
+            <label style={{ display: "flex", flexDirection: "column", gap: space.s8 }}>
+              <span style={labelStyle}>Passord</span>
+              <input
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                style={inputStyle}
+                autoComplete="current-password"
+              />
+            </label>
+          )}
+
+          {showCodeStep && (
+            <label style={{ display: "flex", flexDirection: "column", gap: space.s8 }}>
+              <span style={labelStyle}>Engangskode</span>
+              <input
+                ref={codeInputRef}
+                type="text"
+                required
+                value={code}
+                // Strip everything but digits so a pasted "123 456" still works.
+                onChange={(e) =>
+                  setCode(e.target.value.replace(/\D/g, "").slice(0, CODE_LENGTH))
+                }
+                placeholder="000000"
+                style={{ ...inputStyle, letterSpacing: "0.4em", fontSize: 20 }}
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={CODE_LENGTH}
+                pattern="\d{6}"
+                autoFocus
+              />
+            </label>
+          )}
 
           {error && (
             <p
+              role="alert"
               style={{
                 ...typography.sizes.t14,
                 color: "#a83f34",
@@ -211,6 +375,7 @@ function LoginForm() {
 
           {notice && (
             <p
+              role="status"
               style={{
                 ...typography.sizes.t14,
                 color: "#034b45",
@@ -227,60 +392,107 @@ function LoginForm() {
             type="submit"
             disabled={submitting}
             style={{
-              ...typography.sizes.t16,
+              ...primaryButtonStyle,
               cursor: submitting ? "wait" : "pointer",
               opacity: submitting ? 0.7 : 1,
-              fontFamily: FONT_STACK,
-              padding: `${space.s12} ${space.s16}`,
-              background: colors.brandWarmBlue,
-              color: colors.textLight,
-              border: `1px solid ${colors.brandWarmBlue}`,
-              fontWeight: typography.weights.medium,
             }}
           >
-            {submitting ? "Logger inn…" : "Logg inn"}
+            {mode === "password"
+              ? submitting
+                ? "Logger inn…"
+                : "Logg inn"
+              : step === "email"
+                ? submitting
+                  ? "Sender kode…"
+                  : "Send meg en engangskode"
+                : submitting
+                  ? "Logger inn…"
+                  : "Logg inn"}
           </button>
 
-          <button
-            type="button"
-            onClick={onMagicLink}
-            disabled={submitting}
-            style={{
-              ...typography.sizes.t14,
-              fontFamily: FONT_STACK,
-              padding: `${space.s8} ${space.s16}`,
-              background: "transparent",
-              color: colors.brandWarmBlue,
-              border: `1px solid ${colors.brandWarmBlue}`,
-              fontWeight: typography.weights.medium,
-              cursor: "pointer",
-            }}
-          >
-            Send meg en innloggingslenke
-          </button>
+          {showCodeStep && (
+            <>
+              <button
+                type="button"
+                onClick={() => sendCode(true)}
+                disabled={submitting || cooldown > 0}
+                style={{
+                  ...secondaryButtonStyle,
+                  cursor: submitting || cooldown > 0 ? "not-allowed" : "pointer",
+                  opacity: submitting || cooldown > 0 ? 0.6 : 1,
+                }}
+              >
+                {cooldown > 0 ? `Send ny kode (${cooldown} s)` : "Send ny kode"}
+              </button>
 
-          <button
-            type="button"
-            onClick={onForgotPassword}
-            disabled={submitting}
-            style={{
-              ...typography.sizes.t14,
-              fontFamily: FONT_STACK,
-              padding: `${space.s8} ${space.s16}`,
-              background: "transparent",
-              color: colors.textMuted,
-              border: `1px solid ${colors.borderSubtle}`,
-              fontWeight: typography.weights.medium,
-              cursor: "pointer",
-            }}
-          >
-            Glemt passord?
-          </button>
+              <button
+                type="button"
+                onClick={changeEmail}
+                disabled={submitting}
+                style={{ ...linkButtonStyle, cursor: "pointer" }}
+              >
+                Endre e-postadresse
+              </button>
+
+              <p
+                style={{
+                  ...typography.sizes.t14,
+                  color: colors.textMuted,
+                  margin: 0,
+                }}
+              >
+                Får du ingen kode? Adressen må være registrert på forhånd — ta kontakt
+                med prosjektadministrator hvis den ikke kommer.
+              </p>
+            </>
+          )}
+
+          {mode === "password" && (
+            <button
+              type="button"
+              onClick={onForgotPassword}
+              disabled={submitting}
+              style={{
+                ...secondaryButtonStyle,
+                color: colors.textMuted,
+                border: `1px solid ${colors.borderSubtle}`,
+                cursor: "pointer",
+              }}
+            >
+              Glemt passord?
+            </button>
+          )}
         </form>
 
         <p
           style={{
             marginTop: space.s24,
+            ...typography.sizes.t14,
+            color: colors.textMuted,
+          }}
+        >
+          {mode === "otp" ? (
+            <button
+              type="button"
+              onClick={() => switchMode("password")}
+              style={{ ...linkButtonStyle, padding: 0, cursor: "pointer" }}
+            >
+              Logg inn med passord i stedet
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => switchMode("otp")}
+              style={{ ...linkButtonStyle, padding: 0, cursor: "pointer" }}
+            >
+              Logg inn med engangskode i stedet
+            </button>
+          )}
+        </p>
+
+        <p
+          style={{
+            marginTop: space.s16,
             ...typography.sizes.t14,
             color: colors.textMuted,
           }}
@@ -299,6 +511,12 @@ function LoginForm() {
   );
 }
 
+const labelStyle: React.CSSProperties = {
+  ...typography.sizes.t12,
+  fontWeight: typography.weights.medium,
+  color: colors.textBody,
+};
+
 const inputStyle: React.CSSProperties = {
   padding: `${space.s12} ${space.s16}`,
   border: `1px solid ${colors.borderSubtle}`,
@@ -306,6 +524,37 @@ const inputStyle: React.CSSProperties = {
   fontFamily: FONT_STACK,
   background: colors.bgCard,
   color: colors.textBody,
+};
+
+const primaryButtonStyle: React.CSSProperties = {
+  ...typography.sizes.t16,
+  fontFamily: FONT_STACK,
+  padding: `${space.s12} ${space.s16}`,
+  background: colors.brandWarmBlue,
+  color: colors.textLight,
+  border: `1px solid ${colors.brandWarmBlue}`,
+  fontWeight: typography.weights.medium,
+};
+
+const secondaryButtonStyle: React.CSSProperties = {
+  ...typography.sizes.t14,
+  fontFamily: FONT_STACK,
+  padding: `${space.s8} ${space.s16}`,
+  background: "transparent",
+  color: colors.brandWarmBlue,
+  border: `1px solid ${colors.brandWarmBlue}`,
+  fontWeight: typography.weights.medium,
+};
+
+const linkButtonStyle: React.CSSProperties = {
+  ...typography.sizes.t14,
+  fontFamily: FONT_STACK,
+  padding: `${space.s8} ${space.s16}`,
+  background: "transparent",
+  color: colors.brandWarmBlue,
+  border: "none",
+  fontWeight: typography.weights.medium,
+  textDecoration: "underline",
 };
 
 export default function LoginPage() {
