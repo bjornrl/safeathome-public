@@ -44,6 +44,11 @@ export default function ContentBrowser() {
   const [matchIds, setMatchIds] = useState<Set<string> | null>(null);
   const [pending, startTransition] = useTransition();
 
+  // Clicking a card opens the detail here rather than navigating to the node
+  // map: switching tabs under the reader is disorienting, and the jump to the
+  // graph belongs *inside* the detail as an explicit choice (prompt 03, p. 13).
+  const [selected, setSelected] = useState<CorpusNode | null>(null);
+
   const [kinds, setKinds] = useState<CorpusKind[]>([]);
   const [frictions, setFrictions] = useState<CareFriction[]>([]);
   const [qualities, setQualities] = useState<CareQuality[]>([]);
@@ -248,30 +253,116 @@ export default function ContentBrowser() {
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
                 {bucket.map((n) => (
-                  <NodeCard key={n.id} node={n} />
+                  <NodeCard key={n.id} node={n} onOpen={() => setSelected(n)} />
                 ))}
               </div>
             </div>
           ))}
         </>
       )}
+
+      {selected && <DetailPanel node={selected} onClose={() => setSelected(null)} />}
     </div>
   );
 }
 
-function NodeCard({ node }: { node: CorpusNode }) {
+/**
+ * In-place detail. Deliberately not a route change: the reader stays on the
+ * list they were browsing, and the trip to the graph is one explicit click.
+ */
+function DetailPanel({ node, onClose }: { node: CorpusNode; onClose: () => void }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <>
+      <div
+        onClick={onClose}
+        style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.25)", zIndex: 60 }}
+      />
+      <aside
+        role="dialog"
+        aria-modal="true"
+        aria-label={node.title}
+        style={{
+          position: "fixed",
+          top: 0,
+          right: 0,
+          bottom: 0,
+          width: "min(520px, 100%)",
+          background: "#ffffff",
+          borderLeft: "1px solid #e6e6e6",
+          padding: 32,
+          overflowY: "auto",
+          zIndex: 61,
+          fontFamily: FONT_STACK,
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 16, marginBottom: 16 }}>
+          <span style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.12em", color: KIND_COLOR[node.kind] }}>
+            {KIND_LABEL[node.kind]}
+          </span>
+          <button type="button" onClick={onClose} style={{ ...linkButton, fontSize: 13 }}>
+            Lukk
+          </button>
+        </div>
+
+        <h3 style={{ fontSize: 24, fontWeight: 700, lineHeight: 1.25, color: "#2a2859", marginBottom: 16 }}>
+          {node.title}
+        </h3>
+
+        {node.body && (
+          <p style={{ fontSize: 15, lineHeight: 1.7, color: "#2c2c2c", whiteSpace: "pre-wrap", marginBottom: 24 }}>
+            {node.body}
+          </p>
+        )}
+
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 24 }}>
+          {node.resourceType && <Tag label={RESOURCE_TYPE_LABELS[node.resourceType]} color="#6b3fa0" />}
+          {node.mapScale && <Tag label={SCALES[node.mapScale].label} color="#7a756b" />}
+          {node.workPackage && <Tag label={node.workPackage} color="#7a756b" />}
+          {node.fieldSite && <Tag label={node.fieldSite} color="#7a756b" />}
+          {node.frictions.map((f) => (
+            <Tag key={f} label={FRICTIONS[f].label} color={FRICTIONS[f].color} />
+          ))}
+          {node.qualities.map((q) => (
+            <Tag key={q} label={QUALITIES[q].label} color={QUALITIES[q].color} />
+          ))}
+        </div>
+
+        <Link
+          href={`/internal/content?tab=nodes&focus=${encodeURIComponent(node.id)}`}
+          style={{ fontSize: 14, fontWeight: 600, color: "#1f42aa" }}
+        >
+          Vis i nodekart →
+        </Link>
+      </aside>
+    </>
+  );
+}
+
+function NodeCard({ node, onOpen }: { node: CorpusNode; onOpen: () => void }) {
   const preview = node.body.replace(/\s+/g, " ").trim().slice(0, 140);
   return (
-    <Link
-      href={`/internal/content?tab=nodes&focus=${encodeURIComponent(node.id)}`}
+    <button
+      type="button"
+      onClick={onOpen}
       style={{
         display: "block",
+        width: "100%",
+        textAlign: "left",
         padding: 24,
         background: "#ffffff",
         border: "1px solid #e6e6e6",
         borderRadius: 8,
-        textDecoration: "none",
         color: "#2c2c2c",
+        cursor: "pointer",
+        fontFamily: FONT_STACK,
       }}
     >
       <h4 style={{ fontSize: 17, fontWeight: 600, lineHeight: 1.3, marginBottom: 8, color: "#2a2859" }}>
@@ -294,7 +385,7 @@ function NodeCard({ node }: { node: CorpusNode }) {
           <Tag key={q} label={QUALITIES[q].label} color={QUALITIES[q].color} />
         ))}
       </div>
-    </Link>
+    </button>
   );
 }
 
