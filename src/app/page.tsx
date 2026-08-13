@@ -147,7 +147,6 @@ const FOOTER_LINKS = [
   { href: "/about", label: "Om prosjektet" },
   { href: "/welfare-tech", label: "Velferdsteknologi" },
   { href: "/for-municipalities", label: "For kommuner" },
-  { href: "/reading-room", label: "Lesesal" },
 ];
 
 const container: React.CSSProperties = {

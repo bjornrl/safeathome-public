@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import Nav from "@/components/Nav";
 import { QUALITIES, FRICTIONS, QUALITY_COPY } from "@/lib/constants";
 import type { CareFriction, CareQuality, CategoryDescription, PublicStory } from "@/lib/types";
 import { getAllStories, getQualityDescriptions } from "@/lib/queries";
@@ -33,7 +32,7 @@ function firstSharedCategory(a: PublicStory, b: PublicStory): { key: string; col
   return null;
 }
 
-export default function QualitiesPage() {
+export default function QualitiesPanel() {
   const [stories, setStories] = useState<PublicStory[]>([]);
   const [descriptions, setDescriptions] = useState<Record<string, CategoryDescription>>({});
   const [expandedKey, setExpandedKey] = useState<CareQuality | null>(null);
@@ -65,8 +64,7 @@ export default function QualitiesPage() {
   );
 
   return <>
-      <Nav />
-      <main style={{
+      <div style={{
       fontFamily: FONT_STACK
     }} className="[padding-top:72px] [padding-bottom:96px]">
         <header className="[max-width:1120px] [margin:0_auto] [padding:0_24px_48px]">
@@ -213,7 +211,7 @@ export default function QualitiesPage() {
           })}
           </div>
         </div>
-      </main>
+      </div>
 
       <style>{`
         .qualities-scroll { scrollbar-width: thin; scrollbar-color: #e6e6e6 transparent; }

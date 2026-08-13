@@ -83,6 +83,134 @@ export async function semanticSearch(
   return { status: "ok", hits, mode };
 }
 
+/**
+ * Everything the search tab can show, with no query — the default view.
+ *
+ * Reads the source tables directly rather than the `embeddings` index: the
+ * index is backfilled asynchronously and is allowed to lag (one quick note is
+ * unindexed right now). For search that lag is invisible; for a browse-all
+ * listing it would silently hide real content, which is exactly what this
+ * platform must stop doing.
+ *
+ * Ordered newest first. `score` is 0 throughout — there is nothing to rank by.
+ */
+export async function browseAll(sourceTypes?: string[]): Promise<SearchResponse> {
+  const supabase = await createSupabaseServerClient();
+  const { data: sessionData } = await supabase.auth.getUser();
+  if (!sessionData.user?.id) return { status: "unauthenticated" };
+
+  const filter =
+    sourceTypes && sourceTypes.length > 0
+      ? sourceTypes.filter(isEmbeddableSourceType)
+      : null;
+  const wanted = (t: EmbeddableSourceType) => !filter || filter.includes(t);
+
+  type Row = { hit: SearchHit; sortKey: string };
+  const rows: Row[] = [];
+
+  try {
+    await Promise.all([
+      (async () => {
+        if (!wanted("quick_note")) return;
+        const { data } = await supabase
+          .from("quick_notes")
+          .select("id, headline, body, created_at")
+          .order("created_at", { ascending: false });
+        for (const r of (data ?? []) as {
+          id: string; headline: string | null; body: string; created_at: string;
+        }[]) {
+          rows.push({
+            sortKey: r.created_at,
+            hit: {
+              sourceType: "quick_note",
+              sourceId: r.id,
+              title: r.headline?.trim() || r.body.slice(0, 60) || "(uten tittel)",
+              snippet: snippetFrom(r.body ?? ""),
+              href: null,
+              score: 0,
+            },
+          });
+        }
+      })(),
+      (async () => {
+        if (!wanted("insight")) return;
+        const { data } = await supabase
+          .from("insights")
+          .select("id, title, body, created_at")
+          .order("created_at", { ascending: false });
+        for (const r of (data ?? []) as {
+          id: string; title: string; body: string | null; created_at: string;
+        }[]) {
+          rows.push({
+            sortKey: r.created_at,
+            hit: {
+              sourceType: "insight",
+              sourceId: r.id,
+              title: r.title,
+              snippet: snippetFrom(r.body ?? ""),
+              href: null,
+              score: 0,
+            },
+          });
+        }
+      })(),
+      (async () => {
+        if (!wanted("story")) return;
+        const { data } = await supabase
+          .from("public_stories")
+          .select("id, title, body, created_at")
+          .eq("published", true)
+          .order("created_at", { ascending: false });
+        for (const r of (data ?? []) as {
+          id: string; title: string; body: string | null; created_at: string;
+        }[]) {
+          rows.push({
+            sortKey: r.created_at,
+            hit: {
+              sourceType: "story",
+              sourceId: r.id,
+              title: r.title,
+              snippet: snippetFrom(r.body ?? ""),
+              href: `/story/${r.id}`,
+              score: 0,
+            },
+          });
+        }
+      })(),
+      (async () => {
+        if (!wanted("resource")) return;
+        const { data } = await supabase
+          .from("public_resources")
+          .select("id, title, description, url, created_at")
+          .eq("published", true)
+          .order("created_at", { ascending: false });
+        for (const r of (data ?? []) as {
+          id: string; title: string; description: string | null;
+          url: string | null; created_at: string;
+        }[]) {
+          rows.push({
+            sortKey: r.created_at,
+            hit: {
+              sourceType: "resource",
+              sourceId: r.id,
+              title: r.title,
+              snippet: snippetFrom(r.description ?? ""),
+              href: r.url,
+              score: 0,
+            },
+          });
+        }
+      })(),
+    ]);
+  } catch (err) {
+    console.warn("[search] browseAll failed:", err);
+    return { status: "error", message: (err as Error).message };
+  }
+
+  rows.sort((a, b) => (a.sortKey < b.sortKey ? 1 : a.sortKey > b.sortKey ? -1 : 0));
+  return { status: "ok", hits: rows.map((r) => r.hit), mode: "keyword" };
+}
+
 // Keyword-only path over the Norwegian FTS column. Used when no OpenAI key is
 // configured, or as a runtime fallback when embedding/RPC fails.
 async function keywordSearch(

@@ -339,7 +339,7 @@ export default function AdminPage() {
     }} className="[max-width:1200px] [margin:0_auto] [padding:40px_24px_96px]">
       <header className="[margin-bottom:40px]">
         <h1 className="[font-size:40px] [font-weight:700] [letter-spacing:-0.02em] [color:#2a2859] [margin:0_0_12px]">
-          Innholdsredigering
+          Redigering
         </h1>
         <br />
         <p className="[font-size:15px] [color:#666666] [margin:0] [line-height:1.6] [max-width:720px]">

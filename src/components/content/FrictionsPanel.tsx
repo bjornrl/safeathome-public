@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { chord as d3chord, arc as d3arc, ribbon as d3ribbon } from "d3";
-import Nav from "@/components/Nav";
 import { FRICTIONS } from "@/lib/constants";
 import type { CareFriction, PublicStory } from "@/lib/types";
 import { getAllStories } from "@/lib/queries";
@@ -56,7 +55,7 @@ function storiesMatchingSelection(stories: PublicStory[], sel: Selection): Publi
 // so adding an inline expand would conflict with that UX. A better
 // surface would be a dedicated `/frictions/[key]` page per friction
 // or a side drawer opened from the legend. Deferred for a later pass.
-export default function FrictionsPage() {
+export default function FrictionsPanel() {
   const [stories, setStories] = useState<PublicStory[]>([]);
   const [selection, setSelection] = useState<Selection>({
     kind: "none"
@@ -66,9 +65,7 @@ export default function FrictionsPage() {
   }, []);
   const matrix = useMemo(() => buildMatrix(stories), [stories]);
   const results = useMemo(() => storiesMatchingSelection(stories, selection), [stories, selection]);
-  return <>
-      <Nav />
-      <main style={{
+  return <div style={{
       fontFamily: FONT_STACK
     }} className="[max-width:1120px] [margin:0_auto] [padding:72px_24px_96px]">
         <p className="[font-size:12px] [font-weight:600] [text-transform:uppercase] [letter-spacing:0.18em] [color:#808080] [margin-bottom:16px]">
@@ -141,8 +138,7 @@ export default function FrictionsPage() {
               her ville sagt det samme to ganger på én skjerm. */}
           {stories.length === 0 ? null : selection.kind === "none" ? <GroupedByFriction stories={stories} /> : <StoryGrid stories={results} />}
         </section>
-      </main>
-    </>;
+      </div>;
 }
 
 // ─── Chord diagram ───

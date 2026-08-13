@@ -778,7 +778,7 @@ export default function NodeMapClient() {
   }
 
   return (
-    <main
+    <div
       style={{
         fontFamily: FONT_STACK,
         background: colors.bg,
@@ -954,7 +954,7 @@ export default function NodeMapClient() {
           />
         )}
       </AnimatePresence>
-    </main>
+    </div>
   );
 }
 

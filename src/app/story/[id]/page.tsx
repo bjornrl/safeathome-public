@@ -56,7 +56,7 @@ export default async function StoryPage({
       <main style={{
       fontFamily: FONT_STACK
     }} className="[max-width:760px] [margin:0_auto] [padding:56px_24px_96px]">
-        <Link href="/frictions" className="[display:inline-flex] [align-items:center] [gap:6px] [font-size:13px] [color:#1f42aa] [text-decoration:none] [margin-bottom:32px] [font-weight:500]">
+        <Link href="/internal/content?tab=frictions" className="[display:inline-flex] [align-items:center] [gap:6px] [font-size:13px] [color:#1f42aa] [text-decoration:none] [margin-bottom:32px] [font-weight:500]">
           ← Tilbake til friksjoner
         </Link>
 
@@ -76,7 +76,7 @@ export default async function StoryPage({
         }} className="[font-size:11px] [padding:3px_10px] [border-radius:4px] [font-weight:500] [text-decoration:none]">
               {FRICTIONS[f]?.label}
             </Link>)}
-          {story.qualities?.map(q => <Link key={q} href="/qualities" style={{
+          {story.qualities?.map(q => <Link key={q} href="/internal/content?tab=qualities" style={{
           background: QUALITIES[q]?.color + "18",
           color: QUALITIES[q]?.color
         }} className="[font-size:11px] [padding:3px_10px] [border-radius:4px] [font-weight:500] [text-decoration:none]">
