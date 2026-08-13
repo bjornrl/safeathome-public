@@ -1,6 +1,6 @@
 # OTP-innlogging — drift
 
-Innlogging på `/login` bruker e-post-engangskode (6 siffer). Passord er
+Innlogging på `/login` bruker e-post-engangskode (8 siffer). Passord er
 beholdt som fallback bak en diskret lenke.
 
 **Kode, ikke lenke.** Microsoft Defender Safe Links skanner lenker automatisk i
@@ -23,6 +23,7 @@ endring her slår ut begge steder umiddelbart.
 |---|---|
 | Authentication → Emails → **Magic Link** | Malen må bruke `{{ .Token }}`, ikke `{{ .ConfirmationURL }}`. Samme mal brukes for `signInWithOtp` — det er variabelen, ikke malnavnet, som avgjør om mottakeren får kode eller lenke. |
 | Authentication → Sign In / Providers → Email | «Allow new users to sign up» = **av**. |
+| Authentication → Sign In / Providers → Email | «Email OTP Length» = **8** (Supabase-standard er 6; prosjektet står på 8). Denne *må* matche `CODE_LENGTH` i `src/lib/auth-messages.ts`. Endres den her, endre tallet der — alt annet i grensesnittet utledes fra konstanten. Er de ulike, kan brukeren enten ikke skrive inn hele koden, eller får «Koden er N siffer» på en kode som faktisk er riktig. |
 | Authentication → Providers → Email | «Email OTP Expiration» (standard 3600 s). Login-siden sier bare «gyldig i kort tid», så verdien kan endres uten kodeendring. |
 | Authentication → Emails → SMTP Settings | **Ikke satt opp ennå.** Se «Rate limits» under. |
 
@@ -32,9 +33,10 @@ lenke — den peker på `/auth/reset`.
 ## Verifiser at kodemalen er aktiv
 
 Raskest, uten å lese kode: be om en kode fra `/login` med din egen adresse og se
-på e-posten. Får du seks siffer, er malen riktig. Får du en lenke, står
+på e-posten. Får du en sifferkode, er malen riktig. Får du en lenke, står
 `{{ .ConfirmationURL }}` fortsatt i malen, og kodefeltet i grensesnittet er dødt
-— brukeren har ingenting å skrive inn.
+— brukeren har ingenting å skrive inn. Teller du sifrene og får noe annet enn
+`CODE_LENGTH`, se «Email OTP Length» i tabellen over.
 
 Symptomet hvis dette glipper: brukeren får «Sjekk e-posten», mottar en lenke, og
 klikker seg til en side som ikke forventer en lenkebasert økt.
