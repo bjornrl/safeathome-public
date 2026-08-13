@@ -63,8 +63,6 @@ const WORK_PACKAGES: { value: WorkPackage; label: string }[] = [
   { value: "WP4", label: "WP4 · Innovasjon og design" },
 ];
 
-// Skien lives in the DB enum but is no longer a project partner; only
-// surface the active sites in the form.
 const FIELD_SITES: FieldSite[] = ["Alna", "Søndre Nordstrand"];
 
 const HOUSE_THEMES: HouseTheme[] = [

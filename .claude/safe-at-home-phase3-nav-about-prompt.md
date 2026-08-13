@@ -30,7 +30,7 @@ File: `src/app/about/page.tsx` (currently ~33 lines, placeholder-ish).
 Structure the page as two clearly separated sections with the same typography scale used on other content pages (Qualities / Reading Room):
 
 **Section A — The project.**
-- One or two paragraphs: what safe@home is, who's involved, the three field sites (Alna, Søndre Nordstrand, Skien), the time frame, and the kind of questions the project investigates.
+- One or two paragraphs: what safe@home is, who's involved, the field sites (Alna, Søndre Nordstrand), the time frame, and the kind of questions the project investigates.
 - Leave the actual body copy editable from a central place — either (a) hard-code reasonable placeholder prose that the user can replace later, or (b) load it from the existing `public_pages` table if there's a row with `slug = 'about-project'`. Pick (b) if it's a small lift; otherwise do (a) and note it with a `// phase3:` comment for later.
 
 **Section B — How the categorizations work.**

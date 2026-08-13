@@ -19,7 +19,7 @@ Replace the current homepage with an editorial project page containing:
 
 **About the project:**
 - Brief description of the Bo Trygt Hjemme reform context
-- The three field sites: Alna (Oslo), Søndre Nordstrand (Oslo), Skien (Telemark)
+- The field sites: Alna (Oslo), Søndre Nordstrand (Oslo)
 - Project period: 2026–2029
 - Funded by: [placeholder — add when known]
 
@@ -33,10 +33,9 @@ Replace the current homepage with an editorial project page containing:
 - OsloMet (project lead)
 - University of Oslo (UiO)
 - Durham University
-- Comte Bureau
+- comte
 - Alna District, Oslo
 - Søndre Nordstrand District, Oslo
-- Skien Municipality
 
 **People section** (grid of team member cards):
 Use the 11 provisioned users from the profiles table. Each card: name, institution, role/WP. No email shown publicly.

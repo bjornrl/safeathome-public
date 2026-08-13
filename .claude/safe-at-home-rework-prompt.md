@@ -52,7 +52,7 @@ The homepage should be an editorial project page that explains safe@home and dri
 
 **About the project section:**
 - Headline: "A research platform for the Bo Trygt Hjemme reform"
-- 2-3 paragraphs explaining: SAFE@HOME is a collaborative research project (2026-2029) between OsloMet, University of Oslo, Durham University, Comte Bureau, and three municipalities (Alna, Søndre Nordstrand in Oslo, and Skien in Telemark). The project investigates how homecare services can be adapted for Norway's growing aging immigrant population.
+- 2-3 paragraphs explaining: SAFE@HOME is a collaborative research project (2026-2029) between OsloMet, University of Oslo, Durham University, comte, and two municipalities in Oslo; Alna and Søndre Nordstrand. The project investigates how homecare services can be adapted for Norway's growing aging immigrant population.
 - Mention the four work packages briefly:
   - WP1: Homes & Communities — how material spaces and social dynamics shape homecare
   - WP2: Health & Care Institutions — what barriers and enablers shape service access
@@ -91,7 +91,7 @@ The homepage should be an editorial project page that explains safe@home and dri
 
 **Footer:**
 - Partner logos/names: OsloMet, University of Oslo, Durham University, Comte Bureau
-- Municipality partners: Alna District, Søndre Nordstrand, Skien Municipality
+- Municipality partners: Alna District, Søndre Nordstrand
 - Project funding acknowledgment if relevant
 
 ### 3. Move the map experience to `/explore`

@@ -101,7 +101,7 @@ updated_at timestamptz
 
 **Enums:**
 - `house_theme`: front_door, living_room, kitchen, bedroom, study, childrens_room, garden, phone, prayer_space, bathroom, hallway
-- `field_site`: Alna, Søndre Nordstrand, Skien
+- `field_site`: Alna, Søndre Nordstrand
 - `resource_type`: publication, policy_brief, toolkit, practice_guide, teaching_guide
 
 **All queries must filter by `published = true`** — this is enforced by RLS, but be explicit in queries anyway for clarity.

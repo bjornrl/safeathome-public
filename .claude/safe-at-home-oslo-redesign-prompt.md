@@ -224,4 +224,4 @@ If there are authenticated routes (insights, challenges dashboard, etc.), apply 
 
 ## FONT FILE NOTE
 
-After running this prompt, you will need to obtain Oslo Sans font files from the municipal partners (Elisabeth Lie Arulnesar at Alna, Lillian Rognstad at Søndre Nordstrand, or Frøydis Straume at Skien) or from Oslo kommune's design team. Place the .woff2 files in `/public/fonts/` with the names referenced in the @font-face declarations. Until then, the site will render in Helvetica Neue / Arial, which is visually close enough for development.
+After running this prompt, you will need to obtain Oslo Sans font files from the municipal partners (Elisabeth Lie Arulnesar at Alna, Lillian Rognstad at Søndre Nordstrand) or from Oslo kommune's design team. Place the .woff2 files in `/public/fonts/` with the names referenced in the @font-face declarations. Until then, the site will render in Helvetica Neue / Arial, which is visually close enough for development.
