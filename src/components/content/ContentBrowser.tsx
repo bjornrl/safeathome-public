@@ -312,9 +312,14 @@ function DetailPanel({ node, onClose }: { node: CorpusNode; onClose: () => void 
           </button>
         </div>
 
-        <h3 style={{ fontSize: 24, fontWeight: 700, lineHeight: 1.25, color: "#2a2859", marginBottom: 16 }}>
+        <h3 style={{ fontSize: 24, fontWeight: 700, lineHeight: 1.25, color: "#2a2859", marginBottom: node.authors ? 8 : 16 }}>
           {node.title}
         </h3>
+        {node.authors && (
+          <p style={{ fontSize: 15, lineHeight: 1.45, color: "#666666", marginBottom: 16 }}>
+            {node.authors}
+          </p>
+        )}
 
         {node.body && (
           <p style={{ fontSize: 15, lineHeight: 1.7, color: "#2c2c2c", whiteSpace: "pre-wrap", marginBottom: 24 }}>
@@ -367,9 +372,14 @@ function NodeCard({ node, onOpen }: { node: CorpusNode; onOpen: () => void }) {
         fontFamily: FONT_STACK,
       }}
     >
-      <h4 style={{ fontSize: 17, fontWeight: 600, lineHeight: 1.3, marginBottom: 8, color: "#2a2859" }}>
+      <h4 style={{ fontSize: 17, fontWeight: 600, lineHeight: 1.3, marginBottom: node.authors ? 4 : 8, color: "#2a2859" }}>
         {node.title}
       </h4>
+      {node.authors && (
+        <p style={{ fontSize: 13, lineHeight: 1.4, color: "#666666", marginBottom: 8 }}>
+          {node.authors}
+        </p>
+      )}
       {preview && (
         <p style={{ fontSize: 13, lineHeight: 1.55, color: "#666666", marginBottom: 12 }}>
           {preview}

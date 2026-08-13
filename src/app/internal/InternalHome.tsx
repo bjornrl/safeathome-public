@@ -27,7 +27,7 @@ const ENTRANCES = [
   {
     href: "/internal/content?tab=search",
     label: "Søk",
-    blurb: "Hele korpuset i én liste. Søk smalner den inn.",
+    blurb: "Notater, innsikter og ressurser samlet. Filtrer eller søk.",
   },
   {
     href: "/internal/content?tab=nodes",
@@ -45,9 +45,9 @@ const ENTRANCES = [
     blurb: "Det som gjør omsorg god når den treffer.",
   },
   {
-    href: "/internal/content?tab=resources",
-    label: "Ressurser",
-    blurb: "Publikasjoner, policy-notater og kommunale erfaringer.",
+    href: "/internal/threads",
+    label: "Tråder",
+    blurb: "Argumenter under arbeid, med notatene som bærer dem.",
   },
   {
     href: "/admin",
