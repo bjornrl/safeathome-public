@@ -33,6 +33,7 @@ import {
   labelStyle as sharedLabelStyle,
 } from "./FormPrimitives";
 import { CategoryHelp } from "@/components/ui";
+import ThreadMembership from "@/components/threads/ThreadMembership";
 import { ConnectSidebar } from "./ConnectSidebar";
 import {
   fetchLinkedEntities,
@@ -1019,6 +1020,9 @@ function NoteDetail({
           </ul>
         )}
       </section>
+
+      {/* Threads this note is part of — the window into the analysis */}
+      <ThreadMembership sourceType="quick_note" sourceId={noteId} />
 
       {/* Comments */}
       <section style={{ display: "flex", flexDirection: "column", gap: space.s12 }}>

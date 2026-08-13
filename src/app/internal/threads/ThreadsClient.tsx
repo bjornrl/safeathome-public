@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   STATUS_LABEL,
   addLogEntry,
@@ -26,8 +27,11 @@ import { FONT_STACK, colors, space, typography } from "@/lib/design-tokens";
  * into the analysis; analysts get somewhere to build an argument.
  */
 export default function ThreadsClient() {
+  const searchParams = useSearchParams();
   const [threads, setThreads] = useState<Thread[] | null>(null);
-  const [openId, setOpenId] = useState<string | null>(null);
+  // ?thread=<id> opens straight into a thread — that is where the discreet
+  // thread list on a note detail view points.
+  const [openId, setOpenId] = useState<string | null>(() => searchParams.get("thread"));
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
@@ -440,6 +444,10 @@ const linkButton: React.CSSProperties = {
   border: "none",
   cursor: "pointer",
   padding: 0,
+  // Block, or consecutive link buttons ("Søk i materialet" and "Legg til
+  // vending") run together as one line of text. Flex parents override this.
+  display: "block",
+  textAlign: "left",
 };
 
 const sectionHeading: React.CSSProperties = {

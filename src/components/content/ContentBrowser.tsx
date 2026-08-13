@@ -6,6 +6,7 @@ import { FRICTIONS, QUALITIES, RESOURCE_TYPE_LABELS, SCALES } from "@/lib/consta
 import { loadCorpus, type CorpusKind, type CorpusNode } from "@/lib/corpus";
 import { semanticSearch } from "@/app/actions/search";
 import { FONT_STACK } from "@/lib/design-tokens";
+import ThreadMembership from "@/components/threads/ThreadMembership";
 import type { CareFriction, CareQuality } from "@/lib/types";
 
 const FRICTION_KEYS = Object.keys(FRICTIONS) as CareFriction[];
@@ -341,6 +342,10 @@ function DetailPanel({ node, onClose }: { node: CorpusNode; onClose: () => void 
         </div>
 
         {node.kind === "resource" && <ResourceAccess node={node} />}
+
+        <div style={{ marginBottom: 24 }}>
+          <ThreadMembership sourceType={node.kind} sourceId={node.rawId} />
+        </div>
 
         <Link
           href={`/internal/content?tab=nodes&focus=${encodeURIComponent(node.id)}`}

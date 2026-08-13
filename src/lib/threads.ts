@@ -136,6 +136,25 @@ export async function addThreadItem(
   await touchThread(threadId);
 }
 
+/**
+ * Append a source to a thread, after whatever is already there.
+ *
+ * The caller from a detail view has no idea how long the thread is, and adding
+ * everything at position 0 would quietly reshuffle the order the analyst built.
+ */
+export async function appendSourceToThread(
+  threadId: string,
+  sourceType: ThreadSourceType,
+  sourceId: string,
+  note = "",
+): Promise<void> {
+  const { count } = await supabase
+    .from("thread_items")
+    .select("id", { count: "exact", head: true })
+    .eq("thread_id", threadId);
+  await addThreadItem(threadId, sourceType, sourceId, note, count ?? 0);
+}
+
 export async function updateThreadItem(id: string, patch: Partial<Pick<ThreadItem, "note" | "position">>): Promise<void> {
   const { error } = await supabase.from("thread_items").update(patch).eq("id", id);
   if (error) throw new Error(error.message);

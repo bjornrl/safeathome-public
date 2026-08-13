@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import ThreadsClient from "./ThreadsClient";
 import { FONT_STACK } from "@/lib/design-tokens";
 
@@ -25,7 +26,10 @@ export default function ThreadsPage() {
         </p>
       </header>
 
-      <ThreadsClient />
+      {/* ThreadsClient reads ?thread=<id>; useSearchParams needs a boundary. */}
+      <Suspense fallback={null}>
+        <ThreadsClient />
+      </Suspense>
     </main>
   );
 }
