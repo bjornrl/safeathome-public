@@ -346,12 +346,12 @@ function LoginForm() {
                 onChange={(e) =>
                   setCode(e.target.value.replace(/\D/g, "").slice(0, CODE_LENGTH))
                 }
-                placeholder="000000"
+                placeholder={"0".repeat(CODE_LENGTH)}
                 style={{ ...inputStyle, letterSpacing: "0.4em", fontSize: 20 }}
                 inputMode="numeric"
                 autoComplete="one-time-code"
                 maxLength={CODE_LENGTH}
-                pattern="\d{6}"
+                pattern={`\\d{${CODE_LENGTH}}`}
                 autoFocus
               />
             </label>
