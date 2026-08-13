@@ -8,7 +8,9 @@ import type { CareFriction, CareQuality, WorkPackage } from "@/lib/types";
 
 const DAILY_LIMIT = 20;
 const MODEL = "claude-haiku-4-5-20251001";
-const MAX_TOKENS = 300; // categories-only output is small (no related list anymore)
+// Categories-only output is small (~50 tokens), but headroom is cheap and a
+// truncated answer is unparseable rather than merely shorter.
+const MAX_TOKENS = 1024;
 
 // Related-items kNN tuning. The floor mirrors search's `min_similarity` (0.32):
 // it separates on-topic (~0.34–0.54) from off-topic (~0.18–0.26). See ADR 0001.
@@ -55,6 +57,19 @@ const EMPTY_RESULT: SuggestionResult = {
 type Categories = Pick<SuggestionResult, "frictions" | "qualities" | "work_package">;
 const EMPTY_CATEGORIES: Categories = { frictions: [], qualities: [], work_package: null };
 
+/**
+ * Why this is a union rather than `Categories | null`:
+ *
+ * "the model answered, confidently, with nothing" and "we could not read the
+ * model's answer" are different events that used to collapse into the same
+ * empty arrays. That made an empty category row unexplainable — which is
+ * exactly how the suggest button came to look broken.
+ */
+type CategoriesOutcome =
+  | { kind: "ok"; categories: Categories; raw: string }
+  | { kind: "unparseable"; raw: string }
+  | { kind: "error"; message: string };
+
 function hasApiKey(): boolean {
   return Boolean(process.env.ANTHROPIC_API_KEY);
 }
@@ -97,7 +112,18 @@ export type SuggestInput = {
 };
 
 export type SuggestResponse =
-  | { status: "ok"; suggestions: SuggestionResult; remaining: number }
+  // `categoriesFailed` means the kNN half succeeded but Claude did not, so the
+  // caller can say so instead of showing related items and silently no
+  // categories — which reads as "the button doesn't suggest categories".
+  // debugRaw is TEMPORARY — raw Claude text, to tell "model said nothing" apart
+  // from "we misread the model". Remove once the cause is settled.
+  | {
+      status: "ok";
+      suggestions: SuggestionResult;
+      remaining: number;
+      categoriesFailed?: boolean;
+      debugRaw?: string;
+    }
   | { status: "limit_reached" }
   | { status: "unavailable" }
   | { status: "unauthenticated" }
@@ -123,19 +149,25 @@ export async function requestSuggestions(input: SuggestInput): Promise<SuggestRe
     relatedByKnn(supabase, input),
   ]);
 
-  if (categories === null) {
-    // Claude failed. Surface related anyway (it's free of the Claude budget),
-    // but only treat it as an error — and skip the counter — when nothing came
-    // back at all. Either way we never charged a Claude unit, so don't bump.
+  if (categories.kind !== "ok") {
+    // Claude failed, or answered in a shape we could not read. Surface related
+    // anyway (it's free of the Claude budget), but only treat it as an error —
+    // and skip the counter — when nothing came back at all. Either way we never
+    // got a usable Claude response, so don't bump the quota.
     if (related.length === 0) return { status: "error", suggestions: EMPTY_RESULT };
     return {
       status: "ok",
       suggestions: { ...EMPTY_CATEGORIES, related },
       remaining: Math.max(0, DAILY_LIMIT - used),
+      categoriesFailed: true,
+      debugRaw:
+        categories.kind === "unparseable"
+          ? `UNPARSEABLE: ${categories.raw.slice(0, 500)}`
+          : `ERROR: ${categories.message}`,
     };
   }
 
-  const suggestions: SuggestionResult = { ...categories, related };
+  const suggestions: SuggestionResult = { ...categories.categories, related };
 
   // Bump the counter only after a successful Claude response.
   let remaining = Math.max(0, DAILY_LIMIT - used - 1);
@@ -151,7 +183,7 @@ export async function requestSuggestions(input: SuggestInput): Promise<SuggestRe
     console.warn("[suggest] increment usage failed:", err);
   }
 
-  return { status: "ok", suggestions, remaining };
+  return { status: "ok", suggestions, remaining, debugRaw: `OK: ${categories.raw.slice(0, 500)}` };
 }
 
 // ─── Related items: vector kNN over the corpus ──────────────────
@@ -308,7 +340,7 @@ function sourceTypeToSuggestionType(sourceType: string): SuggestionRelatedType |
 // Returns null on failure so the caller can keep the related items and avoid
 // charging a Claude unit.
 
-async function suggestCategories(input: SuggestInput): Promise<Categories | null> {
+async function suggestCategories(input: SuggestInput): Promise<CategoriesOutcome> {
   const system =
     "You are a research assistant for the SAFE@HOME project, a Norwegian research project studying how municipal homecare services can be adapted for aging immigrants. You help researchers tag their field notes with the correct analytical categories.\n\nRespond only with valid JSON. No explanation, no markdown, no preamble.";
 
@@ -331,10 +363,26 @@ async function suggestCategories(input: SuggestInput): Promise<Categories | null
       .filter((b): b is Anthropic.TextBlock => b.type === "text")
       .map((b) => b.text)
       .join("");
-    return parseCategories(text);
+    // A truncated answer leaves the JSON unbalanced, so brace-matching finds no
+    // closing brace and every field silently falls back to its default — empty
+    // arrays and a null work package, indistinguishable from "no suggestions".
+    if (response.stop_reason === "max_tokens") {
+      console.warn(`[suggest] Claude output hit max_tokens (${MAX_TOKENS}); raising it would help`);
+      return { kind: "unparseable", raw: `[truncated at max_tokens] ${text}` };
+    }
+    const parsed = parseCategories(text);
+    if (parsed === null) {
+      console.warn(`[suggest] could not parse Claude output: ${text.slice(0, 400)}`);
+      return { kind: "unparseable", raw: text };
+    }
+    return { kind: "ok", categories: parsed, raw: text };
   } catch (err) {
-    console.warn("[suggest] Claude call failed:", err);
-    return null;
+    // Log enough to tell an auth/model/quota problem apart from a network one —
+    // a bare error object here left the categories half failing invisibly.
+    const e = err as { name?: string; status?: number; message?: string };
+    const message = `model=${MODEL}, name=${e?.name}, status=${e?.status}: ${e?.message}`;
+    console.warn(`[suggest] Claude call failed (${message})`);
+    return { kind: "error", message };
   }
 }
 
@@ -391,18 +439,19 @@ Respond with JSON in exactly this format:
 Only suggest categories you are confident about. Fewer confident suggestions are better than many uncertain ones. Return empty arrays if unsure.`;
 }
 
-function parseCategories(text: string): Categories {
+/** null means "could not read this", not "the model suggested nothing". */
+function parseCategories(text: string): Categories | null {
   // Extract JSON, even if the model wrapped it in code fences or stray prose.
   const jsonText = extractJsonObject(text);
-  if (!jsonText) return EMPTY_CATEGORIES;
+  if (!jsonText) return null;
 
   let raw: unknown;
   try {
     raw = JSON.parse(jsonText);
   } catch {
-    return EMPTY_CATEGORIES;
+    return null;
   }
-  if (!raw || typeof raw !== "object") return EMPTY_CATEGORIES;
+  if (!raw || typeof raw !== "object") return null;
   const obj = raw as Record<string, unknown>;
 
   const frictions = Array.isArray(obj.frictions)

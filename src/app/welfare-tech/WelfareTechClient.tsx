@@ -122,7 +122,7 @@ export default function WelfareTechClient({ items }: { items: WelfareTechnology[
               lineHeight: 1.15,
             }}
           >
-            Velferdsteknologi
+            Eksisterende initiativer
           </h1>
           <p
             style={{

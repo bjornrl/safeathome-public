@@ -23,7 +23,7 @@ const INTERNAL_LINKS: NavLink[] = [
   { href: "/admin", label: "Redigering", description: "Skriv og rediger notater, innsikter, ressurser og mer." },
   { href: "/internal/content", label: "Innhold", description: "Søk, nodekart, friksjoner, kvaliteter og ressurser." },
   { href: "/internal/threads", label: "Tråder", description: "Argumenter under arbeid — analyselaget." },
-  { href: "/welfare-tech", label: "Velferdsteknologi", description: "Bla gjennom teknologi-oppføringer med detaljer." },
+  { href: "/welfare-tech", label: "Eksisterende initiativer", description: "Bla gjennom teknologi-oppføringer med detaljer." },
 ];
 
 function useAuthState() {

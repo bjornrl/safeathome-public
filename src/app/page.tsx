@@ -145,7 +145,7 @@ const FIELD_SITES = [
 
 const FOOTER_LINKS = [
   { href: "/about", label: "Om prosjektet" },
-  { href: "/welfare-tech", label: "Velferdsteknologi" },
+  { href: "/welfare-tech", label: "Eksisterende initiativer" },
   { href: "/for-municipalities", label: "For kommuner" },
 ];
 

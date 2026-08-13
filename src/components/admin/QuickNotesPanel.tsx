@@ -230,6 +230,8 @@ function NoteForm({
   const [aiLoading, setAiLoading] = useState(false);
   const [aiCoolingDown, setAiCoolingDown] = useState(false);
   const [aiCleared, setAiCleared] = useState(false);
+  // Claude half failed while the related-items half worked.
+  const [aiCategoriesFailed, setAiCategoriesFailed] = useState(false);
   const aiHadSuggestionsRef = useRef(false);
 
   useEffect(() => {
@@ -283,7 +285,21 @@ function NoteForm({
         currentQualities: qualities,
         excludeSourceId: noteId,
       });
+      // TEMPORARY diagnostic — console.error so it reaches the dev log.
+      console.error(
+        "[DEBUG-notes] SENT:",
+        JSON.stringify({
+          headlineLen: headline.length,
+          bodyLen: body.length,
+          bodyStart: body.slice(0, 120),
+          alreadyFrictions: frictions,
+          alreadyQualities: qualities,
+        }),
+        "GOT:",
+        JSON.stringify(res),
+      );
       if (res.status === "ok") {
+        setAiCategoriesFailed(res.categoriesFailed === true);
         // Drop anything the user already picked.
         setAiFrictions(res.suggestions.frictions.filter((f) => !frictions.includes(f)));
         setAiQualities(res.suggestions.qualities.filter((q) => !qualities.includes(q)));
@@ -584,6 +600,12 @@ function NoteForm({
           cleared={aiCleared}
           onClick={handleSuggest}
         />
+        {aiCategoriesFailed && (
+          <p style={{ ...typography.sizes.t12, color: colors.textMuted, fontStyle: "italic" }}>
+            Fant relaterte notater, men kategoriforslagene feilet denne gangen.
+            Prøv igjen — kvoten din er ikke brukt.
+          </p>
+        )}
 
         {/* Tag selectors */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: space.s12 }}>

@@ -67,7 +67,7 @@ export default function QualitiesPanel() {
   return <>
       <div style={{ fontFamily: FONT_STACK }}>
         {stories.length === 0 && (
-          <p className="[font-size:16px] [line-height:1.65] [color:#666666] [max-width:620px] [margin-bottom:24px]">
+          <p style={{ fontSize: 14, lineHeight: 1.6, color: "#666666", maxWidth: 620, marginBottom: 24 }}>
             Her kommer feltmaterialet. Datainnsamlingen i Alna og Søndre Nordstrand
             starter høsten 2026 — etter hvert som notater tagges med kvaliteter,
             dukker de opp her.
@@ -114,54 +114,67 @@ export default function QualitiesPanel() {
                         fontFamily: FONT_STACK,
                       }}
                     >
-                      <h2 className="[font-size:22px] [font-weight:700] [line-height:1.2] [color:#2a2859] [margin-bottom:8px]">
+                      <h3
+                        style={{
+                          fontSize: 17,
+                          fontWeight: 600,
+                          lineHeight: 1.3,
+                          letterSpacing: 0,
+                          color: "#2a2859",
+                          marginBottom: 6,
+                        }}
+                      >
                         {q.label}
                         {hasDescription && (
                           <span
                             aria-hidden
                             style={{
-                              fontSize: 14,
-                              marginLeft: 8,
+                              fontSize: 13,
+                              marginLeft: 6,
                               color: q.color,
-                              fontWeight: 700,
+                              fontWeight: 600,
                             }}
                           >
                             {isExpanded ? "−" : "+"}
                           </span>
                         )}
-                      </h2>
+                      </h3>
                       <p
-                        className="[font-size:14px] [line-height:1.55]"
-                        style={{ color: "#666666" }}
+                        style={{
+                          fontSize: 13,
+                          lineHeight: 1.5,
+                          color: "#666666",
+                          margin: 0,
+                        }}
                       >
                         {QUALITY_COPY[k]}
                       </p>
                     </button>
                     {!hasDescription && (
-                      <p className="[font-size:11px] [color:#9a9a9a] [font-style:italic] [margin-top:8px]">
+                      <p style={{ fontSize: 11, color: "#9a9a9a", fontStyle: "italic", marginTop: 8 }}>
                         Lengre beskrivelse kommer snart.
                       </p>
                     )}
                     {isExpanded && hasDescription && (
                       <div style={{
-                        marginTop: 16,
-                        padding: 16,
+                        marginTop: 12,
+                        padding: 12,
                         background: "#f9f9f9",
                         borderLeft: `3px solid ${q.color}`,
                       }}>
                         {desc.long_description.trim().length > 0 && (
-                          <p className="[font-size:14px] [line-height:1.6] [color:#2c2c2c] [margin-bottom:12px]">
+                          <p style={{ fontSize: 13, lineHeight: 1.55, color: "#2c2c2c", marginBottom: 10 }}>
                             {desc.long_description}
                           </p>
                         )}
                         {(desc.examples?.length ?? 0) > 0 && (
                           <>
-                            <p className="[font-size:11px] [font-weight:600] [text-transform:uppercase] [letter-spacing:0.12em] [color:#808080] [margin-bottom:6px]">
+                            <p style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.12em", color: "#808080", marginBottom: 6 }}>
                               Eksempler
                             </p>
-                            <ul className="[list-style:disc] [padding-left:20px] [margin:0]">
+                            <ul style={{ listStyle: "disc", paddingLeft: 18, margin: 0 }}>
                               {desc.examples.map((ex, i) => (
-                                <li key={i} className="[font-size:13px] [line-height:1.55] [color:#2c2c2c] [margin-bottom:4px]">
+                                <li key={i} style={{ fontSize: 12, lineHeight: 1.5, color: "#2c2c2c", marginBottom: 4 }}>
                                   {ex}
                                 </li>
                               ))}
@@ -241,23 +254,33 @@ function QualityStoryCard({
     background: highlighted ? highlightColor + "10" : "#f9f9f9",
     border: `1px solid ${isOrigin ? highlightColor : highlighted ? highlightColor + "88" : "#e6e6e6"}`,
     boxShadow: isOrigin ? `0 0 0 1px ${highlightColor}` : undefined,
-    opacity: dimmed ? 0.35 : 1
-  }} className="[display:block] [padding:16px] [border-radius:8px] [text-decoration:none] [color:#2c2c2c] [transition:opacity_.15s,_background_.15s,_border-color_.15s,_box-shadow_.15s]">
-      <h3 className="[font-size:16px] [font-weight:600] [line-height:1.3] [margin-bottom:8px] [color:#2a2859]">
+    opacity: dimmed ? 0.35 : 1,
+    display: "block",
+    padding: 12,
+    borderRadius: 8,
+    textDecoration: "none",
+    color: "#2c2c2c",
+    transition: "opacity .15s, background .15s, border-color .15s, box-shadow .15s",
+  }}>
+      <h4 style={{ fontSize: 14, fontWeight: 600, lineHeight: 1.3, letterSpacing: 0, marginBottom: 6, color: "#2a2859" }}>
         {story.title}
-      </h3>
-      <p className="[font-size:13px] [line-height:1.5] [color:#666666] [margin-bottom:8px]">
+      </h4>
+      <p style={{ fontSize: 12, lineHeight: 1.5, color: "#666666", marginBottom: 8 }}>
         {preview}
         {story.body.length > 120 ? "…" : ""}
       </p>
-      <div className="[display:flex] [flex-wrap:wrap] [gap:4px]">
-        {story.fieldSite && <span className="[font-size:10px] [padding:2px_8px] [border-radius:4px] [background:#f2f2f2] [color:#666666] [font-weight:500]">
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+        {story.fieldSite && <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 4, background: "#f2f2f2", color: "#666666", fontWeight: 500 }}>
             {story.fieldSite}
           </span>}
         {story.frictions?.slice(0, 2).map(f => <span key={f} style={{
         background: FRICTIONS[f]?.color + "18",
-        color: FRICTIONS[f]?.color
-      }} className="[font-size:10px] [padding:2px_8px] [border-radius:4px] [font-weight:500]">
+        color: FRICTIONS[f]?.color,
+        fontSize: 10,
+        padding: "2px 8px",
+        borderRadius: 4,
+        fontWeight: 500,
+      }}>
             {FRICTIONS[f]?.label}
           </span>)}
       </div>
