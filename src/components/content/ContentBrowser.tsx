@@ -335,6 +335,8 @@ function DetailPanel({ node, onClose }: { node: CorpusNode; onClose: () => void 
           ))}
         </div>
 
+        {node.kind === "resource" && <ResourceAccess node={node} />}
+
         <Link
           href={`/internal/content?tab=nodes&focus=${encodeURIComponent(node.id)}`}
           style={{ fontSize: 14, fontWeight: 600, color: "#1f42aa" }}
@@ -386,6 +388,73 @@ function NodeCard({ node, onOpen }: { node: CorpusNode; onOpen: () => void }) {
         ))}
       </div>
     </button>
+  );
+}
+
+/**
+ * The resource itself — the point of a resource entry.
+ *
+ * PDFs preview inline via the browser's own viewer. docx/pptx cannot be
+ * previewed without handing the file URL to Google's or Microsoft's online
+ * viewer, and these are municipal partners' documents — that is not a call to
+ * make silently, so those get a download instead.
+ */
+function ResourceAccess({ node }: { node: CorpusNode }) {
+  const r = node.raw as { url?: string | null; file_url?: string | null; file_name?: string | null };
+  const url = r.url ?? null;
+  const fileUrl = r.file_url ?? null;
+  const fileName = r.file_name ?? null;
+  if (!url && !fileUrl) return null;
+
+  const isPdf = Boolean(fileName?.toLowerCase().endsWith(".pdf") || fileUrl?.toLowerCase().endsWith(".pdf"));
+
+  return (
+    <div style={{ marginBottom: 24, paddingTop: 20, borderTop: "1px solid #e6e6e6" }}>
+      <p style={{ ...groupLabel, marginBottom: 12 }}>Ressursen</p>
+
+      {url && (
+        <p style={{ marginBottom: 12 }}>
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ fontSize: 14, fontWeight: 600, color: "#1f42aa", wordBreak: "break-all" }}
+          >
+            Åpne lenke ↗
+          </a>
+        </p>
+      )}
+
+      {fileUrl && (
+        <>
+          {isPdf ? (
+            <object
+              data={fileUrl}
+              type="application/pdf"
+              style={{ width: "100%", height: 420, border: "1px solid #e6e6e6", marginBottom: 12 }}
+              aria-label={`Forhåndsvisning av ${fileName ?? "PDF"}`}
+            >
+              <p style={{ fontSize: 13, color: "#666666", padding: 12 }}>
+                Nettleseren kan ikke vise PDF-en her. Bruk nedlastingslenken under.
+              </p>
+            </object>
+          ) : (
+            <p style={{ fontSize: 13, color: "#666666", marginBottom: 12 }}>
+              Formatet kan ikke forhåndsvises i nettleseren. Last ned filen for å åpne den.
+            </p>
+          )}
+          <a
+            href={fileUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            download={fileName ?? undefined}
+            style={{ fontSize: 14, fontWeight: 600, color: "#1f42aa", wordBreak: "break-all" }}
+          >
+            Last ned{fileName ? ` — ${fileName}` : ""} ↓
+          </a>
+        </>
+      )}
+    </div>
   );
 }
 
