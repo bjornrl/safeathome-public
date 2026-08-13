@@ -2,29 +2,35 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { motion as fm, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { clay, colors, motion, space, typography } from "@/lib/design-tokens";
 import { Button } from "@/components/ui";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
+import { useI18n } from "@/lib/i18n/I18nProvider";
+import { splitLocale } from "@/lib/i18n/config";
+import type { Dictionary } from "@/lib/i18n/dictionaries/no";
 
 export type NavVariant = "default" | "minimal";
 export type NavMode = "public" | "internal";
 
 type NavLink = { href: string; label: string; description: string };
 
-const PUBLIC_LINKS: NavLink[] = [
-  { href: "/about", label: "Om", description: "Om prosjektet safe@home og forskningen bak." },
-];
+function publicLinks(t: Dictionary): NavLink[] {
+  return [{ href: "/about", ...t.nav.links.about }];
+}
 
 // Søk, nodekart, friksjoner, kvaliteter og lesesalen er slått sammen til faner
 // under «Innhold» — samme korpus, ulike innganger, én inngang i menyen.
-const INTERNAL_LINKS: NavLink[] = [
-  { href: "/admin", label: "Redigering", description: "Skriv og rediger notater, innsikter, ressurser og mer." },
-  { href: "/internal/content", label: "Innhold", description: "Søk, nodekart, friksjoner, kvaliteter og ressurser." },
-  { href: "/internal/threads", label: "Tråder", description: "Argumenter under arbeid — analyselaget." },
-  { href: "/welfare-tech", label: "Eksisterende initiativer", description: "Bla gjennom teknologi-oppføringer med detaljer." },
-];
+function internalLinks(t: Dictionary): NavLink[] {
+  return [
+    { href: "/admin", ...t.nav.links.admin },
+    { href: "/internal/content", ...t.nav.links.content },
+    { href: "/internal/threads", ...t.nav.links.threads },
+    { href: "/welfare-tech", ...t.nav.links.welfareTech },
+  ];
+}
 
 function useAuthState() {
   const [signedIn, setSignedIn] = useState<boolean | null>(null);
@@ -44,11 +50,13 @@ function useAuthState() {
   return signedIn;
 }
 
+/** `pathname` carries the locale prefix; `href` never does. */
 function isLinkActive(pathname: string | null, href: string): boolean {
   if (!pathname) return false;
+  const { rest } = splitLocale(pathname);
   const path = href.split("?")[0];
-  if (path === "/") return pathname === "/";
-  return pathname === path || pathname.startsWith(path + "/");
+  if (path === "/") return rest === "/";
+  return rest === path || rest.startsWith(path + "/");
 }
 
 export default function Nav({
@@ -58,6 +66,7 @@ export default function Nav({
   variant?: NavVariant;
   mode?: NavMode;
 }) {
+  const { t, href } = useI18n();
   const signedIn = useAuthState();
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -93,7 +102,7 @@ export default function Nav({
     setMenuOpen(false);
   }, [pathname]);
 
-  const homeHref = signedIn ? "/internal" : "/";
+  const homeHref = href(signedIn ? "/internal" : "/");
 
   if (variant === "minimal") {
     return (
@@ -135,14 +144,17 @@ export default function Nav({
           <span style={{ fontWeight: 600 }}>safe@home</span>
         </Link>
 
-        <div style={{ pointerEvents: "auto" }}>
+        <div style={{ pointerEvents: "auto", display: "inline-flex", alignItems: "center", gap: space.s12 }}>
+          <Suspense fallback={null}>
+            <LanguageSwitcher compact />
+          </Suspense>
           {signedIn ? (
             <Link href={homeHref} style={{ textDecoration: "none" }}>
-              <Button variant="primary" size="sm">Admin</Button>
+              <Button variant="primary" size="sm">{t.nav.admin}</Button>
             </Link>
           ) : (
-            <Link href="/login" style={{ textDecoration: "none" }}>
-              <Button variant="secondary" size="sm">Innlogging</Button>
+            <Link href={href("/login")} style={{ textDecoration: "none" }}>
+              <Button variant="secondary" size="sm">{t.nav.signIn}</Button>
             </Link>
           )}
         </div>
@@ -173,6 +185,7 @@ export default function Nav({
             margin: "0 auto",
             padding: `${space.s8} ${space.s24}`,
             display: "flex",
+            alignItems: "center",
             justifyContent: "flex-end",
             gap: space.s16,
             ...typography.sizes.t12,
@@ -180,7 +193,10 @@ export default function Nav({
             fontFamily: clay.font.body,
           }}
         >
-          <span>Forskning · OsloMet, UiO, Durham, Comte</span>
+          <span>{t.nav.utility}</span>
+          <Suspense fallback={null}>
+            <LanguageSwitcher />
+          </Suspense>
         </div>
       </div>
 
@@ -241,9 +257,10 @@ function PublicNavRow({
   pathname: string | null;
   signedIn: boolean | null;
 }) {
+  const { t, href } = useI18n();
   return (
     <nav
-      aria-label="Hovedmeny"
+      aria-label={t.nav.mainMenu}
       style={{
         display: "flex",
         alignItems: "center",
@@ -262,12 +279,12 @@ function PublicNavRow({
           flexWrap: "wrap",
         }}
       >
-        {PUBLIC_LINKS.map((link) => {
+        {publicLinks(t).map((link) => {
           const active = isLinkActive(pathname, link.href);
           return (
             <li key={link.href}>
               <Link
-                href={link.href}
+                href={href(link.href)}
                 aria-current={active ? "page" : undefined}
                 style={{
                   display: "inline-block",
@@ -290,12 +307,12 @@ function PublicNavRow({
       </ul>
 
       {signedIn ? (
-        <Link href="/admin" style={{ textDecoration: "none" }}>
-          <Button variant="secondary" size="sm">Admin</Button>
+        <Link href={href("/admin")} style={{ textDecoration: "none" }}>
+          <Button variant="secondary" size="sm">{t.nav.admin}</Button>
         </Link>
       ) : (
         <Link
-          href="/login"
+          href={href("/login")}
           style={{
             fontFamily: clay.font.body,
             fontSize: "14px",
@@ -307,7 +324,7 @@ function PublicNavRow({
             transition: `color ${motion.fast}, border-color ${motion.fast}`,
           }}
         >
-          Innlogging for teamet →
+          {t.nav.signInTeam}
         </Link>
       )}
     </nav>
@@ -325,13 +342,17 @@ function InternalNavRow({
   setMenuOpen: (v: boolean) => void;
   toggleRef: React.RefObject<HTMLButtonElement | null>;
 }) {
+  const { t, href } = useI18n();
   return (
     <div style={{ display: "inline-flex", alignItems: "center", gap: space.s8 }}>
+      <Suspense fallback={null}>
+        <LanguageSwitcher compact />
+      </Suspense>
       {/* «Nytt notat» skal nås fra hele det interne området, ikke bare fra en
           fane inne i /admin — å senke terskelen for å levere inn et notat er
           den viktigste enkeltendringen for datainnsamlerne (prompt 03, punkt 3). */}
       <Link
-        href="/admin?tab=notes"
+        href={href("/admin?tab=notes")}
         style={{
           display: "inline-flex",
           alignItems: "center",
@@ -347,12 +368,12 @@ function InternalNavRow({
           whiteSpace: "nowrap",
         }}
       >
-        Nytt notat
+        {t.nav.newNote}
       </Link>
     <button
       ref={toggleRef}
       type="button"
-      aria-label={menuOpen ? "Lukk meny" : "Åpne meny"}
+      aria-label={menuOpen ? t.nav.closeMenu : t.nav.openMenu}
       aria-expanded={menuOpen}
       aria-haspopup="true"
       onClick={() => setMenuOpen(!menuOpen)}
@@ -373,7 +394,7 @@ function InternalNavRow({
       }}
     >
       <HamburgerIcon open={menuOpen} />
-      <span>{menuOpen ? "Lukk" : "Meny"}</span>
+      <span>{menuOpen ? t.nav.closeShort : t.nav.menu}</span>
     </button>
     </div>
   );
@@ -434,9 +455,10 @@ function DropdownMenu({
   onClose: () => void;
 }) {
   const router = useRouter();
+  const { t, href } = useI18n();
   async function signOut() {
     await supabase.auth.signOut();
-    router.replace("/login");
+    router.replace(href("/login"));
   }
   return (
     <>
@@ -460,7 +482,7 @@ function DropdownMenu({
       <fm.aside
         ref={menuRef}
         role="menu"
-        aria-label="Meny"
+        aria-label={t.nav.menu}
         initial={{ x: "100%" }}
         animate={{ x: 0 }}
         exit={{ x: "100%" }}
@@ -501,12 +523,12 @@ function DropdownMenu({
               color: clay.colors.muted,
             }}
           >
-            Meny
+            {t.nav.menu}
           </span>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Lukk meny"
+            aria-label={t.nav.closeMenu}
             style={{
               background: "transparent",
               border: "none",
@@ -534,9 +556,9 @@ function DropdownMenu({
             padding: space.s24,
           }}
         >
-          <MenuSection title="Internt" links={INTERNAL_LINKS} pathname={pathname} />
+          <MenuSection title={t.nav.sectionInternal} links={internalLinks(t)} pathname={pathname} />
           <div style={{ height: 1, background: clay.colors.hairline }} />
-          <MenuSection title="Offentlige sider" links={PUBLIC_LINKS} pathname={pathname} />
+          <MenuSection title={t.nav.sectionPublic} links={publicLinks(t)} pathname={pathname} />
           <div style={{ height: 1, background: clay.colors.hairline }} />
           <button
             type="button"
@@ -556,7 +578,7 @@ function DropdownMenu({
               fontFamily: clay.font.body,
             }}
           >
-            Logg ut
+            {t.nav.signOut}
           </button>
         </div>
       </fm.aside>
@@ -573,6 +595,7 @@ function MenuSection({
   links: NavLink[];
   pathname: string | null;
 }) {
+  const { href } = useI18n();
   return (
     <div>
       <p
@@ -602,7 +625,7 @@ function MenuSection({
           return (
             <li key={link.href}>
               <Link
-                href={link.href}
+                href={href(link.href)}
                 aria-current={active ? "page" : undefined}
                 role="menuitem"
                 style={{

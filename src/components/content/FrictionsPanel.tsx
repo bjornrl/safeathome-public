@@ -7,6 +7,8 @@ import { FRICTIONS } from "@/lib/constants";
 import type { CareFriction } from "@/lib/types";
 import { loadCorpus, type CorpusNode } from "@/lib/corpus";
 import { FONT_STACK } from "@/lib/design-tokens";
+import { useI18n } from "@/lib/i18n/I18nProvider";
+import { fill } from "@/lib/i18n/dictionary";
 const FRICTION_KEYS = Object.keys(FRICTIONS) as CareFriction[];
 type Selection = {
   kind: "none";
@@ -56,6 +58,7 @@ function storiesMatchingSelection(stories: CorpusNode[], sel: Selection): Corpus
 // surface would be a dedicated `/frictions/[key]` page per friction
 // or a side drawer opened from the legend. Deferred for a later pass.
 export default function FrictionsPanel() {
+  const { t, tax } = useI18n();
   const [stories, setStories] = useState<CorpusNode[]>([]);
   const [selection, setSelection] = useState<Selection>({
     kind: "none"
@@ -69,13 +72,11 @@ export default function FrictionsPanel() {
   return <div style={{ fontFamily: FONT_STACK }}>
         {represented.length >= MIN_FRICTIONS_FOR_CHORD ? (
           <p className="[font-size:15px] [line-height:1.6] [color:#666666] [max-width:680px] [margin-bottom:32px]">
-            Dette akkord-diagrammet viser hvordan friksjonene fletter seg sammen på
-            tvers av historier — jo tykkere bånd, jo flere liv deler den samme kollisjonen.
+            {t.frictions.chordIntro}
           </p>
         ) : stories.length > 0 ? (
           <p className="[font-size:15px] [line-height:1.6] [color:#666666] [max-width:680px] [margin-bottom:32px]">
-            Når materialet vokser, viser et akkord-diagram her hvordan friksjonene fletter
-            seg sammen på tvers av historier.
+            {t.frictions.chordPending}
           </p>
         ) : null}
 
@@ -83,14 +84,14 @@ export default function FrictionsPanel() {
           {/* Tre tilstander, ikke to: tomt korpus forklares, tynt korpus telles,
               og akkord-diagrammet tegnes først når det har noe å si. */}
           {stories.length === 0
-            ? <CorpusEmpty />
+            ? <CorpusEmpty text={t.frictions.corpusEmpty} />
             : represented.length < MIN_FRICTIONS_FOR_CHORD
               ? <FrictionCounts stories={stories} selection={selection} onSelect={setSelection} />
               : <ChordDiagram matrix={matrix} selection={selection} onSelect={setSelection} />}
 
           <aside>
             <p className="[font-size:11px] [font-weight:600] [text-transform:uppercase] [letter-spacing:0.14em] [color:#808080] [margin-bottom:16px]">
-              Tegnforklaring
+              {t.frictions.legend}
             </p>
             <ul className="[list-style:none] [padding:0px] [margin:0px]">
               {FRICTION_KEYS.map(k => <li key={k} className="[margin-bottom:8px]">
@@ -100,18 +101,18 @@ export default function FrictionsPanel() {
                 kind: "friction",
                 friction: k
               })} style={{
-                background: selection.kind === "friction" && selection.friction === k ? FRICTIONS[k].color + "14" : "transparent",
+                background: selection.kind === "friction" && selection.friction === k ? tax.frictions[k].color + "14" : "transparent",
                 fontFamily: FONT_STACK
               }} className="[display:flex] [align-items:flex-start] [gap:10px] [padding:8px] [width:100%] [border:none] [border-radius:8px] [cursor:pointer] [text-align:left]">
                     <span style={{
-                  background: FRICTIONS[k].color
+                  background: tax.frictions[k].color
                 }} className="[margin-top:5px] [width:12px] [height:12px] [border-radius:50%] [flex-shrink:0]" />
                     <span className="[display:block]">
                       <span className="[font-size:16px] [font-weight:600] [color:#2a2859]">
-                        {FRICTIONS[k].label}
+                        {tax.frictions[k].label}
                       </span>
                       <span className="[display:block] [font-size:13px] [line-height:1.5] [color:#666666] [margin-top:2px]">
-                        {FRICTIONS[k].description}
+                        {tax.frictions[k].description}
                       </span>
                     </span>
                   </button>
@@ -130,7 +131,7 @@ export default function FrictionsPanel() {
           })} style={{
             fontFamily: FONT_STACK
           }} className="[font-size:13px] [color:#1f42aa] [font-weight:600] [background:none] [border:none] [cursor:pointer] [padding:0px]">
-                Nullstill valg
+                {t.frictions.clearSelection}
               </button>}
           </div>
 
@@ -152,6 +153,7 @@ function ChordDiagram({
   selection: Selection;
   onSelect: (s: Selection) => void;
 }) {
+  const { t, tax } = useI18n();
   const ref = useRef<SVGSVGElement>(null);
   const size = 520;
   const outerRadius = size / 2 - 40;
@@ -189,7 +191,7 @@ function ChordDiagram({
           const selectedPair = isPairSelected(a, b);
           const anyActive = selection.kind !== "none";
           const opacity = anyActive ? selectedPair ? 0.85 : 0.05 : 0.45;
-          const color = FRICTIONS[a].color;
+          const color = tax.frictions[a].color;
           const d = ribbonGen(c);
           return <path key={`r-${i}`} d={d ?? ""} fill={color} fillOpacity={opacity} stroke={color} strokeOpacity={selectedPair ? 0.9 : 0.15} onClick={e => {
             e.stopPropagation();
@@ -207,7 +209,13 @@ function ChordDiagram({
             }
           }} className="[cursor:pointer] [transition:fill-opacity_.15s,_stroke-opacity_.15s]">
                 <title>
-                  {a === b ? `${FRICTIONS[a].label} — ${c.source.value} historier` : `${FRICTIONS[a].label} + ${FRICTIONS[b].label} — ${c.source.value} historier deler begge`}
+                  {a === b
+                    ? fill(t.frictions.singleTooltip, { a: tax.frictions[a].label, n: c.source.value })
+                    : fill(t.frictions.pairTooltip, {
+                        a: tax.frictions[a].label,
+                        b: tax.frictions[b].label,
+                        n: c.source.value,
+                      })}
                 </title>
               </path>;
         })}
@@ -219,7 +227,7 @@ function ChordDiagram({
           const k = FRICTION_KEYS[g.index];
           const selected = isFrictionSelected(k);
           const anyActive = selection.kind !== "none";
-          const color = FRICTIONS[k].color;
+          const color = tax.frictions[k].color;
           const d = arcGen(g);
 
           // Label position along the arc midpoint
@@ -253,12 +261,12 @@ function ChordDiagram({
                 });
               }
             }} className="[cursor:pointer] [transition:fill-opacity_.15s]">
-                  <title>{FRICTIONS[k].label}</title>
+                  <title>{tax.frictions[k].label}</title>
                 </path>
                 <text x={x} y={y} fontSize={13} fontWeight={selected ? 700 : 500} textAnchor={anchor} fill={selected ? color : "#2c2c2c"} transform={`rotate(${flipped ? labelRotation + 180 : labelRotation}, ${x}, ${y})`} style={{
               fontFamily: FONT_STACK
             }} className="[pointer-events:none] [dominant-baseline:middle]">
-                  {FRICTIONS[k].label}
+                  {tax.frictions[k].label}
                 </text>
               </g>;
         })}
@@ -273,8 +281,7 @@ function ChordDiagram({
       </svg>
 
       <p className="[font-size:12px] [color:#9a9a9a] [text-align:center] [margin-top:8px]">
-        Hold musen over et segment for å fremheve. Klikk for å låse. Klikk
-        på et bånd for å se paret.
+        {t.frictions.chordHint}
       </p>
     </div>;
 }
@@ -288,37 +295,38 @@ function SelectionHeading({
   selection: Selection;
   count: number;
 }) {
+  const { t, tax } = useI18n();
   if (selection.kind === "none") {
-    return <>Alle historier gruppert etter friksjon</>;
+    return <>{t.frictions.allGrouped}</>;
   }
   if (selection.kind === "friction") {
     return <>
         <span style={{
-        color: FRICTIONS[selection.friction].color
+        color: tax.frictions[selection.friction].color
       }}>
-          {FRICTIONS[selection.friction].label}
+          {tax.frictions[selection.friction].label}
         </span>{" "}
         &middot;{" "}
         <span className="[color:#808080] [font-weight:400] [font-size:18px]">
-          {count} {count === 1 ? "historie" : "historier"}
+          {count} {count === 1 ? t.common.storyOne : t.common.storyOther}
         </span>
       </>;
   }
   return <>
       <span style={{
-      color: FRICTIONS[selection.a].color
+      color: tax.frictions[selection.a].color
     }}>
-        {FRICTIONS[selection.a].label}
+        {tax.frictions[selection.a].label}
       </span>{" "}
       +{" "}
       <span style={{
-      color: FRICTIONS[selection.b].color
+      color: tax.frictions[selection.b].color
     }}>
-        {FRICTIONS[selection.b].label}
+        {tax.frictions[selection.b].label}
       </span>{" "}
       &middot;{" "}
       <span className="[color:#808080] [font-weight:400] [font-size:18px]">
-        {count} {count === 1 ? "historie deler begge" : "historier deler begge"}
+        {count} {count === 1 ? t.frictions.sharedBothOne : t.frictions.sharedBothOther}
       </span>
     </>;
 }
@@ -360,6 +368,7 @@ function FrictionCounts({
   selection: Selection;
   onSelect: (s: Selection) => void;
 }) {
+  const { t, tax } = useI18n();
   const counts = FRICTION_KEYS.map((k) => ({
     key: k,
     count: stories.filter((s) => s.frictions?.includes(k)).length,
@@ -368,9 +377,7 @@ function FrictionCounts({
 
   return <div className="[padding:8px_0]">
       <p className="[font-size:15px] [line-height:1.7] [color:#666666] [margin-bottom:24px] [max-width:620px]">
-        Akkord-diagrammet tegnes når materialet er rikt nok til å vise hvordan
-        friksjonene fletter seg sammen. Foreløpig viser vi tellingen slik den
-        faktisk står.
+        {t.frictions.countsIntro}
       </p>
       <ul className="[list-style:none] [padding:0px] [margin:0px]">
         {counts.map(({ key, count }) => {
@@ -383,16 +390,16 @@ function FrictionCounts({
                 style={{ fontFamily: FONT_STACK, background: "transparent" }}
                 className="[display:flex] [align-items:center] [gap:12px] [width:100%] [border:none] [padding:4px_0] [cursor:pointer] [text-align:left]"
               >
-                <span style={{ color: FRICTIONS[key].color, fontWeight: active ? 700 : 600 }} className="[font-size:15px] [flex:0_0_150px]">
-                  {FRICTIONS[key].label}
+                <span style={{ color: tax.frictions[key].color, fontWeight: active ? 700 : 600 }} className="[font-size:15px] [flex:0_0_150px]">
+                  {tax.frictions[key].label}
                 </span>
                 <span
                   aria-hidden
-                  style={{ background: FRICTIONS[key].color, width: `${(count / max) * 100}%`, opacity: count === 0 ? 0.15 : 1 }}
+                  style={{ background: tax.frictions[key].color, width: `${(count / max) * 100}%`, opacity: count === 0 ? 0.15 : 1 }}
                   className="[height:10px] [min-width:10px] [border-radius:5px]"
                 />
                 <span className="[font-size:13px] [color:#808080] [flex:0_0_90px]">
-                  {count} {count === 1 ? "historie" : "historier"}
+                  {count} {count === 1 ? t.common.storyOne : t.common.storyOther}
                 </span>
               </button>
             </li>;
@@ -401,11 +408,9 @@ function FrictionCounts({
     </div>;
 }
 
-function CorpusEmpty() {
+function CorpusEmpty({ text }: { text: string }) {
   return <p className="[font-size:17px] [line-height:1.7] [color:#666666] [padding:24px_0] [max-width:620px]">
-      Her kommer feltmaterialet. Datainnsamlingen i Alna og Søndre Nordstrand
-      starter høsten 2026 — etter hvert som notater tagges med friksjoner,
-      dukker de opp her.
+      {text}
     </p>;
 }
 
@@ -414,9 +419,10 @@ function StoryGrid({
 }: {
   stories: CorpusNode[];
 }) {
+  const { t } = useI18n();
   if (stories.length === 0) {
     return <p className="[font-size:17px] [color:#808080] [padding:24px_0]">
-        Ingen historier deler denne kombinasjonen ennå.
+        {t.frictions.noCombination}
       </p>;
   }
   return <div className="[display:grid] [grid-template-columns:repeat(auto-fill,_minmax(300px,_1fr))] [gap:16px]">
@@ -428,22 +434,23 @@ function GroupedByFriction({
 }: {
   stories: CorpusNode[];
 }) {
+  const { t, tax } = useI18n();
   return <div>
       {FRICTION_KEYS.map(k => {
       const bucket = stories.filter(s => s.frictions?.includes(k));
       if (bucket.length === 0) return null;
       return <div key={k} className="[margin-bottom:48px]">
             <div style={{
-          borderBottom: `2px solid ${FRICTIONS[k].color}`
+          borderBottom: `2px solid ${tax.frictions[k].color}`
         }} className="[display:flex] [align-items:center] [gap:10px] [margin-bottom:16px] [padding-bottom:8px]">
               <span aria-hidden style={{
-            background: FRICTIONS[k].color
+            background: tax.frictions[k].color
           }} className="[width:12px] [height:12px] [border-radius:50%]" />
               <h3 className="[font-size:20px] [font-weight:600] [color:#2a2859]">
-                {FRICTIONS[k].label}
+                {tax.frictions[k].label}
               </h3>
               <span className="[font-size:13px] [color:#9a9a9a]">
-                {bucket.length} {bucket.length === 1 ? "historie" : "historier"}
+                {bucket.length} {bucket.length === 1 ? t.common.storyOne : t.common.storyOther}
               </span>
             </div>
             <div className="[display:grid] [grid-template-columns:repeat(auto-fill,_minmax(300px,_1fr))] [gap:16px]">
@@ -458,8 +465,9 @@ function StoryCard({
 }: {
   story: CorpusNode;
 }) {
+  const { tax, href } = useI18n();
   const preview = story.body.split("\n\n")[0].slice(0, 140);
-  return <Link href={`/internal/content?tab=nodes&focus=${encodeURIComponent(story.id)}`} className="[display:block] [padding:24px] [background:#ffffff] [border:1px_solid_#e6e6e6] [border-radius:8px] [text-decoration:none] [color:#2c2c2c]">
+  return <Link href={href(`/internal/content?tab=nodes&focus=${encodeURIComponent(story.id)}`)} className="[display:block] [padding:24px] [background:#ffffff] [border:1px_solid_#e6e6e6] [border-radius:8px] [text-decoration:none] [color:#2c2c2c]">
       <h4 className="[font-size:17px] [font-weight:600] [line-height:1.3] [margin-bottom:8px] [color:#2a2859]">
         {story.title}
       </h4>
@@ -469,10 +477,10 @@ function StoryCard({
       </p>
       <div className="[display:flex] [flex-wrap:wrap] [gap:4px]">
         {story.frictions?.map(f => <span key={f} style={{
-        background: FRICTIONS[f]?.color + "18",
-        color: FRICTIONS[f]?.color
+        background: tax.frictions[f]?.color + "18",
+        color: tax.frictions[f]?.color
       }} className="[font-size:10px] [padding:2px_8px] [border-radius:4px] [font-weight:500]">
-            {FRICTIONS[f]?.label}
+            {tax.frictions[f]?.label}
           </span>)}
       </div>
     </Link>;

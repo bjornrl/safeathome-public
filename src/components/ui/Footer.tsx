@@ -1,4 +1,7 @@
+"use client";
+
 import { clay, space, typography } from "@/lib/design-tokens";
+import { useI18n } from "@/lib/i18n/I18nProvider";
 
 const RESEARCH_PARTNERS = [
   "OsloMet",
@@ -13,6 +16,7 @@ const MUNICIPALITIES = [
 ];
 
 export function Footer() {
+  const { t } = useI18n();
   return (
     <footer
       style={{
@@ -46,7 +50,7 @@ export function Footer() {
             safe@home
           </p>
           <p style={{ ...typography.sizes.t14, color: clay.colors.body, maxWidth: "30ch", lineHeight: 1.55 }}>
-            Forskningsplattform om aldring, omsorg og teknologi i reformen Bo trygt hjemme.
+            {t.footer.tagline}
           </p>
         </div>
         <div>
@@ -60,7 +64,7 @@ export function Footer() {
               marginBottom: space.s12,
             }}
           >
-            Forskningspartnere
+            {t.footer.researchPartners}
           </p>
           <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: space.s4, ...typography.sizes.t14, color: clay.colors.body }}>
             {RESEARCH_PARTNERS.map(p => (
@@ -79,7 +83,7 @@ export function Footer() {
               marginBottom: space.s12,
             }}
           >
-            Kommunepartnere
+            {t.footer.municipalPartners}
           </p>
           <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: space.s4, ...typography.sizes.t14, color: clay.colors.body }}>
             {MUNICIPALITIES.map(m => (

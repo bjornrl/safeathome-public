@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { clay, space, typography } from "@/lib/design-tokens";
+import { useI18n } from "@/lib/i18n/I18nProvider";
 
 /** First name from a full name, falling back to the whole string. */
 function firstName(fullName: string): string {
@@ -16,6 +17,7 @@ function firstName(fullName: string): string {
  * Reads the signed-in user's `full_name` from the `profiles` table.
  */
 export default function Greeting() {
+  const { t } = useI18n();
   const [name, setName] = useState<string | null>(null);
 
   useEffect(() => {
@@ -72,8 +74,14 @@ export default function Greeting() {
           color: clay.colors.onPrimary,
         }}
       >
-        Hei <strong style={{ fontWeight: 700, color: clay.colors.mint }}>{name}</strong>, velkommen
-        tilbake til Safe@Home-plattformen
+        {t.greeting.welcome.split("{name}").map((part, i) => (
+          <span key={i}>
+            {i > 0 && (
+              <strong style={{ fontWeight: 700, color: clay.colors.mint }}>{name}</strong>
+            )}
+            {part}
+          </span>
+        ))}
       </p>
     </div>
   );
