@@ -91,39 +91,84 @@ export default function WelfareTechClient({ items }: { items: WelfareTechnology[
         minHeight: "100vh",
       }}
     >
-      {/* ── Section 1: header ───────────────────────────────── */}
+      {/* Page chrome: matches Innhold / Redigering */}
       <section
         style={{
-          maxWidth: 1280,
+          maxWidth: 1200,
           margin: "0 auto",
-          padding: `${space.s64} ${space.s24} ${space.s32}`,
+          padding: `${space.s40} ${space.s24} 0`,
         }}
       >
-        <h1
-          style={{
-            ...typography.sizes.t40,
-            fontWeight: typography.weights.bold,
-            color: colors.textBody,
-            letterSpacing: "-0.02em",
-            marginBottom: space.s32,
-          }}
-        >
-          Velferdsteknologi
-        </h1>
+        <header style={{ marginBottom: space.s32 }}>
+          <p
+            style={{
+              ...typography.sizes.t12,
+              fontWeight: typography.weights.bold,
+              textTransform: "uppercase",
+              letterSpacing: "0.14em",
+              color: colors.textMuted,
+              margin: `0 0 ${space.s12}`,
+            }}
+          >
+            Internt
+          </p>
+          <h1
+            style={{
+              ...typography.sizes.t40,
+              fontWeight: typography.weights.bold,
+              letterSpacing: 0,
+              color: colors.brandDarkBlue,
+              margin: `0 0 ${space.s12}`,
+              lineHeight: 1.15,
+            }}
+          >
+            Velferdsteknologi
+          </h1>
+          <p
+            style={{
+              ...typography.sizes.t16,
+              color: colors.textMuted,
+              margin: 0,
+              lineHeight: 1.6,
+              maxWidth: 640,
+            }}
+          >
+            En kuratert oversikt over velferdsteknologi som er relevant for hjemmebasert
+            omsorg for eldre med innvandrerbakgrunn. Utvalget er gjort av SAFE@HOME-prosjektet
+            som inspirasjon og referanse — ikke som anbefaling.
+          </p>
+          {isAdmin && (
+            <Link
+              href="/admin?tab=welfare-tech"
+              style={{
+                display: "inline-block",
+                marginTop: space.s16,
+                ...typography.sizes.t14,
+                color: colors.brandWarmBlue,
+                textDecoration: "none",
+                borderBottom: `1px dashed ${colors.brandWarmBlue}`,
+                paddingBottom: 2,
+                fontWeight: typography.weights.medium,
+              }}
+            >
+              + Legg til / rediger oppføringer
+            </Link>
+          )}
+        </header>
 
-        <div
+        <nav
           role="tablist"
           aria-label="Filtrer etter kategori"
           className="welfare-filter-tabs"
           style={{
             display: "flex",
-            gap: space.s8,
+            gap: space.s4,
+            flexWrap: "wrap",
             overflowX: "auto",
-            paddingBottom: space.s8,
-            marginBottom: space.s24,
+            borderBottom: `1px solid ${colors.borderSubtle}`,
+            marginBottom: space.s32,
             WebkitOverflowScrolling: "touch",
             scrollbarWidth: "none",
-            flexWrap: "nowrap",
           }}
         >
           <FilterPill active={active === ALL} onClick={() => setActive(ALL)}>
@@ -134,46 +179,15 @@ export default function WelfareTechClient({ items }: { items: WelfareTechnology[
               {c}
             </FilterPill>
           ))}
-        </div>
-
-        <p
-          style={{
-            ...typography.sizes.t18,
-            color: colors.textMuted,
-            maxWidth: 700,
-            lineHeight: 1.6,
-          }}
-        >
-          En kuratert oversikt over velferdsteknologi som er relevant for hjemmebasert
-          omsorg for eldre med innvandrerbakgrunn. Utvalget er gjort av SAFE@HOME-prosjektet
-          som inspirasjon og referanse — ikke som anbefaling.
-        </p>
-
-        {isAdmin && (
-          <Link
-            href="/admin?tab=welfare-tech"
-            style={{
-              display: "inline-block",
-              marginTop: space.s16,
-              ...typography.sizes.t12,
-              color: colors.brandWarmBlue,
-              textDecoration: "none",
-              borderBottom: `1px dashed ${colors.brandWarmBlue}`,
-              paddingBottom: 2,
-              fontWeight: typography.weights.medium,
-            }}
-          >
-            + Legg til / rediger oppføringer
-          </Link>
-        )}
+        </nav>
       </section>
 
       {/* ── Section 2: grid ─────────────────────────────────── */}
       <section
         style={{
-          maxWidth: 1280,
+          maxWidth: 1200,
           margin: "0 auto",
-          padding: `${space.s24} ${space.s24} ${space.s104}`,
+          padding: `0 ${space.s24} ${space.s96}`,
         }}
       >
         {visible.length === 0 ? (
@@ -260,17 +274,17 @@ function FilterPill({
       aria-selected={active}
       onClick={onClick}
       style={{
-        ...typography.sizes.t14,
-        padding: `${space.s8} ${space.s16}`,
-        background: active ? colors.brandDarkBlue : "transparent",
-        color: active ? colors.textLight : colors.textBody,
-        border: `1px solid ${active ? colors.brandDarkBlue : colors.borderSubtle}`,
-        borderRadius: 999,
+        padding: `${space.s12} ${space.s16}`,
+        marginBottom: -1,
+        fontSize: 15,
+        fontWeight: active ? typography.weights.bold : typography.weights.medium,
+        border: "none",
+        borderBottom: `2px solid ${active ? colors.brandWarmBlue : "transparent"}`,
+        background: "transparent",
+        color: active ? colors.brandWarmBlue : colors.textBody,
         cursor: "pointer",
         fontFamily: FONT_STACK,
-        fontWeight: typography.weights.medium,
         whiteSpace: "nowrap",
-        transition: "background 0.15s, color 0.15s, border-color 0.15s",
         flexShrink: 0,
       }}
     >

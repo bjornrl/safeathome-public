@@ -49,14 +49,21 @@ import {
 type Tab = "home" | "notes" | "stories" | "resources";
 const TAB_VALUES: Tab[] = ["home", "notes", "stories", "resources"];
 
-// "home" carries its own copy (AdminHome), so it has no banner description.
-const TAB_DESCRIPTIONS: Record<Exclude<Tab, "home">, string> = {
-  notes:
-    "Kladdebok for pågående observasjoner, ideer og spørsmål fra feltet. Merk med arbeidspakke, friksjon, kvalitet, tema eller skala slik at notatene dukker opp i nodekartet og i AI-forslagene.",
-  stories:
-    "Ferdige, publiserte funn — det som blir det offentlige historiekartet. Knytt en innsikt til arbeidspakken den kommer fra, feltstedet og friksjonene/kvalitetene den illustrerer. Bruk koblingsskjemaet under for å trekke typede linjer mellom to publiserte innsikter.",
-  resources:
-    "Oppføringer for lesesalen og kommunale ressurser — publikasjoner, verktøykasser, policy-notater, undervisningsguider. Koble til innsiktene de hører sammen med og merk med friksjoner/kvaliteter slik at de dukker opp på de matchende offentlige sidene.",
+// "home" carries its own copy (AdminHome). Other tabs get a section title + lead
+// owned by the page shell — same hierarchy as /internal/content.
+const TAB_COPY: Record<Exclude<Tab, "home">, { title: string; lead: string }> = {
+  notes: {
+    title: "Hurtignotater",
+    lead: "Kladdebok for pågående observasjoner, ideer og spørsmål fra feltet. Merk med arbeidspakke, friksjon, kvalitet, tema eller skala slik at notatene dukker opp i nodekartet og i AI-forslagene.",
+  },
+  stories: {
+    title: "Innsikter",
+    lead: "Ferdige, publiserte funn — det som blir det offentlige historiekartet. Knytt en innsikt til arbeidspakke, feltsted og friksjoner/kvaliteter, og trekk typede koblinger mellom innsikter.",
+  },
+  resources: {
+    title: "Ressurser",
+    lead: "Oppføringer for lesesalen og kommunale ressurser — publikasjoner, verktøykasser, policy-notater, undervisningsguider. Koble til innsiktene de hører sammen med.",
+  },
 };
 const WP_IDS = Object.keys(WP_LABELS) as WpId[];
 const FRICTION_KEYS = Object.keys(FRICTIONS) as CareFriction[];
@@ -314,21 +321,64 @@ export default function AdminPage() {
   }
 
   return <ToastContext.Provider value={showToast}>
-    <main style={{
-      fontFamily: FONT_STACK
-    }} className="[max-width:1200px] [margin:0_auto] [padding:40px_24px_96px]">
-      <header className="[margin-bottom:40px]">
-        <h1 className="[font-size:40px] [font-weight:700] [letter-spacing:-0.02em] [color:#2a2859] [margin:0_0_12px]">
+    <main
+      id="main-content"
+      style={{
+        fontFamily: FONT_STACK,
+        maxWidth: 1200,
+        margin: "0 auto",
+        padding: `${space.s40} ${space.s24} ${space.s96}`,
+      }}
+    >
+      <header style={{ marginBottom: space.s32 }}>
+        <p
+          style={{
+            ...typography.sizes.t12,
+            fontWeight: typography.weights.bold,
+            textTransform: "uppercase",
+            letterSpacing: "0.14em",
+            color: colors.textMuted,
+            margin: `0 0 ${space.s12}`,
+          }}
+        >
+          Internt
+        </p>
+        <h1
+          style={{
+            ...typography.sizes.t40,
+            fontWeight: typography.weights.bold,
+            letterSpacing: 0,
+            color: colors.brandDarkBlue,
+            margin: `0 0 ${space.s12}`,
+            lineHeight: 1.15,
+          }}
+        >
           Redigering
         </h1>
-        <br />
-        <p className="[font-size:15px] [color:#666666] [margin:0] [line-height:1.6] [max-width:720px]">
-          Hurtignotater, innsikter, designutfordringer og lesesal-oppføringer —
-          alt som skrives her havner i den tilsvarende Supabase-tabellen.
+        <p
+          style={{
+            ...typography.sizes.t16,
+            color: colors.textMuted,
+            margin: 0,
+            lineHeight: 1.6,
+            maxWidth: 640,
+          }}
+        >
+          Hurtignotater, innsikter og ressurser — alt som skrives her havner i
+          den tilsvarende Supabase-tabellen.
         </p>
       </header>
 
-      <nav className="[display:flex] [gap:8px] [margin-bottom:20px] [flex-wrap:wrap]">
+      <nav
+        aria-label="Redigeringsfaner"
+        style={{
+          display: "flex",
+          gap: space.s4,
+          flexWrap: "wrap",
+          borderBottom: `1px solid ${colors.borderSubtle}`,
+          marginBottom: space.s32,
+        }}
+      >
         <TabButton active={tab === "home"} onClick={() => selectTab("home")}>
           Start
         </TabButton>
@@ -346,24 +396,37 @@ export default function AdminPage() {
       {tab === "home" && <AdminHome onOpenTab={(t) => selectTab(t as Tab)} />}
 
       {tab !== "home" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 48, marginTop: 28 }}>
-          <p
-            style={{
-              margin: 0,
-              ...typography.sizes.t18,
-              color: colors.textMuted,
-              maxWidth: 700,
-              lineHeight: 1.6,
-            }}
-          >
-            {TAB_DESCRIPTIONS[tab]}
-          </p>
-          <div>
-            {tab === "notes" && <QuickNotesPanel />}
-            {tab === "stories" && <StoriesPanel currentUserId={currentUserId} />}
-            {tab === "resources" && <ResourcesPanel currentUserId={currentUserId} />}
+        <section aria-labelledby="admin-tab-heading">
+          <div style={{ marginBottom: space.s32, maxWidth: 720 }}>
+            <h2
+              id="admin-tab-heading"
+              style={{
+                ...typography.sizes.t26,
+                fontWeight: typography.weights.bold,
+                color: colors.brandDarkBlue,
+                letterSpacing: 0,
+                lineHeight: 1.25,
+                margin: `0 0 ${space.s12}`,
+              }}
+            >
+              {TAB_COPY[tab].title}
+            </h2>
+            <p
+              style={{
+                ...typography.sizes.t18,
+                color: colors.textMuted,
+                lineHeight: 1.6,
+                margin: 0,
+              }}
+            >
+              {TAB_COPY[tab].lead}
+            </p>
           </div>
-        </div>
+
+          {tab === "notes" && <QuickNotesPanel />}
+          {tab === "stories" && <StoriesPanel currentUserId={currentUserId} />}
+          {tab === "resources" && <ResourcesPanel currentUserId={currentUserId} />}
+        </section>
       )}
     </main>
     {toast && (
@@ -385,21 +448,28 @@ function TabButton({
   onClick: () => void;
   children: React.ReactNode;
 }) {
-  return <button type="button" onClick={onClick} style={{
-    padding: "8px 16px",
-    fontSize: 14,
-    fontWeight: 500,
-    border: `1px solid ${active ? "#2a2859" : "#e6e6e6"}`,
-    background: active ? "#2a2859" : "transparent",
-    color: active ? "#ffffff" : "#2c2c2c",
-    borderRadius: 999,
-    cursor: "pointer",
-    whiteSpace: "nowrap",
-    fontFamily: FONT_STACK,
-    transition: "background 0.15s, color 0.15s, border-color 0.15s"
-  }}>
-    {children}
-  </button>;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-current={active ? "page" : undefined}
+      style={{
+        padding: `${space.s12} ${space.s16}`,
+        marginBottom: -1,
+        fontSize: 15,
+        fontWeight: active ? typography.weights.bold : typography.weights.medium,
+        border: "none",
+        borderBottom: `2px solid ${active ? colors.brandWarmBlue : "transparent"}`,
+        background: "transparent",
+        color: active ? colors.brandWarmBlue : colors.textBody,
+        cursor: "pointer",
+        whiteSpace: "nowrap",
+        fontFamily: FONT_STACK,
+      }}
+    >
+      {children}
+    </button>
+  );
 }
 
 // ─── Stories (Insights) ───
