@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Nav from "@/components/Nav";
 import { supabase } from "@/lib/supabase";
+import { authErrorMessage } from "@/lib/auth-messages";
 const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -49,7 +50,7 @@ export default function ResetPasswordPage() {
     });
     setSubmitting(false);
     if (updateErr) {
-      setError(updateErr.message);
+      setError(authErrorMessage(updateErr, "password"));
       return;
     }
     setNotice("Passordet er oppdatert. Sender deg videre…");
@@ -102,7 +103,7 @@ export default function ResetPasswordPage() {
           </form>}
 
         <p className="[margin-top:24px] [font-size:13px] [color:#808080] [line-height:1.6]">
-          <Link href="/auth" className="[color:#1f42aa] [font-weight:500]">
+          <Link href="/login" className="[color:#1f42aa] [font-weight:500]">
             Tilbake til innlogging
           </Link>
           .

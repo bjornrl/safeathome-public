@@ -3,8 +3,12 @@
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import type { AuthError } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
+import {
+  AUTH_MSG as MSG,
+  CODE_LENGTH,
+  authErrorMessage,
+} from "@/lib/auth-messages";
 import { colors, space, typography } from "@/lib/design-tokens";
 
 const FONT_STACK = '"Oslo Sans", "Helvetica Neue", Arial, sans-serif';
@@ -14,79 +18,10 @@ const SAFE_REDIRECT = /^\/(?!\/)/;
 /** Seconds the «Send ny kode»-button stays disabled after a code is sent. */
 const RESEND_SECONDS = 60;
 
-const CODE_LENGTH = 6;
-
-const MSG = {
-  unknownEmail:
-    "Vi fant ingen bruker med denne adressen. Ta kontakt med prosjektadministrator for tilgang.",
-  badCode: "Koden er feil eller utløpt. Be om en ny kode.",
-  rateLimit: "Du har bedt om for mange koder. Vent noen minutter og prøv igjen.",
-  generic: "Noe gikk galt. Prøv igjen om litt.",
-  noProfile:
-    "Kontoen mangler en profil på plattformen. Ta kontakt med prosjektadministrator.",
-  missingEmail: "Skriv inn e-postadressen din først.",
-  shortCode: `Koden er ${CODE_LENGTH} siffer.`,
-} as const;
-
 function safeRedirect(raw: string | null): string {
   if (!raw) return "/admin";
   if (!SAFE_REDIRECT.test(raw)) return "/admin";
   return raw;
-}
-
-/**
- * Supabase error text is English and leaks implementation detail, so every
- * failure is mapped to one of the four messages the team agreed on.
- * `context` matters: the same "invalid" wording means «unknown address» when
- * requesting a code and «wrong code» when verifying one.
- */
-function authErrorMessage(
-  err: AuthError | null,
-  context: "send" | "verify",
-): string {
-  if (!err) return MSG.generic;
-
-  const code = err.code ?? "";
-  const message = err.message.toLowerCase();
-  const status = err.status ?? 0;
-
-  if (
-    status === 429 ||
-    code === "over_email_send_rate_limit" ||
-    code === "over_request_rate_limit" ||
-    message.includes("rate limit") ||
-    message.includes("too many requests") ||
-    message.includes("only request this after")
-  ) {
-    return MSG.rateLimit;
-  }
-
-  // `shouldCreateUser: false` rejects addresses that have no auth.users row.
-  if (
-    code === "otp_disabled" ||
-    code === "signup_disabled" ||
-    code === "user_not_found" ||
-    message.includes("signups not allowed") ||
-    message.includes("signup is disabled") ||
-    message.includes("user not found")
-  ) {
-    return MSG.unknownEmail;
-  }
-
-  if (context === "verify") {
-    if (
-      code === "otp_expired" ||
-      status === 401 ||
-      status === 403 ||
-      message.includes("expired") ||
-      message.includes("invalid") ||
-      message.includes("token")
-    ) {
-      return MSG.badCode;
-    }
-  }
-
-  return MSG.generic;
 }
 
 function LoginForm() {
@@ -241,7 +176,7 @@ function LoginForm() {
       setSubmitting(false);
       setError(
         signErr?.status === 400
-          ? "Feil e-postadresse eller passord."
+          ? MSG.wrongPassword
           : authErrorMessage(signErr, "verify"),
       );
       return;
