@@ -64,6 +64,7 @@ export default function FrictionsPanel() {
     getAllStories().then(setStories);
   }, []);
   const matrix = useMemo(() => buildMatrix(stories), [stories]);
+  const represented = useMemo(() => representedFrictions(stories), [stories]);
   const results = useMemo(() => storiesMatchingSelection(stories, selection), [stories, selection]);
   return <div style={{
       fontFamily: FONT_STACK
@@ -76,17 +77,20 @@ export default function FrictionsPanel() {
         </h1>
         <p className="[font-size:19px] [line-height:1.7] [color:#666666] [max-width:680px] [margin-bottom:48px]">
           Friksjoner navngir de gjentakende mekanismene der velmenende omsorg
-          likevel skader. Dette akkord-diagrammet viser hvordan de fletter
-          seg sammen på tvers av historier — jo tykkere bånd, jo flere liv
-          deler den samme kollisjonen.
+          likevel skader.
+          {represented.length >= MIN_FRICTIONS_FOR_CHORD
+            ? " Dette akkord-diagrammet viser hvordan de fletter seg sammen på tvers av historier — jo tykkere bånd, jo flere liv deler den samme kollisjonen."
+            : " Når materialet vokser, viser et akkord-diagram her hvordan de fletter seg sammen på tvers av historier."}
         </p>
 
         <div className="[display:grid] [grid-template-columns:minmax(280px,_1fr)_minmax(260px,_320px)] [gap:48px] [align-items:start]">
-          {/* Akkord-diagrammet trenger et korpus å tegne. Med null historier blir
-              matrisen bare nuller, alle buene får bredde 0 og etikettene stables
-              oppå hverandre — et diagram som ser ødelagt ut, ikke tomt. Da viser
-              vi tegnforklaringen alene og forklarer hva som kommer. */}
-          {stories.length === 0 ? <CorpusEmpty /> : <ChordDiagram matrix={matrix} selection={selection} onSelect={setSelection} />}
+          {/* Tre tilstander, ikke to: tomt korpus forklares, tynt korpus telles,
+              og akkord-diagrammet tegnes først når det har noe å si. */}
+          {stories.length === 0
+            ? <CorpusEmpty />
+            : represented.length < MIN_FRICTIONS_FOR_CHORD
+              ? <FrictionCounts stories={stories} selection={selection} onSelect={setSelection} />
+              : <ChordDiagram matrix={matrix} selection={selection} onSelect={setSelection} />}
 
           <aside>
             <p className="[font-size:11px] [font-weight:600] [text-transform:uppercase] [letter-spacing:0.14em] [color:#808080] [margin-bottom:16px]">
@@ -327,6 +331,80 @@ function SelectionHeading({
 
 // Skilles fra StoryGrids tomtilstand med vilje: der betyr tomt «filteret traff
 // ingenting», her betyr det «korpuset er tomt ennå». De to krever ulikt svar.
+/**
+ * How many distinct frictions the corpus actually touches. The chord diagram
+ * draws each friction with an arc proportional to its weight, so anything at
+ * zero collapses to a hairline and its label stacks on top of its neighbours'.
+ * Below this threshold the circle stops reading as "sparse" and starts reading
+ * as "broken", so we show counts instead.
+ */
+const MIN_FRICTIONS_FOR_CHORD = 3;
+
+function representedFrictions(stories: PublicStory[]): CareFriction[] {
+  const seen = new Set<CareFriction>();
+  for (const s of stories) {
+    for (const f of s.frictions ?? []) {
+      if (FRICTION_KEYS.includes(f)) seen.add(f);
+    }
+  }
+  return FRICTION_KEYS.filter((k) => seen.has(k));
+}
+
+/**
+ * The thin-corpus stand-in for the chord diagram: every friction with its real
+ * count, nothing implied that the material does not support. Clicking a row
+ * filters exactly like clicking an arc does.
+ */
+function FrictionCounts({
+  stories,
+  selection,
+  onSelect,
+}: {
+  stories: PublicStory[];
+  selection: Selection;
+  onSelect: (s: Selection) => void;
+}) {
+  const counts = FRICTION_KEYS.map((k) => ({
+    key: k,
+    count: stories.filter((s) => s.frictions?.includes(k)).length,
+  }));
+  const max = Math.max(1, ...counts.map((c) => c.count));
+
+  return <div className="[padding:8px_0]">
+      <p className="[font-size:15px] [line-height:1.7] [color:#666666] [margin-bottom:24px] [max-width:620px]">
+        Akkord-diagrammet tegnes når materialet er rikt nok til å vise hvordan
+        friksjonene fletter seg sammen. Foreløpig viser vi tellingen slik den
+        faktisk står.
+      </p>
+      <ul className="[list-style:none] [padding:0px] [margin:0px]">
+        {counts.map(({ key, count }) => {
+          const active = selection.kind === "friction" && selection.friction === key;
+          return <li key={key} className="[margin-bottom:12px]">
+              <button
+                type="button"
+                onClick={() => onSelect(active ? { kind: "none" } : { kind: "friction", friction: key })}
+                aria-pressed={active}
+                style={{ fontFamily: FONT_STACK, background: "transparent" }}
+                className="[display:flex] [align-items:center] [gap:12px] [width:100%] [border:none] [padding:4px_0] [cursor:pointer] [text-align:left]"
+              >
+                <span style={{ color: FRICTIONS[key].color, fontWeight: active ? 700 : 600 }} className="[font-size:15px] [flex:0_0_150px]">
+                  {FRICTIONS[key].label}
+                </span>
+                <span
+                  aria-hidden
+                  style={{ background: FRICTIONS[key].color, width: `${(count / max) * 100}%`, opacity: count === 0 ? 0.15 : 1 }}
+                  className="[height:10px] [min-width:10px] [border-radius:5px]"
+                />
+                <span className="[font-size:13px] [color:#808080] [flex:0_0_90px]">
+                  {count} {count === 1 ? "historie" : "historier"}
+                </span>
+              </button>
+            </li>;
+        })}
+      </ul>
+    </div>;
+}
+
 function CorpusEmpty() {
   return <p className="[font-size:17px] [line-height:1.7] [color:#666666] [padding:24px_0] [max-width:620px]">
       Her kommer feltmaterialet. Datainnsamlingen i Alna, Søndre Nordstrand og
