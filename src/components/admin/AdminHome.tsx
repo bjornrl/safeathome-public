@@ -140,7 +140,7 @@ export function AdminHome({ onOpenTab }: { onOpenTab?: (tab: string) => void }) 
           <PrimaryContact
             name="Bjørn Ravlo-Leira"
             role="Plattform · WP4"
-            org="Comte Bureau"
+            org="comte"
             email="bjorn@comte.no"
             phone="+47 95463335"
             photoSrc="/images/bjorn.jpg"

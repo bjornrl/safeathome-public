@@ -128,7 +128,7 @@ const PARTNERS: {
       ],
     },
     {
-      name: "Comte Bureau",
+      name: "comte",
       role: "Designpartner",
       logo: "/images/collaborator_logos/Comte_logo_red.png",
       contacts: [
