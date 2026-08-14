@@ -30,9 +30,8 @@ export function AdminHome({ onOpenTab }: { onOpenTab?: (tab: string) => void }) 
         </h2>
         <p style={{ ...typography.sizes.t18, color: colors.textBody, lineHeight: 1.6, marginBottom: space.s12 }}>
           Her samler vi materialet fra feltarbeidet — observasjoner, ferdige
-          innsikter, designutfordringer og ressurser. Alt du skriver lagres i
-          prosjektets database og blir tilgjengelig for resten av teamet, i
-          nodekartet og i det semantiske søket.
+          innsikter og ressurser. Alt du skriver lagres i
+          prosjektets database og blir tilgjengelig for resten av teamet.
         </p>
         <p style={{ ...typography.sizes.t16, color: colors.textMuted, lineHeight: 1.6 }}>
           Er du usikker på hvor du skal begynne? Start med et hurtignotat fra
@@ -52,7 +51,10 @@ export function AdminHome({ onOpenTab }: { onOpenTab?: (tab: string) => void }) 
             notater mens du skriver.
           </Step>
           <Step n={2} title="Innsikter" onClick={onOpenTab ? () => onOpenTab("stories") : undefined}>
-            Ferdige, publiserte funn — det som blir det offentlige historiekartet.
+            Funn fra feltarbeidet
+            
+            
+             — det som blir det offentlige historiekartet.
             Knytt en innsikt til arbeidspakken, feltstedet og friksjonene/kvalitetene
             den illustrerer, og trekk typede koblinger mellom innsikter.
           </Step>

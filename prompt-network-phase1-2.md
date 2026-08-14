@@ -2,7 +2,7 @@
 
 ## Context
 
-Comte Bureau is a design consultancy. We're building an interactive project network visualization that shows ~30 projects as nodes connected by organic particle-lines. The visual is inspired by a p5.js generative art sketch (included below) that uses attractors and particles — particles pathfind through attractors by repeatedly lerping toward the nearest unvisited one, creating organic curved paths.
+comte is a design consultancy. We're building an interactive project network visualization that shows ~30 projects as nodes connected by organic particle-lines. The visual is inspired by a p5.js generative art sketch (included below) that uses attractors and particles — particles pathfind through attractors by repeatedly lerping toward the nearest unvisited one, creating organic curved paths.
 
 In our version: **attractors = project nodes**, **particles = connection lines between related projects**.
 
