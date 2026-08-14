@@ -578,6 +578,39 @@ const no = {
     download: "Last ned →",
     comingSoon: "Kommer snart",
   },
+
+  // Kontaktwidgeten nederst til høyre. Ligger på hver side, også for utloggede.
+  contact: {
+    launcher: "Send en melding",
+    openLabel: "Åpne meldingsfeltet",
+    closeLabel: "Lukk meldingsfeltet",
+    title: "Send en melding",
+    subtitle: "Går rett til prosjektledelsen",
+    greeting:
+      "Hei! Har du et spørsmål, en retting, eller noe fra praksis du vil dele? Skriv i vei — meldingen går rett til prosjektledelsen.",
+    messageLabel: "Melding",
+    messagePlaceholder: "Skriv meldingen din her…",
+    nameLabel: "Navn",
+    namePlaceholder: "Hva heter du?",
+    emailLabel: "E-post",
+    emailPlaceholder: "navn@eksempel.no",
+    optional: "valgfritt",
+    emailHelper: "Legg igjen adressen din hvis du vil ha svar.",
+    send: "Send",
+    sending: "Sender…",
+    sentTitle: "Takk — meldingen er mottatt.",
+    // {email} = adressen avsenderen oppga.
+    sentWithEmail: "Vi svarer til {email} så snart vi rekker det.",
+    sentNoEmail:
+      "Du la ikke igjen e-postadresse, så vi har dessverre ingen måte å svare deg på.",
+    again: "Send en til",
+    errorEmpty: "Skriv en melding først.",
+    errorEmail: "E-postadressen ser ikke riktig ut.",
+    errorRate: "Du har sendt mange meldinger i dag. Prøv igjen i morgen.",
+    errorGeneric: "Noe gikk galt, og meldingen ble ikke sendt. Prøv igjen om litt.",
+    // {n} = tegn igjen av grensen.
+    charsLeft: "{n} tegn igjen",
+  },
 };
 
 export type Dictionary = typeof no;

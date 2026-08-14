@@ -4,6 +4,7 @@ import "../globals.css";
 import { HTML_LANG, LOCALES, isLocale } from "@/lib/i18n/config";
 import { getDictionary } from "@/lib/i18n/dictionary";
 import { I18nProvider } from "@/lib/i18n/I18nProvider";
+import ContactWidget from "@/components/ContactWidget";
 
 // Inter is the working substitute for Clay's licensed Plain Black face.
 // Exposed as --font-inter for the Clay --clay-font-* tokens.
@@ -50,6 +51,9 @@ export default async function RootLayout({ children, params }: LayoutProps<"/[la
       <body suppressHydrationWarning>
         <I18nProvider lang={lang} dictionary={dictionary}>
           {children}
+          {/* Mounted here rather than per page so the channel is genuinely
+              always open — including on pages added later. */}
+          <ContactWidget />
         </I18nProvider>
       </body>
     </html>

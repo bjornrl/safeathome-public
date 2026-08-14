@@ -558,6 +558,35 @@ const en: Dictionary = {
     download: "Download →",
     comingSoon: "Coming soon",
   },
+
+  contact: {
+    launcher: "Send a message",
+    openLabel: "Open the message panel",
+    closeLabel: "Close the message panel",
+    title: "Send a message",
+    subtitle: "Goes straight to the project leads",
+    greeting:
+      "Hello! Got a question, a correction, or something from practice you want to share? Go ahead — your message goes straight to the project leads.",
+    messageLabel: "Message",
+    messagePlaceholder: "Write your message here…",
+    nameLabel: "Name",
+    namePlaceholder: "What's your name?",
+    emailLabel: "Email",
+    emailPlaceholder: "name@example.com",
+    optional: "optional",
+    emailHelper: "Leave your address if you'd like a reply.",
+    send: "Send",
+    sending: "Sending…",
+    sentTitle: "Thanks — your message is with us.",
+    sentWithEmail: "We'll reply to {email} as soon as we can.",
+    sentNoEmail: "You didn't leave an email address, so we have no way to reply.",
+    again: "Send another",
+    errorEmpty: "Write a message first.",
+    errorEmail: "That email address doesn't look right.",
+    errorRate: "You've sent a lot of messages today. Try again tomorrow.",
+    errorGeneric: "Something went wrong and the message wasn't sent. Try again shortly.",
+    charsLeft: "{n} characters left",
+  },
 };
 
 export default en;
