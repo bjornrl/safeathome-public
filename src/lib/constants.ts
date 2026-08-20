@@ -289,7 +289,7 @@ export const WP_LABELS: Record<WpId, { label: string; subtitle: string; longDesc
     label: "WP4: Innovasjon og design",
     subtitle: "konkrete tiltak utviklet sammen med beboere og kommuner",
     longDescription:
-      "Tverrgående. Tar funn fra de andre arbeidspakkene og utvikler konkrete tiltak sammen med beboere, ansatte og kommunale partnere. Bruk WP4 når innsikten handler om en mulig løsning, et prøveprosjekt eller en endring i hvordan tjenesten utføres. Ledes av Alejandro Miranda Nieto (OsloMet) og Øystein Evensen (Comte Bureau).",
+      "Tverrgående. Tar funn fra de andre arbeidspakkene og utvikler konkrete tiltak sammen med beboere, ansatte og kommunale partnere. Bruk WP4 når innsikten handler om en mulig løsning, et prøveprosjekt eller en endring i hvordan tjenesten utføres. Ledes av Alejandro Miranda Nieto (OsloMet) og Øystein Evensen (Comte).",
   },
 };
 

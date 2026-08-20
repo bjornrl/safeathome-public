@@ -8,7 +8,7 @@ import { clay, space, typography } from "@/lib/design-tokens";
 export const metadata: Metadata = {
   title: "SAFE@HOME — Tilpasning av kommunale hjemmetjenester for aldrende innvandrere",
   description:
-    "Et forskningsprosjekt (2026–2029) som tilpasser kommunale hjemmetjenester for eldre innvandrere — ledet av OsloMet med UiO, Durham og Comte Bureau, i feltsamarbeid med bydelene Alna og Søndre Nordstrand.",
+    "Et forskningsprosjekt (2026–2029) som tilpasser kommunale hjemmetjenester for eldre innvandrere — ledet av OsloMet med UiO, Durham og Comte, i feltsamarbeid med bydelene Alna og Søndre Nordstrand.",
 };
 
 // Each WP gets a saturated Clay feature-card color in the prescribed rotation
@@ -62,7 +62,7 @@ const WORK_PACKAGES: {
       title: "Innovation & Service Development",
       titleNo: "Innovasjon og tjenesteutvikling",
       lead: "Alejandro Miranda Nieto · Øystein Evensen",
-      institution: "OsloMet · Comte Bureau",
+      institution: "OsloMet · Comte",
       body: "Å ko-skape praktiske løsninger og tjenester sammen med beboere, ansatte og kommuner.",
       bg: clay.colors.peach,
       ink: clay.colors.ink,
@@ -142,6 +142,32 @@ const FIELD_SITES = [
   { place: "Alna", region: "Oslo" },
   { place: "Søndre Nordstrand", region: "Oslo" },
 ];
+
+/** Playful prototypes that probe SAFE@HOME themes from unexpected angles. */
+const EXPERIMENTS: {
+  title: string;
+  tag: string;
+  body: string;
+  href: string;
+  cta: string;
+}[] = [
+    {
+      title: "Få sengen inn",
+      tag: "Spill",
+      body:
+        "Trangere planløsning, som er gjennomgående for familier med innvandrerbakgrunn, er et kjent hinder for å få inn medisinsk utstyr og dermed også muliggjøre folk å forbli hjemme, også i krevende situasjoner. Dette er et lite spill om å få en omsorgsseng inn i et hjem. Det synliggjør hvordan møbler, dører og romplan blir til barrierer — og hvorfor «bo trygt hjemme» også handler om det materielle rommet.",
+      href: "https://fa-sengen-inn.netlify.app/",
+      cta: "Spill Få sengen inn",
+    },
+    {
+      title: "Helseveiviseren på flere språk",
+      tag: "Prototype",
+      body:
+        "En flerspråklig utgave av Oslo kommunes Helseveiviser (norsk, engelsk og urdu). Det er et kjent problem at innbyggere med innvandrerbakgrunn, som behersker norsk svark eller dårlig, stiller dårligere i tilgangen til helsetjenester og har mindre mulighet til å orientere seg uten direkte hjelp fra helsepersonell eller famile. Helseveiviseren på flere språk er et forsøk på å tilgjengeliggjøre helsetilbud for alle deler av befolknignen. Det langsiktige målet er å gjøre befolknignen mer autonom i forhold til egen helse.",
+      href: "https://luxury-tapioca-a46cee.netlify.app/",
+      cta: "Åpne Helseveiviseren",
+    },
+  ];
 
 const FOOTER_LINKS = [
   { href: "/about", label: "Om prosjektet" },
@@ -225,9 +251,58 @@ export default function HomePage() {
                   friksjonene og kvalitetene som oppstår når kommunal omsorg møter mangfoldige
                   eldreliv.
                 </p>
-                <Link href="/about" style={{ textDecoration: "none" }}>
-                  <Button variant="primary" size="lg">Les mer om SAFE@HOME</Button>
-                </Link>
+                <style>{`
+                  .customOutlineBtn {
+                    background: ${clay.colors.canvas};
+                    border: 2px solid ${clay.colors.ink};
+                    color: ${clay.colors.ink};
+                    transition: background 0.15s, color 0.15s, border 0.15s;
+                  }
+                  .customOutlineBtn:hover, .customOutlineBtn:focus-visible {
+                    background: ${clay.colors.ink};
+                    color: ${clay.colors.canvas};
+                    border-color: ${clay.colors.ink};
+                  }
+                  .customPrimaryBtn {
+                    transition: background 0.15s, color 0.15s, border 0.15s;
+                  }
+                  .customPrimaryBtn:hover, .customPrimaryBtn:focus-visible {
+                    background: ${clay.colors.ink};
+                    color: ${clay.colors.canvas};
+                  }
+                `}</style>
+                <div style={{ display: "flex", gap: space.s16 }}>
+                  <Link href="/about" style={{ textDecoration: "none" }}>
+                    <Button
+                      variant="primary"
+                      size="lg"
+                      className="customPrimaryBtn"
+                      style={{
+                        // fallback color for server-sided rendering
+                        background: clay.colors.ink,
+                        color: "#fff",
+                      }}
+                    >
+                      Les mer om SAFE@HOME
+                    </Button>
+                  </Link>
+                  <Link href="https://www.regjeringen.no/no/dokumenter/meld.-st.-24-20222023/id2984417/?ch=1" target="_blank" style={{ textDecoration: "none" }}>
+                    <Button
+                      variant="primary"
+                      size="lg"
+                      className="customOutlineBtn"
+                      style={{
+                        background: clay.colors.canvas,
+                        border: `2px solid ${clay.colors.ink}`,
+                        color: clay.colors.ink,
+                      }}
+                    >
+                      Les om Bo trygt hjemme-reformen
+                    </Button>
+                  </Link>
+                </div>
+
+
               </div>
 
               {/* Hero illustration card — placeholder for the 3D claymation
@@ -237,6 +312,7 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+
 
         {/* ── About ───────────────────────────────────────────── */}
         <section style={{ background: clay.colors.surfaceCard }}>
@@ -311,8 +387,101 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ── Work packages ──────────────────────────────────── */}
+        {/* ── Experiments ─────────────────────────────────────── */}
         <section style={{ background: clay.colors.surfaceSoft }}>
+          <div style={{ ...container, ...sectionPad }}>
+            <p style={{ ...eyebrow, marginBottom: space.s16 }}>Eksperimenter</p>
+            <h2 style={{ marginBottom: space.s24, maxWidth: "24ch" }}>
+              Små prototyper, nye perspektiver
+            </h2>
+            <p
+              style={{
+                ...typography.sizes.t18,
+                color: clay.colors.body,
+                lineHeight: 1.6,
+                maxWidth: "58ch",
+                marginBottom: space.s48,
+              }}
+            >
+              Underveis i SAFE@HOME lager vi også lettere eksperimenter — litt for moro skyld,
+              men med et alvorlig spørsmål bak: hvordan kan nye formater åpne andre måter å
+              forstå og løse prosjektets utfordringer på?
+            </p>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+                gap: space.s24,
+              }}
+            >
+              {EXPERIMENTS.map((exp) => (
+                <article
+                  key={exp.href}
+                  style={{
+                    background: clay.colors.canvas,
+                    border: `1px solid ${clay.colors.hairline}`,
+                    borderRadius: "var(--clay-radius-xl)",
+                    padding: space.s32,
+                    display: "flex",
+                    flexDirection: "column",
+                    minHeight: 280,
+                  }}
+                >
+                  <p
+                    style={{
+                      fontFamily: clay.font.body,
+                      fontSize: "12px",
+                      fontWeight: 600,
+                      letterSpacing: "1.8px",
+                      textTransform: "uppercase",
+                      color: clay.colors.muted,
+                      marginBottom: space.s16,
+                    }}
+                  >
+                    {exp.tag}
+                  </p>
+                  <h3
+                    style={{
+                      fontFamily: clay.font.display,
+                      color: clay.colors.ink,
+                      letterSpacing: "-0.5px",
+                      fontSize: "26px",
+                      lineHeight: 1.15,
+                      marginBottom: space.s16,
+                    }}
+                  >
+                    {exp.title}
+                  </h3>
+                  <p
+                    style={{
+                      ...typography.sizes.t16,
+                      color: clay.colors.body,
+                      lineHeight: 1.55,
+                      marginBottom: space.s32,
+                      flex: 1,
+                    }}
+                  >
+                    {exp.body}
+                  </p>
+                  <Link
+                    href={exp.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ textDecoration: "none", alignSelf: "flex-start" }}
+                  >
+                    <Button variant="secondary" size="md">
+                      {exp.cta} →
+                    </Button>
+                  </Link>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+
+        {/* ── Work packages ──────────────────────────────────── */}
+        {/* <section style={{ background: clay.colors.surfaceSoft }}>
           <div style={{ ...container, ...sectionPad }}>
             <p style={{ ...eyebrow, marginBottom: space.s16 }}>Arbeidspakker</p>
             <h2 style={{ marginBottom: space.s24, maxWidth: "22ch" }}>
@@ -401,14 +570,14 @@ export default function HomePage() {
               ))}
             </div>
           </div>
-        </section>
+        </section> */}
 
         {/* ── Partners ────────────────────────────────────────── */}
         <section>
           <div style={{ ...container, ...sectionPad }}>
             <p style={{ ...eyebrow, marginBottom: space.s16 }}>Partnere</p>
             <h2 style={{ marginBottom: space.s40, maxWidth: "22ch" }}>
-              Et tverrfaglig konsortium på tvers av forskning, design og kommune.
+              Et tverrfaglig konsortium på tvers av forskning, privat sektor og kommune.
             </h2>
             <div
               style={{
@@ -511,8 +680,9 @@ export default function HomePage() {
           </div>
         </section>
 
+
         {/* ── People ─────────────────────────────────────────── */}
-        <section style={{ background: clay.colors.surfaceCard }}>
+        {/* <section style={{ background: clay.colors.surfaceCard }}>
           <div style={{ ...container, ...sectionPad }}>
             <p style={{ ...eyebrow, marginBottom: space.s16 }}>Prosjektgruppe</p>
             <h2 style={{ marginBottom: space.s24, maxWidth: "22ch" }}>
@@ -528,7 +698,7 @@ export default function HomePage() {
               }}
             >
               Prosjektet drives av et team på tvers av OsloMet, Universitetet i Oslo, Durham
-              University og Comte Bureau, i tett samarbeid med Bydel Alna og Bydel Søndre
+              University og Comte, i tett samarbeid med Bydel Alna og Bydel Søndre
               Nordstrand.
             </p>
             <People />
