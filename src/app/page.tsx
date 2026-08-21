@@ -150,6 +150,8 @@ const EXPERIMENTS: {
   body: string;
   href: string;
   cta: string;
+  image: string;
+  imageAlt: string;
 }[] = [
     {
       title: "Få sengen inn",
@@ -158,6 +160,8 @@ const EXPERIMENTS: {
         "Trangere planløsning, som er gjennomgående for familier med innvandrerbakgrunn, er et kjent hinder for å få inn medisinsk utstyr og dermed også muliggjøre folk å forbli hjemme, også i krevende situasjoner. Dette er et lite spill om å få en omsorgsseng inn i et hjem. Det synliggjør hvordan møbler, dører og romplan blir til barrierer — og hvorfor «bo trygt hjemme» også handler om det materielle rommet.",
       href: "https://fa-sengen-inn.netlify.app/",
       cta: "Spill Få sengen inn",
+      image: "/images/experiments/fa-sengen-inn.png",
+      imageAlt: "Skjermbilde fra spillet Få sengen inn — plantegning med omsorgsseng",
     },
     {
       title: "Helseveiviseren på flere språk",
@@ -166,6 +170,8 @@ const EXPERIMENTS: {
         "En flerspråklig utgave av Oslo kommunes Helseveiviser (norsk, engelsk og urdu). Det er et kjent problem at innbyggere med innvandrerbakgrunn, som behersker norsk svark eller dårlig, stiller dårligere i tilgangen til helsetjenester og har mindre mulighet til å orientere seg uten direkte hjelp fra helsepersonell eller famile. Helseveiviseren på flere språk er et forsøk på å tilgjengeliggjøre helsetilbud for alle deler av befolknignen. Det langsiktige målet er å gjøre befolknignen mer autonom i forhold til egen helse.",
       href: "https://luxury-tapioca-a46cee.netlify.app/",
       cta: "Åpne Helseveiviseren",
+      image: "/images/experiments/helseveiviser.png",
+      imageAlt: "Skjermbilde fra Helseveiviseren på urdu",
     },
   ];
 
@@ -415,65 +421,29 @@ export default function HomePage() {
               }}
             >
               {EXPERIMENTS.map((exp) => (
-                <article
+                <a
                   key={exp.href}
-                  style={{
-                    background: clay.colors.canvas,
-                    border: `1px solid ${clay.colors.hairline}`,
-                    borderRadius: "var(--clay-radius-xl)",
-                    padding: space.s32,
-                    display: "flex",
-                    flexDirection: "column",
-                    minHeight: 280,
-                  }}
+                  href={exp.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="experiment-card"
+                  aria-label={`${exp.cta}: ${exp.title}`}
                 >
-                  <p
-                    style={{
-                      fontFamily: clay.font.body,
-                      fontSize: "12px",
-                      fontWeight: 600,
-                      letterSpacing: "1.8px",
-                      textTransform: "uppercase",
-                      color: clay.colors.muted,
-                      marginBottom: space.s16,
-                    }}
-                  >
-                    {exp.tag}
-                  </p>
-                  <h3
-                    style={{
-                      fontFamily: clay.font.display,
-                      color: clay.colors.ink,
-                      letterSpacing: "-0.5px",
-                      fontSize: "26px",
-                      lineHeight: 1.15,
-                      marginBottom: space.s16,
-                    }}
-                  >
-                    {exp.title}
-                  </h3>
-                  <p
-                    style={{
-                      ...typography.sizes.t16,
-                      color: clay.colors.body,
-                      lineHeight: 1.55,
-                      marginBottom: space.s32,
-                      flex: 1,
-                    }}
-                  >
-                    {exp.body}
-                  </p>
-                  <Link
-                    href={exp.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{ textDecoration: "none", alignSelf: "flex-start" }}
-                  >
-                    <Button variant="secondary" size="md">
-                      {exp.cta} →
-                    </Button>
-                  </Link>
-                </article>
+
+                  <div className="experiment-card__body">
+                    <p className="experiment-card__tag">{exp.tag}</p>
+                    <h3 className="experiment-card__title">{exp.title}</h3>
+                    <div className="experiment-card__media">
+                      <img
+                        src={exp.image}
+                        alt={exp.imageAlt}
+                        className="experiment-card__image"
+                      />
+                    </div>
+                    <p className="experiment-card__text">{exp.body}</p>
+                    <span className="experiment-card__cta">{exp.cta} →</span>
+                  </div>
+                </a>
               ))}
             </div>
           </div>

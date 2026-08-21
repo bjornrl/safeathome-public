@@ -307,6 +307,98 @@ a:hover { color: var(--clay-body); text-decoration-color: var(--clay-body); }
   color: var(--pkt-color-text-placeholder);
 }
 
+/* Homepage experiment cards — full-card link + hover */
+.experiment-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--clay-canvas);
+  border: 1px solid var(--clay-hairline);
+  border-radius: var(--clay-radius-xl);
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  min-height: 100%;
+  transition:
+    border-color var(--pkt-motion-fast),
+    transform var(--pkt-motion-fast),
+    box-shadow var(--pkt-motion-fast);
+}
+.experiment-card:hover,
+.experiment-card:focus-visible {
+  border-color: var(--clay-ink);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
+  color: inherit;
+  text-decoration: none;
+}
+.experiment-card__media {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  background: var(--clay-surface-soft);
+  border: 1px solid var(--clay-hairline);
+  .experiment-card:hover .experiment-card__media,
+  .experiment-card:focus-visible .experiment-card__media {
+    border-color: var(--clay-ink);
+  }
+  border-radius: var(--clay-radius-md);
+}
+.experiment-card__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  display: block;
+  transition: transform 0.35s ease;
+}
+.experiment-card:hover .experiment-card__image,
+.experiment-card:focus-visible .experiment-card__image {
+  transform: scale(1.04);
+}
+.experiment-card__body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: var(--clay-space-xl);
+}
+.experiment-card__tag {
+  font-family: var(--clay-font-body);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1.8px;
+  text-transform: uppercase;
+  color: var(--clay-muted);
+  margin-bottom: 16px;
+}
+.experiment-card__title {
+  font-family: var(--clay-font-display);
+  color: var(--clay-ink);
+  letter-spacing: -0.5px;
+  font-size: 26px;
+  line-height: 1.15;
+  margin-bottom: 16px;
+}
+.experiment-card__text {
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--clay-body);
+  margin-bottom: 32px;
+  margin-top: 16px;
+  flex: 1;
+}
+.experiment-card__cta {
+  font-family: var(--clay-font-body);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--clay-ink);
+  letter-spacing: -0.1px;
+  transition: color var(--pkt-motion-fast);
+}
+.experiment-card:hover .experiment-card__cta,
+.experiment-card:focus-visible .experiment-card__cta {
+  color: var(--clay-body);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.001ms !important;
