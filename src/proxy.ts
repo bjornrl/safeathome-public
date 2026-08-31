@@ -73,6 +73,12 @@ export async function proxy(request: NextRequest) {
 
   // Optional dev lock: require auth on every non-public route.
   if (DEV_LOCK_ENABLED && !isPublicPath(pathname) && !signedIn) {
+    // API-ruter får JSON, ikke en redirect. En fetch() følger redirecten og
+    // ville fått innloggingssida som HTML med status 200 — som klienten ikke
+    // kan tolke, og som ser ut som en tilfeldig parse-feil.
+    if (pathname.startsWith("/api/")) {
+      return NextResponse.json({ error: "Ikke innlogget." }, { status: 401 });
+    }
     return NextResponse.redirect(loginRedirect(request));
   }
 

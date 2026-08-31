@@ -319,3 +319,9 @@ export const HOUSE_HOTSPOTS: { theme: HouseTheme; x: number; y: number; label: s
   { theme: "garden",         x: 55, y: 80, label: "Hage" },
   { theme: "phone",          x: 78, y: 56, label: "Telefon" },
 ];
+
+// ─── Kontaktskjema ───
+// Grensene bor her, ikke i lib/contact-email.ts, slik at klientskjemaet kan
+// importere dem uten å dra serverkoden (og Resend-nøkkelen) inn i bundelen.
+export const CONTACT_MESSAGE_MAX = 5000;
+export const CONTACT_SUBJECT_MAX = 200;

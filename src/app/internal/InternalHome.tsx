@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { FONT_STACK, colors, space, typography } from "@/lib/design-tokens";
+import { FONT_STACK, colors, radius, space, typography } from "@/lib/design-tokens";
+import ContactForm from "@/components/ContactForm";
 
 /**
  * The internal landing page.
@@ -112,15 +113,74 @@ export default function InternalHome() {
       className="[max-width:1200px] [margin:0_auto] [padding:40px_24px_96px]"
     >
       <header className="[margin-bottom:12px]">
+        <p style={{ ...typography.sizes.t16, color: colors.textMuted, marginTop: 10 }}>
+          Velkommen til
+        </p>
         <h1 className="[font-size:40px] [font-weight:700] [letter-spacing:-0.02em] [color:#2a2859] [margin:0_0_12px]">
-          Analysebordet for SAFE@HOME
+          Arbeidsplatform for SAFE@HOME
         </h1>
         {/* The one global honesty line, per §6.4: mark what is finished, not
             what is in progress — in-progress is almost everything. */}
-        <p style={{ ...typography.sizes.t16, color: colors.textMuted, margin: 0 }}>
-          Alt her er arbeid under utvikling.
+        <p style={{ ...typography.sizes.t28, color: colors.textBody, marginTop: 24 }}>
+          Safe@HOME-prosjektets interne arbeidsbenk
         </p>
       </header>
+
+      {/* Meldingsskjemaet. Boblen nede til høyre dekker resten av plattformen,
+          men her — der folk lander etter innlogging — ligger det åpent, uten
+          et klikk foran seg. */}
+      <section
+        style={{
+          marginTop: space.s48,
+          paddingTop: space.s32,
+          borderTop: `1px solid ${colors.borderSubtle}`,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            gap: space.s24,
+            alignItems: "flex-start",
+            flexWrap: "wrap",
+            marginBottom: space.s32,
+            padding: space.s24,
+            background: colors.bgCard,
+            border: `1px solid ${colors.borderSubtle}`,
+            borderRadius: radius.lg,
+          }}
+        >
+          <ProfilePhoto src="/images/bjorn.jpg" name="Bjørn Ravlo-Leira" size={104} />
+          <div style={{ flex: "1 1 280px", minWidth: 0 }}>
+            <h2
+              style={{
+                ...typography.sizes.t22,
+                fontWeight: typography.weights.regular,
+                color: colors.textBody,
+                letterSpacing: "-0.01em",
+                lineHeight: 1.45,
+                margin: 0,
+              }}
+            >
+              Denne plattformen vil bli jobbet med kontinuerlig under prosjektet.
+              Dersom noe er uklart, ikke nøl med å sende meg en melding. Det kan
+              du gjøre ved å skrive her, eller ringe meg. Mitt nummer er{" "}
+              <a
+                href="tel:+4795463335"
+                style={{
+                  color: colors.brandWarmBlue,
+                  textDecoration: "underline",
+                  textUnderlineOffset: "3px",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                +47 954 63 335
+              </a>
+              .
+            </h2>
+          </div>
+        </div>
+        <ContactForm />
+      </section>
 
       <div
         style={{
@@ -208,6 +268,7 @@ export default function InternalHome() {
           </p>
         </section>
       </div>
+
     </main>
   );
 }
@@ -243,3 +304,54 @@ const muted: React.CSSProperties = {
   ...typography.sizes.t14,
   color: colors.textMuted,
 };
+
+function ProfilePhoto({ src, name, size }: { src: string; name: string; size: number }) {
+  const [errored, setErrored] = useState(false);
+  const initials = name
+    .trim()
+    .split(/\s+/)
+    .map((part) => part[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
+  if (errored) {
+    return (
+      <span
+        aria-hidden
+        style={{
+          width: size,
+          height: size,
+          borderRadius: "50%",
+          flexShrink: 0,
+          background: colors.brandDarkBlue,
+          color: colors.textLight,
+          display: "inline-flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: Math.round(size / 2.6),
+          fontWeight: typography.weights.bold,
+        }}
+      >
+        {initials}
+      </span>
+    );
+  }
+
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={src}
+      alt={name}
+      onError={() => setErrored(true)}
+      style={{
+        width: size,
+        height: size,
+        borderRadius: "50%",
+        objectFit: "cover",
+        flexShrink: 0,
+        border: `2px solid ${colors.borderSubtle}`,
+      }}
+    />
+  );
+}

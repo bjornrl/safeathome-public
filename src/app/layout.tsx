@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import ContactWidget from "@/components/ContactWidget";
 
 // Inter is the working substitute for Clay's licensed Plain Black face.
 // Exposed as --font-inter for the Clay --clay-font-* tokens.
@@ -32,7 +33,13 @@ export default function RootLayout({
       {/* suppressHydrationWarning: browser extensions (e.g. ColorZilla) add
           attributes to <body> before React mounts, causing a harmless
           hydration warning in dev. Only silences attribute-level diffs. */}
-      <body suppressHydrationWarning>{children}</body>
+      {/* ContactWidget monteres her, ikke per side: den skal ligge over alt
+          innhold på hver skjerm. Den avgjør selv om den vises — kun innlogget,
+          og ikke på /internal, som har skjemaet inline. */}
+      <body suppressHydrationWarning>
+        {children}
+        <ContactWidget />
+      </body>
     </html>
   );
 }
