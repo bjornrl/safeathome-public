@@ -73,9 +73,16 @@ const en: Dictionary = {
 
   footer: {
     tagline:
-      "A research platform on ageing, care and technology within the «Living safely at home» reform.",
+      "A research project on ageing, care and belonging within the «Living safely at home» reform.",
+    navigate: "Navigate",
     researchPartners: "Research partners",
     municipalPartners: "Municipal partners",
+    copyright: "© 2026 The SAFE@HOME consortium",
+    links: {
+      about: "About the project",
+      welfareTech: "Existing initiatives",
+      municipalities: "For municipalities",
+    },
   },
 
   greeting: {
@@ -179,16 +186,6 @@ const en: Dictionary = {
     contactHeading: "Want to know more, or work with us?",
     contactLead: "Get in touch with the project leadership or the platform team.",
 
-    footerBlurb:
-      "A research project on ageing, care and belonging within the «Living safely at home» reform.",
-    footerNavigate: "Navigate",
-    footerConsortium: "Consortium",
-    footerCopyright: "© 2026 The SAFE@HOME consortium",
-    footerLinks: {
-      about: "About the project",
-      welfareTech: "Existing initiatives",
-      municipalities: "For municipalities",
-    },
   },
 
   about: {
@@ -305,11 +302,16 @@ const en: Dictionary = {
     metaDescription:
       "What is new since last time, entrances to the views, and the state of the material.",
     welcomeTo: "Welcome to",
-    heading: "The SAFE@HOME work platform",
-    workbench: "The SAFE@HOME project's internal workbench",
+    heading: "SAFE@HOME",
+    lead:
+      "This is the SAFE@HOME project's internal workbench. It is worked on and updated continuously throughout the project, in coordination with everyone on the team.",
     workInProgress: "Everything here is work in progress.",
+    scrollCue: "See what is here",
+    contactEyebrow: "Who to ask",
     contactLead:
-      "This platform will be worked on continuously throughout the project. If anything is unclear, do not hesitate to send me a message. You can do that by writing here, or by calling me. My number is",
+      "I am Bjørn, and I am responsible for the platform. Everything about how to use it is further down this page. If something is still unclear, send me a message here — or give me a call. Most things people wonder about are quick to sort out.",
+    contactPhoneLabel: "Phone",
+    formEyebrow: "Send a message",
     recentNotes: "Latest notes",
     noNotes: "No notes yet. The first one entered will show up here.",
     entrances: "Entrances",

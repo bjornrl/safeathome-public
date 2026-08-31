@@ -204,12 +204,6 @@ export default async function HomePage({ params }: PageProps<"/[lang]">) {
   const tax = getTaxonomy(lang);
   const href = (path: string) => withLocale(lang, path);
 
-  const footerLinks = [
-    { href: href("/about"), label: t.home.footerLinks.about },
-    { href: href("/welfare-tech"), label: t.home.footerLinks.welfareTech },
-    { href: href("/for-municipalities"), label: t.home.footerLinks.municipalities },
-  ];
-
   return (
     <>
       <Nav />
@@ -699,126 +693,6 @@ export default async function HomePage({ params }: PageProps<"/[lang]">) {
           </div>
         </section>
 
-        {/* ── Footer (cream — NOT dark, per Clay system rule) ── */}
-        <footer
-          style={{
-            background: clay.colors.surfaceSoft,
-            color: clay.colors.body,
-            fontFamily: clay.font.body,
-          }}
-        >
-          <div
-            style={{
-              maxWidth: "1280px",
-              margin: "0 auto",
-              padding: `80px ${space.s24} ${space.s40}`,
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-              gap: space.s40,
-            }}
-          >
-            <div>
-              <p
-                style={{
-                  fontFamily: clay.font.display,
-                  fontSize: "32px",
-                  fontWeight: 500,
-                  letterSpacing: "-0.5px",
-                  marginBottom: space.s16,
-                  color: clay.colors.ink,
-                }}
-              >
-                safe@home
-              </p>
-              <p
-                style={{
-                  ...typography.sizes.t14,
-                  color: clay.colors.body,
-                  maxWidth: "32ch",
-                  lineHeight: 1.55,
-                }}
-              >
-                {t.home.footerBlurb}
-              </p>
-            </div>
-            <div>
-              <p style={{ ...eyebrow, marginBottom: space.s16 }}>{t.home.footerNavigate}</p>
-              <ul
-                style={{
-                  listStyle: "none",
-                  padding: 0,
-                  margin: 0,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: space.s8,
-                }}
-              >
-                {footerLinks.map((link) => (
-                  <li key={link.href}>
-                    <Link
-                      href={link.href}
-                      style={{
-                        ...typography.sizes.t14,
-                        color: clay.colors.body,
-                        textDecoration: "none",
-                      }}
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <div>
-              <p style={{ ...eyebrow, marginBottom: space.s16 }}>{t.home.footerConsortium}</p>
-              <p style={{ ...typography.sizes.t14, color: clay.colors.body, marginBottom: space.s4 }}>
-                OsloMet · UiO · Durham · Comte
-              </p>
-              <p style={{ ...typography.sizes.t14, color: clay.colors.muted }}>
-                Bydel Alna · Bydel Søndre Nordstrand
-              </p>
-            </div>
-          </div>
-          <div
-            style={{
-              borderTop: `1px solid ${clay.colors.hairline}`,
-              padding: `${space.s16} ${space.s24}`,
-            }}
-          >
-            <div
-              style={{
-                maxWidth: "1280px",
-                margin: "0 auto",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                gap: space.s16,
-                flexWrap: "wrap",
-              }}
-            >
-              <p
-                style={{
-                  ...typography.sizes.t12,
-                  color: clay.colors.mutedSoft,
-                }}
-              >
-                {t.home.footerCopyright}
-              </p>
-              <Link
-                href={href("/login")}
-                style={{
-                  ...typography.sizes.t12,
-                  color: clay.colors.muted,
-                  textDecoration: "none",
-                  borderBottom: `1px dashed ${clay.colors.hairline}`,
-                  paddingBottom: "2px",
-                }}
-              >
-                {t.nav.signInTeam}
-              </Link>
-            </div>
-          </div>
-        </footer>
       </main>
     </>
   );

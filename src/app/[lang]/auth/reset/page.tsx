@@ -62,15 +62,15 @@ export default function ResetPasswordPage() {
         style={{ fontFamily: FONT_STACK }}
         className="[max-width:440px] [margin:0_auto] [padding:80px_24px_96px]"
       >
-        <p className="[font-size:12px] [font-weight:600] [text-transform:uppercase] [letter-spacing:0.18em] [color:#808080] [margin-bottom:16px]">
-          {t.reset.eyebrow}
-        </p>
-        <h1 className="[font-size:40px] [font-weight:700] [line-height:1.1] [letter-spacing:-0.02em] [color:#2a2859] [margin-bottom:16px]">
-          {t.reset.heading}
-        </h1>
-        <p className="[font-size:17px] [line-height:1.6] [color:#666666] [margin-bottom:32px]">
-          {hasRecovery === false ? t.reset.expired : t.reset.intro}
-        </p>
+        {/* Inline styles og ikke klasser: globals.css setter h1/p uten @layer,
+            og ulagret CSS slår all lagret CSS uansett spesifisitet — også
+            Tailwind-utilities. Klassene som sto her ([font-size:40px],
+            [margin-bottom:16px] …) ble derfor kastet, h1-en havnet på
+            globals' 72px/line-height 1.0 med margin 0, og overskrifta la seg
+            oppå ingressen. Inline style vinner over begge deler. */}
+        <p style={eyebrowStyle}>{t.reset.eyebrow}</p>
+        <h1 style={headingStyle}>{t.reset.heading}</h1>
+        <p style={leadStyle}>{hasRecovery === false ? t.reset.expired : t.reset.intro}</p>
 
         {hasRecovery !== false && (
           <form
@@ -133,7 +133,7 @@ export default function ResetPasswordPage() {
           </form>
         )}
 
-        <p className="[margin-top:24px] [font-size:13px] [color:#808080] [line-height:1.6]">
+        <p style={{ marginTop: 24, fontSize: 13, lineHeight: 1.6, color: "#808080" }}>
           <Link href={href("/login")} className="[color:#1f42aa] [font-weight:500]">
             {t.reset.backToLogin}
           </Link>
@@ -143,6 +143,31 @@ export default function ResetPasswordPage() {
     </>
   );
 }
+
+const eyebrowStyle: React.CSSProperties = {
+  fontSize: 12,
+  fontWeight: 600,
+  textTransform: "uppercase",
+  letterSpacing: "0.18em",
+  color: "#808080",
+  marginBottom: 16,
+};
+
+const headingStyle: React.CSSProperties = {
+  fontSize: 40,
+  fontWeight: 700,
+  lineHeight: 1.1,
+  letterSpacing: "-0.02em",
+  color: "#2a2859",
+  marginBottom: 16,
+};
+
+const leadStyle: React.CSSProperties = {
+  fontSize: 17,
+  lineHeight: 1.6,
+  color: "#666666",
+  marginBottom: 32,
+};
 
 const inputStyle: React.CSSProperties = {
   padding: "10px 16px",
