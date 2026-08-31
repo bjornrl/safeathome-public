@@ -59,7 +59,7 @@ const WORK_PACKAGE_CARDS: {
       code: "WP4",
       key: "wp4",
       lead: "Alejandro Miranda Nieto · Øystein Evensen",
-      institution: "OsloMet · Comte Bureau",
+      institution: "OsloMet · Comte",
       bg: clay.colors.peach,
       ink: clay.colors.ink,
       muted: "rgba(10, 10, 10, 0.65)",
@@ -144,6 +144,25 @@ const FIELD_SITES = [
   { place: "Søndre Nordstrand", region: "Oslo" },
 ];
 
+// Lettere prototyper som nærmer seg prosjektets temaer fra en annen kant.
+// All tekst ligger i ordbøkene; bare lenka og bildet er felles for begge språk.
+const EXPERIMENTS: {
+  key: keyof Dictionary["home"]["experiments"];
+  href: string;
+  image: string;
+}[] = [
+    {
+      key: "bedIntoRoom",
+      href: "https://fa-sengen-inn.netlify.app/",
+      image: "/images/experiments/fa-sengen-inn.png",
+    },
+    {
+      key: "healthGuide",
+      href: "https://luxury-tapioca-a46cee.netlify.app/",
+      image: "/images/experiments/helseveiviser.png",
+    },
+  ];
+
 const container: React.CSSProperties = {
   maxWidth: "1280px",
   margin: "0 auto",
@@ -168,6 +187,15 @@ const eyebrow: React.CSSProperties = {
 const sectionPad: React.CSSProperties = {
   padding: `${space.s96} ${space.s24}`,
 };
+
+// Arbeidspakkene og prosjektgruppa er midlertidig av på forsiden. På main ble
+// de kommentert ut, men det lar seg ikke gjøre her: WP-kortene inneholder
+// `/^WP\d:\s*/`, og sekvensen `*/` inni det regexet ville avsluttet en
+// JSX-blokkkommentar midt i seksjonen. Et flagg holder koden typesjekket og
+// søkbar i stedet for å råtne som kommentar.
+// Typet som boolean, ikke literal false, så resten av grenen ikke smalnes bort.
+const SHOW_WORK_PACKAGES: boolean = false;
+const SHOW_PEOPLE: boolean = false;
 
 export default async function HomePage({ params }: PageProps<"/[lang]">) {
   const { lang } = await params;
@@ -223,9 +251,61 @@ export default async function HomePage({ params }: PageProps<"/[lang]">) {
                 >
                   {t.home.heroBody}
                 </p>
-                <Link href={href("/about")} style={{ textDecoration: "none" }}>
-                  <Button variant="primary" size="lg">{t.home.heroCta}</Button>
-                </Link>
+                <style>{`
+                  .customOutlineBtn {
+                    background: ${clay.colors.canvas};
+                    border: 2px solid ${clay.colors.ink};
+                    color: ${clay.colors.ink};
+                    transition: background 0.15s, color 0.15s, border 0.15s;
+                  }
+                  .customOutlineBtn:hover, .customOutlineBtn:focus-visible {
+                    background: ${clay.colors.ink};
+                    color: ${clay.colors.canvas};
+                    border-color: ${clay.colors.ink};
+                  }
+                  .customPrimaryBtn {
+                    transition: background 0.15s, color 0.15s, border 0.15s;
+                  }
+                  .customPrimaryBtn:hover, .customPrimaryBtn:focus-visible {
+                    background: ${clay.colors.ink};
+                    color: ${clay.colors.canvas};
+                  }
+                `}</style>
+                <div style={{ display: "flex", gap: space.s16 }}>
+                  <Link href={href("/about")} style={{ textDecoration: "none" }}>
+                    <Button
+                      variant="primary"
+                      size="lg"
+                      className="customPrimaryBtn"
+                      style={{
+                        // fallback color for server-sided rendering
+                        background: clay.colors.ink,
+                        color: "#fff",
+                      }}
+                    >
+                      {t.home.heroCta}
+                    </Button>
+                  </Link>
+                  <Link
+                    href={t.home.heroCtaReformHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ textDecoration: "none" }}
+                  >
+                    <Button
+                      variant="primary"
+                      size="lg"
+                      className="customOutlineBtn"
+                      style={{
+                        background: clay.colors.canvas,
+                        border: `2px solid ${clay.colors.ink}`,
+                        color: clay.colors.ink,
+                      }}
+                    >
+                      {t.home.heroCtaReform}
+                    </Button>
+                  </Link>
+                </div>
               </div>
 
               <HeroIllustration alt={t.home.heroIllustrationAlt} />
@@ -302,7 +382,64 @@ export default async function HomePage({ params }: PageProps<"/[lang]">) {
           </div>
         </section>
 
+        {/* ── Experiments ─────────────────────────────────────── */}
+        <section style={{ background: clay.colors.surfaceSoft }}>
+          <div style={{ ...container, ...sectionPad }}>
+            <p style={{ ...eyebrow, marginBottom: space.s16 }}>{t.home.experimentsEyebrow}</p>
+            <h2 style={{ marginBottom: space.s24, maxWidth: "24ch" }}>
+              {t.home.experimentsHeading}
+            </h2>
+            <p
+              style={{
+                ...typography.sizes.t18,
+                color: clay.colors.body,
+                lineHeight: 1.6,
+                maxWidth: "58ch",
+                marginBottom: space.s48,
+              }}
+            >
+              {t.home.experimentsLead}
+            </p>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
+                gap: space.s24,
+              }}
+            >
+              {EXPERIMENTS.map((exp) => {
+                const copy = t.home.experiments[exp.key];
+                return (
+                  <a
+                    key={exp.href}
+                    href={exp.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="experiment-card"
+                    aria-label={`${copy.cta}: ${copy.title}`}
+                  >
+                    <div className="experiment-card__body">
+                      <p className="experiment-card__tag">{copy.tag}</p>
+                      <h3 className="experiment-card__title">{copy.title}</h3>
+                      <div className="experiment-card__media">
+                        <img
+                          src={exp.image}
+                          alt={copy.imageAlt}
+                          className="experiment-card__image"
+                        />
+                      </div>
+                      <p className="experiment-card__text">{copy.body}</p>
+                      <span className="experiment-card__cta">{copy.cta} →</span>
+                    </div>
+                  </a>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
         {/* ── Work packages ──────────────────────────────────── */}
+        {SHOW_WORK_PACKAGES && (
         <section style={{ background: clay.colors.surfaceSoft }}>
           <div style={{ ...container, ...sectionPad }}>
             <p style={{ ...eyebrow, marginBottom: space.s16 }}>{t.home.wpEyebrow}</p>
@@ -391,6 +528,7 @@ export default async function HomePage({ params }: PageProps<"/[lang]">) {
             </div>
           </div>
         </section>
+        )}
 
         {/* ── Partners ────────────────────────────────────────── */}
         <section>
@@ -499,6 +637,7 @@ export default async function HomePage({ params }: PageProps<"/[lang]">) {
         </section>
 
         {/* ── People ─────────────────────────────────────────── */}
+        {SHOW_PEOPLE && (
         <section style={{ background: clay.colors.surfaceCard }}>
           <div style={{ ...container, ...sectionPad }}>
             <p style={{ ...eyebrow, marginBottom: space.s16 }}>{t.home.peopleEyebrow}</p>
@@ -517,6 +656,7 @@ export default async function HomePage({ params }: PageProps<"/[lang]">) {
             <People />
           </div>
         </section>
+        )}
 
         {/* ── Contact CTA band ────────────────────────────────── */}
         <section>

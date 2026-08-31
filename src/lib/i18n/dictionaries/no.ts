@@ -91,12 +91,16 @@ const no = {
   home: {
     metaTitle: "SAFE@HOME — Tilpasning av kommunale hjemmetjenester for aldrende innvandrere",
     metaDescription:
-      "Et forskningsprosjekt (2026–2029) som tilpasser kommunale hjemmetjenester for eldre innvandrere — ledet av OsloMet med UiO, Durham og Comte Bureau, i feltsamarbeid med bydelene Alna og Søndre Nordstrand.",
+      "Et forskningsprosjekt (2026–2029) som tilpasser kommunale hjemmetjenester for eldre innvandrere — ledet av OsloMet med UiO, Durham og Comte, i feltsamarbeid med bydelene Alna og Søndre Nordstrand.",
     heroEyebrow: "Forskningsprosjekt · 2026–2029",
     heroLead: "Tilpasning av kommunale hjemmetjenester for aldrende innvandrere.",
     heroBody:
       "SAFE@HOME er et forskningsprosjekt initiert av Marit Haldar og Carolina Borges Rau Steuernagel. Det skal undersøke hvordan reformen Bo trygt hjemme møter hverdagen i transnasjonale husholdninger. Vi følger tre skalaer — fra soverom til bystyresal — og kartlegger friksjonene og kvalitetene som oppstår når kommunal omsorg møter mangfoldige eldreliv.",
     heroCta: "Les mer om SAFE@HOME",
+    heroCtaReform: "Les om Bo trygt hjemme-reformen",
+    // Stortingsmeldinga finnes bare på norsk, så begge språk peker samme vei.
+    heroCtaReformHref:
+      "https://www.regjeringen.no/no/dokumenter/meld.-st.-24-20222023/id2984417/?ch=1",
     heroIllustrationAlt: "Illustrasjon for SAFE@HOME",
 
     aboutEyebrow: "Om prosjektet",
@@ -122,8 +126,31 @@ const no = {
       wp4: "Å ko-skape praktiske løsninger og tjenester sammen med beboere, ansatte og kommuner.",
     },
 
+    experimentsEyebrow: "Eksperimenter",
+    experimentsHeading: "Små prototyper, nye perspektiver",
+    experimentsLead:
+      "Underveis i SAFE@HOME lager vi også lettere eksperimenter — litt for moro skyld, men med et alvorlig spørsmål bak: hvordan kan nye formater åpne andre måter å forstå og løse prosjektets utfordringer på?",
+    experiments: {
+      bedIntoRoom: {
+        title: "Få sengen inn",
+        tag: "Spill",
+        body:
+          "Trangere planløsning, som er gjennomgående for familier med innvandrerbakgrunn, er et kjent hinder for å få inn medisinsk utstyr og dermed også muliggjøre folk å forbli hjemme, også i krevende situasjoner. Dette er et lite spill om å få en omsorgsseng inn i et hjem. Det synliggjør hvordan møbler, dører og romplan blir til barrierer — og hvorfor «bo trygt hjemme» også handler om det materielle rommet.",
+        cta: "Spill Få sengen inn",
+        imageAlt: "Skjermbilde fra spillet Få sengen inn — plantegning med omsorgsseng",
+      },
+      healthGuide: {
+        title: "Helseveiviseren på flere språk",
+        tag: "Prototype",
+        body:
+          "En flerspråklig utgave av Oslo kommunes Helseveiviser (norsk, engelsk og urdu). Det er et kjent problem at innbyggere med innvandrerbakgrunn, som behersker norsk svakt eller dårlig, stiller dårligere i tilgangen til helsetjenester og har mindre mulighet til å orientere seg uten direkte hjelp fra helsepersonell eller familie. Helseveiviseren på flere språk er et forsøk på å tilgjengeliggjøre helsetilbud for alle deler av befolkningen. Det langsiktige målet er å gjøre befolkningen mer autonom i forhold til egen helse.",
+        cta: "Åpne Helseveiviseren",
+        imageAlt: "Skjermbilde fra Helseveiviseren på urdu",
+      },
+    },
+
     partnersEyebrow: "Partnere",
-    partnersHeading: "Et tverrfaglig konsortium på tvers av forskning, design og kommune.",
+    partnersHeading: "Et tverrfaglig konsortium på tvers av forskning, privat sektor og kommune.",
     partnerRoles: {
       lead: "Prosjektleder",
       research: "Forskningspartner",
@@ -146,7 +173,7 @@ const no = {
     peopleEyebrow: "Prosjektgruppe",
     peopleHeading: "Forskere, designere og kommunale partnere.",
     peopleLead:
-      "Prosjektet drives av et team på tvers av OsloMet, Universitetet i Oslo, Durham University og Comte Bureau, i tett samarbeid med Bydel Alna og Bydel Søndre Nordstrand.",
+      "Prosjektet drives av et team på tvers av OsloMet, Universitetet i Oslo, Durham University og Comte, i tett samarbeid med Bydel Alna og Bydel Søndre Nordstrand.",
 
     contactEyebrow: "Kontakt",
     contactHeading: "Vil du vite mer, eller samarbeide?",

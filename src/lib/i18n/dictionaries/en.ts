@@ -90,12 +90,16 @@ const en: Dictionary = {
   home: {
     metaTitle: "SAFE@HOME — Adapting municipal home care services for ageing immigrants",
     metaDescription:
-      "A research project (2026–2029) adapting municipal home care services for older immigrants — led by OsloMet with UiO, Durham and Comte Bureau, in field collaboration with the Alna and Søndre Nordstrand districts of Oslo.",
+      "A research project (2026–2029) adapting municipal home care services for older immigrants — led by OsloMet with UiO, Durham and Comte, in field collaboration with the Alna and Søndre Nordstrand districts of Oslo.",
     heroEyebrow: "Research project · 2026–2029",
     heroLead: "Adapting municipal home care services for ageing immigrants.",
     heroBody:
       "SAFE@HOME is a research project initiated by Marit Haldar and Carolina Borges Rau Steuernagel. It examines how Norway's «Living safely at home» reform meets everyday life in transnational households. We follow three scales — from bedroom to city council chamber — and map the frictions and qualities that arise when municipal care meets diverse later lives.",
     heroCta: "Read more about SAFE@HOME",
+    heroCtaReform: "Read about the «Living safely at home» reform",
+    // The white paper exists in Norwegian only, so both locales link to it.
+    heroCtaReformHref:
+      "https://www.regjeringen.no/no/dokumenter/meld.-st.-24-20222023/id2984417/?ch=1",
     heroIllustrationAlt: "SAFE@HOME illustration",
 
     aboutEyebrow: "About the project",
@@ -122,8 +126,31 @@ const en: Dictionary = {
       wp4: "Co-creating practical solutions and services together with residents, staff and municipalities.",
     },
 
+    experimentsEyebrow: "Experiments",
+    experimentsHeading: "Small prototypes, new perspectives",
+    experimentsLead:
+      "Alongside SAFE@HOME we also build lighter experiments — partly for the fun of it, but with a serious question behind them: how might new formats open up other ways of understanding and solving the project's challenges?",
+    experiments: {
+      bedIntoRoom: {
+        title: "Getting the bed in",
+        tag: "Game",
+        body:
+          "Cramped floor plans, common among families with an immigrant background, are a well-known obstacle to bringing in medical equipment — and so to letting people stay at home even in demanding situations. This is a small game about getting a care bed into a home. It makes visible how furniture, doorways and room layout turn into barriers — and why «living safely at home» is also a question of physical space.",
+        cta: "Play Getting the bed in",
+        imageAlt: "Screenshot from the game Getting the bed in — a floor plan with a care bed",
+      },
+      healthGuide: {
+        title: "The Health Guide in several languages",
+        tag: "Prototype",
+        body:
+          "A multilingual version of the City of Oslo's Health Guide (Norwegian, English and Urdu). It is a well-documented problem that residents with an immigrant background who speak little or poor Norwegian have worse access to health services, and less opportunity to find their way without direct help from health personnel or family. The multilingual Health Guide is an attempt to make health services legible to every part of the population. The longer-term aim is a population more autonomous in matters of its own health.",
+        cta: "Open the Health Guide",
+        imageAlt: "Screenshot from the Health Guide in Urdu",
+      },
+    },
+
     partnersEyebrow: "Partners",
-    partnersHeading: "An interdisciplinary consortium across research, design and local government.",
+    partnersHeading: "An interdisciplinary consortium across research, the private sector and local government.",
     partnerRoles: {
       lead: "Project lead",
       research: "Research partner",
@@ -146,7 +173,7 @@ const en: Dictionary = {
     peopleEyebrow: "Project team",
     peopleHeading: "Researchers, designers and municipal partners.",
     peopleLead:
-      "The project is run by a team spanning OsloMet, the University of Oslo, Durham University and Comte Bureau, in close collaboration with the Alna and Søndre Nordstrand districts.",
+      "The project is run by a team spanning OsloMet, the University of Oslo, Durham University and Comte, in close collaboration with the Alna and Søndre Nordstrand districts.",
 
     contactEyebrow: "Contact",
     contactHeading: "Want to know more, or work with us?",
