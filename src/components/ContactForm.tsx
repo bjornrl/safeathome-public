@@ -5,6 +5,39 @@ import { usePathname } from "next/navigation";
 import { clay, colors, motion, space, typography } from "@/lib/design-tokens";
 import { Button, Field, Input, Textarea } from "@/components/ui";
 import { CONTACT_MESSAGE_MAX } from "@/lib/constants";
+import { useI18n } from "@/lib/i18n/I18nProvider";
+import { fill } from "@/lib/i18n/dictionary";
+import type { Dictionary } from "@/lib/i18n/dictionaries/no";
+
+/**
+ * Ruta svarer med en kode; her ligger oversettelsen. Faller tilbake på
+ * serverens egen tekst når koden er ukjent, slik at en feil vi ikke har
+ * oversatt ennå vises som norsk melding framfor å bli borte.
+ */
+function errorFor(
+  t: Dictionary,
+  payload: { error?: string; code?: string; length?: number; max?: number } | null,
+): string {
+  switch (payload?.code) {
+    case "empty":
+      return t.contact.errorEmpty;
+    case "too_long":
+      return fill(t.contact.errorTooLong, {
+        n: payload.length ?? 0,
+        max: payload.max ?? CONTACT_MESSAGE_MAX,
+      });
+    case "unauthorized":
+      return t.contact.errorUnauthorized;
+    case "bad_request":
+      return t.contact.errorBadRequest;
+    case "not_configured":
+      return t.contact.errorNotConfigured;
+    case "send_failed":
+      return t.contact.errorSendFailed;
+    default:
+      return payload?.error ?? t.contact.errorGeneric;
+  }
+}
 
 type Status = "idle" | "sending" | "sent" | "error";
 
@@ -21,6 +54,7 @@ export default function ContactForm({
   compact?: boolean;
   onSent?: () => void;
 }) {
+  const { t } = useI18n();
   const pathname = usePathname();
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
@@ -51,7 +85,7 @@ export default function ContactForm({
       const payload = await res.json().catch(() => null);
 
       if (!res.ok || !payload?.ok) {
-        setError(payload?.error ?? "Meldingen ble ikke sendt. Prøv igjen.");
+        setError(errorFor(t, payload));
         setStatus("error");
         return;
       }
@@ -61,7 +95,7 @@ export default function ContactForm({
       setMessage("");
       onSent?.();
     } catch {
-      setError("Fikk ikke kontakt med serveren. Sjekk nettforbindelsen.");
+      setError(t.contact.errorNetwork);
       setStatus("error");
     }
   }
@@ -84,13 +118,13 @@ export default function ContactForm({
             margin: `0 0 ${space.s8}`,
           }}
         >
-          Meldingen er sendt.
+          {t.contact.sentTitle}
         </p>
         <p style={{ ...typography.sizes.t14, color: clay.colors.muted, margin: `0 0 ${space.s16}` }}>
-          Takk — den ligger nå i innboksen.
+          {t.contact.sentBody}
         </p>
         <Button variant="secondary" size="sm" onClick={() => setStatus("idle")}>
-          Skriv en til
+          {t.contact.again}
         </Button>
       </div>
     );
@@ -106,23 +140,27 @@ export default function ContactForm({
         fontFamily: clay.font.body,
       }}
     >
-      <Field label="Emne (valgfritt)">
+      <Field label={t.contact.subjectLabel}>
         <Input
           value={subject}
           onChange={(e) => setSubject(e.target.value)}
-          placeholder="Kort om hva det gjelder"
+          placeholder={t.contact.subjectPlaceholder}
           disabled={status === "sending"}
         />
       </Field>
 
       <Field
-        label="Melding"
-        error={tooLong ? `Meldingen er ${trimmed.length} tegn — maks er ${CONTACT_MESSAGE_MAX}.` : undefined}
+        label={t.contact.messageLabel}
+        error={
+          tooLong
+            ? fill(t.contact.errorTooLong, { n: trimmed.length, max: CONTACT_MESSAGE_MAX })
+            : undefined
+        }
       >
         <Textarea
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          placeholder="Skriv meldingen her…"
+          placeholder={t.contact.messagePlaceholder}
           required
           disabled={status === "sending"}
           style={{ minHeight: compact ? "120px" : "160px", resize: "vertical" }}
@@ -140,7 +178,7 @@ export default function ContactForm({
 
       <div style={{ display: "flex", alignItems: "center", gap: space.s16 }}>
         <Button type="submit" variant="primary" size={compact ? "sm" : "md"} disabled={!canSend}>
-          {status === "sending" ? "Sender…" : "Send melding"}
+          {status === "sending" ? t.contact.sending : t.contact.send}
         </Button>
         <span
           style={{
@@ -149,7 +187,7 @@ export default function ContactForm({
             transition: `color ${motion.fast}`,
           }}
         >
-          Sendes fra kontoen du er innlogget med.
+          {t.contact.sentFromAccount}
         </span>
       </div>
     </form>

@@ -11,6 +11,8 @@ import {
   type ThreadSourceType,
 } from "@/lib/threads";
 import { FONT_STACK, colors, space, typography } from "@/lib/design-tokens";
+import { useI18n } from "@/lib/i18n/I18nProvider";
+import { fill } from "@/lib/i18n/dictionary";
 
 /**
  * The one analysis surface a data collector meets.
@@ -26,6 +28,7 @@ export default function ThreadMembership({
   sourceType: ThreadSourceType;
   sourceId: string;
 }) {
+  const { t, href } = useI18n();
   const [memberOf, setMemberOf] = useState<Thread[] | null>(null);
   const [picking, setPicking] = useState(false);
   const [all, setAll] = useState<Thread[] | null>(null);
@@ -97,22 +100,22 @@ export default function ThreadMembership({
 
   return (
     <section style={{ fontFamily: FONT_STACK, display: "flex", flexDirection: "column", gap: space.s8 }}>
-      <p style={heading}>Tråder</p>
+      <p style={heading}>{t.threads.membershipHeading}</p>
 
       {memberOf.length === 0 ? (
         <p style={{ ...typography.sizes.t14, color: colors.textMuted, margin: 0 }}>
-          {SOURCE_NOUN[sourceType]} inngår ikke i noen tråd ennå.
+          {fill(t.threads.notInAnyThread, { noun: t.threads.sourceNoun[sourceType] })}
         </p>
       ) : (
         <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: space.s4 }}>
-          {memberOf.map((t) => (
-            <li key={t.id}>
-              <Link href={`/internal/threads?thread=${t.id}`} style={threadLink}>
-                {t.title}
+          {memberOf.map((thread) => (
+            <li key={thread.id}>
+              <Link href={href(`/internal/threads?thread=${thread.id}`)} style={threadLink}>
+                {thread.title}
               </Link>
-              {t.vetted && (
+              {thread.vetted && (
                 <span style={{ fontSize: 11, fontWeight: 600, color: "#0e7c66", marginLeft: space.s8 }}>
-                  ✓ Vi står ved denne
+                  {t.threads.vetted}
                 </span>
               )}
             </li>
@@ -122,24 +125,24 @@ export default function ThreadMembership({
 
       {!picking ? (
         <button type="button" onClick={openPicker} style={linkButton}>
-          Legg til i tråd
+          {t.threads.addToThread}
         </button>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: space.s8, marginTop: space.s4 }}>
           {all === null ? (
-            <p style={{ ...typography.sizes.t14, color: colors.textMuted, margin: 0 }}>Laster tråder…</p>
+            <p style={{ ...typography.sizes.t14, color: colors.textMuted, margin: 0 }}>{t.threads.loadingThreads}</p>
           ) : (
             <>
               {available.length > 0 && (
                 <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "flex", flexDirection: "column", gap: space.s4 }}>
-                  {available.map((t) => (
+                  {available.map((thread) => (
                     <li
-                      key={t.id}
+                      key={thread.id}
                       style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: space.s12 }}
                     >
-                      <span style={{ ...typography.sizes.t14, color: colors.textBody }}>{t.title}</span>
-                      <button type="button" disabled={busy} onClick={() => addTo(t.id)} style={linkButton}>
-                        Legg til
+                      <span style={{ ...typography.sizes.t14, color: colors.textBody }}>{thread.title}</span>
+                      <button type="button" disabled={busy} onClick={() => addTo(thread.id)} style={linkButton}>
+                        {t.common.add}
                       </button>
                     </li>
                   ))}
@@ -150,16 +153,16 @@ export default function ThreadMembership({
                 <input
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
-                  placeholder={available.length > 0 ? "…eller ny tråd" : "Arbeidstittel på ny tråd"}
+                  placeholder={available.length > 0 ? t.threads.orNewThread : t.threads.newThreadTitle}
                   style={input}
                 />
                 <button type="button" disabled={busy || !newTitle.trim()} onClick={createAndAdd} style={linkButton}>
-                  Opprett og legg til
+                  {t.threads.createAndAdd}
                 </button>
               </div>
 
               <button type="button" onClick={() => setPicking(false)} style={{ ...linkButton, color: colors.textMuted }}>
-                Avbryt
+                {t.common.cancel}
               </button>
             </>
           )}
@@ -170,13 +173,6 @@ export default function ThreadMembership({
     </section>
   );
 }
-
-const SOURCE_NOUN: Record<ThreadSourceType, string> = {
-  quick_note: "Dette notatet",
-  insight: "Denne innsikten",
-  story: "Denne historien",
-  resource: "Denne ressursen",
-};
 
 const heading: React.CSSProperties = {
   ...typography.sizes.t12,

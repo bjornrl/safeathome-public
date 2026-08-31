@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { useState } from "react";
 import type { PublicResource, PublicStory, ResourceType, CareFriction, CareQuality } from "@/lib/types";
-import { FRICTIONS, QUALITIES, RESOURCE_TYPE_LABELS, SCALES } from "@/lib/constants";
 import type { ResourceLinksByResource } from "@/lib/queries";
 import { FONT_STACK } from "@/lib/design-tokens";
+import { useI18n } from "@/lib/i18n/I18nProvider";
+import { fill } from "@/lib/i18n/dictionary";
 
 
 // Oslo tones used to distinguish resource types at a glance.
@@ -31,6 +32,7 @@ export default function ResourceList({
   links?: ResourceLinksByResource;
   storiesById?: Record<string, PublicStory>;
 }) {
+  const { t, tax } = useI18n();
   if (resources.length === 0) {
     return (
       <p
@@ -50,10 +52,10 @@ export default function ResourceList({
     const types = Array.from(new Set(resources.map((r) => r.type))) as ResourceType[];
     return (
       <div style={{ display: "grid", gap: 48, fontFamily: FONT_STACK }}>
-        {types.map((t) => {
-          const bucket = resources.filter((r) => r.type === t);
+        {types.map((type) => {
+          const bucket = resources.filter((r) => r.type === type);
           return (
-            <section key={t}>
+            <section key={type}>
               <header
                 style={{
                   display: "flex",
@@ -61,7 +63,7 @@ export default function ResourceList({
                   gap: 10,
                   marginBottom: 24,
                   paddingBottom: 8,
-                  borderBottom: `2px solid ${TYPE_ACCENT[t]}`,
+                  borderBottom: `2px solid ${TYPE_ACCENT[type]}`,
                 }}
               >
                 <span
@@ -70,7 +72,7 @@ export default function ResourceList({
                     width: 12,
                     height: 12,
                     borderRadius: "50%",
-                    background: TYPE_ACCENT[t],
+                    background: TYPE_ACCENT[type],
                   }}
                 />
                 <h2
@@ -81,10 +83,10 @@ export default function ResourceList({
                     letterSpacing: "-0.01em",
                   }}
                 >
-                  {RESOURCE_TYPE_LABELS[t]}
+                  {tax.resourceTypeLabels[type]}
                 </h2>
                 <span style={{ fontSize: 13, color: "#9a9a9a" }}>
-                  {bucket.length} {bucket.length === 1 ? "oppføring" : "oppføringer"}
+                  {bucket.length} {bucket.length === 1 ? t.common.entryOne : t.common.entryOther}
                 </span>
               </header>
               <div
@@ -130,6 +132,7 @@ function ResourceCard({
   links?: { stories: string[]; frictions: CareFriction[]; qualities: CareQuality[] };
   storiesById?: Record<string, PublicStory>;
 }) {
+  const { t, tax, href } = useI18n();
   const accent = TYPE_ACCENT[resource.type];
   // Prefer an external link; fall back to an uploaded document.
   const linkHref = resource.url ?? resource.file_url;
@@ -173,7 +176,7 @@ function ResourceCard({
             color: accent,
           }}
         >
-          {RESOURCE_TYPE_LABELS[resource.type]}
+          {tax.resourceTypeLabels[resource.type]}
         </span>
         {resource.year && (
           <span style={{ fontSize: 12, color: "#9a9a9a" }}>{resource.year}</span>
@@ -207,7 +210,7 @@ function ResourceCard({
       {links && (links.frictions.length > 0 || links.qualities.length > 0) && (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 12 }}>
           {links.frictions.map((f) => {
-            const color = FRICTIONS[f]?.color ?? "#808080";
+            const color = tax.frictions[f]?.color ?? "#808080";
             return (
               <span
                 key={`f-${f}`}
@@ -220,12 +223,12 @@ function ResourceCard({
                   fontWeight: 500,
                 }}
               >
-                {FRICTIONS[f]?.label ?? f}
+                {tax.frictions[f]?.label ?? f}
               </span>
             );
           })}
           {links.qualities.map((q) => {
-            const color = QUALITIES[q]?.color ?? "#808080";
+            const color = tax.qualities[q]?.color ?? "#808080";
             return (
               <span
                 key={`q-${q}`}
@@ -238,7 +241,7 @@ function ResourceCard({
                   fontWeight: 500,
                 }}
               >
-                {QUALITIES[q]?.label ?? q}
+                {tax.qualities[q]?.label ?? q}
               </span>
             );
           })}
@@ -265,14 +268,14 @@ function ResourceCard({
               fontWeight: 600,
             }}
           >
-            Tilknyttede innsikter · {linkedStories.length} {storiesOpen ? "−" : "+"}
+            {fill(t.resources.linkedInsights, { n: linkedStories.length })} {storiesOpen ? "−" : "+"}
           </button>
           {storiesOpen && (
             <ul style={{ listStyle: "none", margin: "8px 0 0", padding: 0, display: "flex", flexDirection: "column", gap: 4 }}>
               {linkedStories.map((s) => (
                 <li key={s.id}>
                   <Link
-                    href={`/story/${s.id}`}
+                    href={href(`/story/${s.id}`)}
                     style={{ fontSize: 12, color: "#2a2859", textDecoration: "underline" }}
                   >
                     {s.title}
@@ -290,15 +293,15 @@ function ResourceCard({
           {resource.authors && (resource.field_site || resource.map_scale) && " · "}
           {resource.field_site}
           {resource.field_site && resource.map_scale && " · "}
-          {resource.map_scale ? SCALES[resource.map_scale].label : null}
+          {resource.map_scale ? tax.scales[resource.map_scale].label : null}
         </span>
         {linkHref ? (
           <span style={{ fontSize: 13, fontWeight: 600, color: accent }}>
-            {resource.url ? "Åpne →" : "Last ned →"}
+            {resource.url ? t.resources.open : t.resources.download}
           </span>
         ) : (
           <span style={{ fontSize: 12, fontStyle: "italic", color: "#9a9a9a" }}>
-            Kommer snart
+            {t.resources.comingSoon}
           </span>
         )}
       </div>

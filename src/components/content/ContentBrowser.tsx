@@ -2,21 +2,17 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
-import { FRICTIONS, QUALITIES, RESOURCE_TYPE_LABELS, SCALES } from "@/lib/constants";
+import { FRICTIONS, QUALITIES } from "@/lib/constants";
 import { loadCorpus, type CorpusKind, type CorpusNode } from "@/lib/corpus";
 import { semanticSearch } from "@/app/actions/search";
 import { FONT_STACK } from "@/lib/design-tokens";
 import ThreadMembership from "@/components/threads/ThreadMembership";
 import type { CareFriction, CareQuality } from "@/lib/types";
+import { useI18n } from "@/lib/i18n/I18nProvider";
+import { fill } from "@/lib/i18n/dictionary";
 
 const FRICTION_KEYS = Object.keys(FRICTIONS) as CareFriction[];
 const QUALITY_KEYS = Object.keys(QUALITIES) as CareQuality[];
-
-const KIND_LABEL: Record<CorpusKind, string> = {
-  quick_note: "Notat",
-  insight: "Innsikt",
-  resource: "Ressurs",
-};
 
 const KIND_COLOR: Record<CorpusKind, string> = {
   quick_note: "#0e7c66",
@@ -38,6 +34,7 @@ const KIND_ORDER: CorpusKind[] = ["quick_note", "insight", "resource"];
  * and the cards look identical whether you searched or not.
  */
 export default function ContentBrowser() {
+  const { t, tax } = useI18n();
   const [nodes, setNodes] = useState<CorpusNode[] | null>(null);
   const [loadError, setLoadError] = useState(false);
 
@@ -115,7 +112,7 @@ export default function ContentBrowser() {
 
   if (loadError) {
     return <p style={{ fontFamily: FONT_STACK, fontSize: 15, color: "#a83f34" }}>
-        Klarte ikke å hente materialet. Last siden på nytt.
+        {t.browser.loadError}
       </p>;
   }
 
@@ -129,8 +126,8 @@ export default function ContentBrowser() {
             setQuery(e.target.value);
             if (!e.target.value.trim()) setMatchIds(null);
           }}
-          placeholder="Søk i alt materialet…"
-          aria-label="Søk"
+          placeholder={t.browser.searchPlaceholder}
+          aria-label={t.common.search}
           style={{
             flex: 1,
             fontFamily: FONT_STACK,
@@ -156,28 +153,28 @@ export default function ContentBrowser() {
             whiteSpace: "nowrap",
           }}
         >
-          {pending ? "Søker…" : "Søk"}
+          {pending ? t.common.searching : t.common.search}
         </button>
       </form>
 
       <section style={{ marginBottom: 32, padding: 20, background: "#f9f9f9", border: "1px solid #e6e6e6", borderRadius: 8 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 12, flexWrap: "wrap" }}>
           <p style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.12em", color: "#808080" }}>
-            Filter
+            {t.common.filter}
           </p>
           {activeFilters > 0 && (
             <button type="button" onClick={clearAll} style={linkButton}>
-              Nullstill filtre ({activeFilters})
+              {fill(t.readingRoom.clearWithCount, { n: activeFilters })}
             </button>
           )}
         </div>
 
-        <p style={groupLabel}>Type</p>
+        <p style={groupLabel}>{t.browser.typeLabel}</p>
         <div style={chipRow}>
           {KIND_ORDER.map((k) => (
             <Chip
               key={k}
-              label={KIND_LABEL[k]}
+              label={t.browser.kinds[k]}
               color={KIND_COLOR[k]}
               active={kinds.includes(k)}
               onClick={() => toggle(kinds, setKinds, k)}
@@ -185,26 +182,26 @@ export default function ContentBrowser() {
           ))}
         </div>
 
-        <p style={groupLabel}>Friksjoner</p>
+        <p style={groupLabel}>{t.browser.frictionsLabel}</p>
         <div style={chipRow}>
           {FRICTION_KEYS.map((k) => (
             <Chip
               key={k}
-              label={FRICTIONS[k].label}
-              color={FRICTIONS[k].color}
+              label={tax.frictions[k].label}
+              color={tax.frictions[k].color}
               active={frictions.includes(k)}
               onClick={() => toggle(frictions, setFrictions, k)}
             />
           ))}
         </div>
 
-        <p style={groupLabel}>Kvaliteter</p>
+        <p style={groupLabel}>{t.browser.qualitiesLabel}</p>
         <div style={{ ...chipRow, marginBottom: 0 }}>
           {QUALITY_KEYS.map((k) => (
             <Chip
               key={k}
-              label={QUALITIES[k].label}
-              color={QUALITIES[k].color}
+              label={tax.qualities[k].label}
+              color={tax.qualities[k].color}
               active={qualities.includes(k)}
               onClick={() => toggle(qualities, setQualities, k)}
             />
@@ -213,26 +210,26 @@ export default function ContentBrowser() {
       </section>
 
       {nodes === null ? (
-        <p style={{ fontSize: 14, color: "#808080" }}>Laster…</p>
+        <p style={{ fontSize: 14, color: "#808080" }}>{t.common.loading}</p>
       ) : filtered.length === 0 ? (
         <div style={{ padding: 24, background: "#ffffff", border: "1px dashed #e6e6e6", borderRadius: 8 }}>
           <p style={{ fontSize: 15, color: "#666666", marginBottom: activeFilters > 0 || matchIds ? 12 : 0 }}>
             {matchIds
-              ? "Ingen treff på dette søket."
+              ? t.browser.noSearchHits
               : activeFilters > 0
-                ? "Ingenting matcher disse filtrene."
-                : "Ingenting her ennå. Det første som legges inn, dukker opp her."}
+                ? t.browser.noFilterHits
+                : t.browser.empty}
           </p>
           {activeFilters > 0 && (
             <button type="button" onClick={clearAll} style={{ ...linkButton, padding: 0 }}>
-              Nullstill filtre
+              {t.common.clearFilters}
             </button>
           )}
         </div>
       ) : (
         <>
           <p style={{ fontSize: 13, color: "#808080", marginBottom: 16 }}>
-            {filtered.length} {filtered.length === 1 ? "oppføring" : "oppføringer"}
+            {filtered.length} {filtered.length === 1 ? t.common.entryOne : t.common.entryOther}
           </p>
           {[...grouped.entries()].map(([kind, bucket]) => (
             <div key={kind} style={{ marginBottom: 40 }}>
@@ -247,9 +244,9 @@ export default function ContentBrowser() {
                 }}
               >
                 <span aria-hidden style={{ width: 10, height: 10, borderRadius: "50%", background: KIND_COLOR[kind] }} />
-                <h3 style={{ fontSize: 20, fontWeight: 600, color: "#2a2859" }}>{KIND_LABEL[kind]}</h3>
+                <h3 style={{ fontSize: 20, fontWeight: 600, color: "#2a2859" }}>{t.browser.kinds[kind]}</h3>
                 <span style={{ fontSize: 13, color: "#9a9a9a" }}>
-                  {bucket.length} {bucket.length === 1 ? "oppføring" : "oppføringer"}
+                  {bucket.length} {bucket.length === 1 ? t.common.entryOne : t.common.entryOther}
                 </span>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
@@ -272,6 +269,7 @@ export default function ContentBrowser() {
  * list they were browsing, and the trip to the graph is one explicit click.
  */
 function DetailPanel({ node, onClose }: { node: CorpusNode; onClose: () => void }) {
+  const { t, tax, href } = useI18n();
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -306,10 +304,10 @@ function DetailPanel({ node, onClose }: { node: CorpusNode; onClose: () => void 
       >
         <div style={{ display: "flex", justifyContent: "space-between", gap: 16, marginBottom: 16 }}>
           <span style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.12em", color: KIND_COLOR[node.kind] }}>
-            {KIND_LABEL[node.kind]}
+            {t.browser.kinds[node.kind]}
           </span>
           <button type="button" onClick={onClose} style={{ ...linkButton, fontSize: 13 }}>
-            Lukk
+            {t.common.close}
           </button>
         </div>
 
@@ -329,15 +327,15 @@ function DetailPanel({ node, onClose }: { node: CorpusNode; onClose: () => void 
         )}
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 24 }}>
-          {node.resourceType && <Tag label={RESOURCE_TYPE_LABELS[node.resourceType]} color="#6b3fa0" />}
-          {node.mapScale && <Tag label={SCALES[node.mapScale].label} color="#7a756b" />}
+          {node.resourceType && <Tag label={tax.resourceTypeLabels[node.resourceType]} color="#6b3fa0" />}
+          {node.mapScale && <Tag label={tax.scales[node.mapScale].label} color="#7a756b" />}
           {node.workPackage && <Tag label={node.workPackage} color="#7a756b" />}
           {node.fieldSite && <Tag label={node.fieldSite} color="#7a756b" />}
           {node.frictions.map((f) => (
-            <Tag key={f} label={FRICTIONS[f].label} color={FRICTIONS[f].color} />
+            <Tag key={f} label={tax.frictions[f].label} color={tax.frictions[f].color} />
           ))}
           {node.qualities.map((q) => (
-            <Tag key={q} label={QUALITIES[q].label} color={QUALITIES[q].color} />
+            <Tag key={q} label={tax.qualities[q].label} color={tax.qualities[q].color} />
           ))}
         </div>
 
@@ -348,10 +346,10 @@ function DetailPanel({ node, onClose }: { node: CorpusNode; onClose: () => void 
         </div>
 
         <Link
-          href={`/internal/content?tab=nodes&focus=${encodeURIComponent(node.id)}`}
+          href={href(`/internal/content?tab=nodes&focus=${encodeURIComponent(node.id)}`)}
           style={{ fontSize: 14, fontWeight: 600, color: "#1f42aa" }}
         >
-          Vis i nodekart →
+          {t.browser.showInNodeMap}
         </Link>
       </aside>
     </>
@@ -359,6 +357,7 @@ function DetailPanel({ node, onClose }: { node: CorpusNode; onClose: () => void 
 }
 
 function NodeCard({ node, onOpen }: { node: CorpusNode; onOpen: () => void }) {
+  const { tax } = useI18n();
   const preview = node.body.replace(/\s+/g, " ").trim().slice(0, 140);
   return (
     <button
@@ -392,14 +391,14 @@ function NodeCard({ node, onOpen }: { node: CorpusNode; onOpen: () => void }) {
         </p>
       )}
       <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-        {node.resourceType && <Tag label={RESOURCE_TYPE_LABELS[node.resourceType]} color="#6b3fa0" />}
-        {node.mapScale && <Tag label={SCALES[node.mapScale].label} color="#7a756b" />}
+        {node.resourceType && <Tag label={tax.resourceTypeLabels[node.resourceType]} color="#6b3fa0" />}
+        {node.mapScale && <Tag label={tax.scales[node.mapScale].label} color="#7a756b" />}
         {node.workPackage && <Tag label={node.workPackage} color="#7a756b" />}
         {node.frictions.map((f) => (
-          <Tag key={f} label={FRICTIONS[f].label} color={FRICTIONS[f].color} />
+          <Tag key={f} label={tax.frictions[f].label} color={tax.frictions[f].color} />
         ))}
         {node.qualities.map((q) => (
-          <Tag key={q} label={QUALITIES[q].label} color={QUALITIES[q].color} />
+          <Tag key={q} label={tax.qualities[q].label} color={tax.qualities[q].color} />
         ))}
       </div>
     </button>
@@ -415,6 +414,7 @@ function NodeCard({ node, onOpen }: { node: CorpusNode; onOpen: () => void }) {
  * make silently, so those get a download instead.
  */
 function ResourceAccess({ node }: { node: CorpusNode }) {
+  const { t } = useI18n();
   const r = node.raw as { url?: string | null; file_url?: string | null; file_name?: string | null };
   const url = r.url ?? null;
   const fileUrl = r.file_url ?? null;
@@ -425,7 +425,7 @@ function ResourceAccess({ node }: { node: CorpusNode }) {
 
   return (
     <div style={{ marginBottom: 24, paddingTop: 20, borderTop: "1px solid #e6e6e6" }}>
-      <p style={{ ...groupLabel, marginBottom: 12 }}>Ressursen</p>
+      <p style={{ ...groupLabel, marginBottom: 12 }}>{t.browser.resourceSection}</p>
 
       {url && (
         <p style={{ marginBottom: 12 }}>
@@ -435,7 +435,7 @@ function ResourceAccess({ node }: { node: CorpusNode }) {
             rel="noopener noreferrer"
             style={{ fontSize: 14, fontWeight: 600, color: "#1f42aa", wordBreak: "break-all" }}
           >
-            Åpne lenke ↗
+            {t.browser.openLink}
           </a>
         </p>
       )}
@@ -447,15 +447,15 @@ function ResourceAccess({ node }: { node: CorpusNode }) {
               data={fileUrl}
               type="application/pdf"
               style={{ width: "100%", height: 420, border: "1px solid #e6e6e6", marginBottom: 12 }}
-              aria-label={`Forhåndsvisning av ${fileName ?? "PDF"}`}
+              aria-label={fill(t.browser.previewOf, { name: fileName ?? "PDF" })}
             >
               <p style={{ fontSize: 13, color: "#666666", padding: 12 }}>
-                Nettleseren kan ikke vise PDF-en her. Bruk nedlastingslenken under.
+                {t.browser.pdfPreviewFallback}
               </p>
             </object>
           ) : (
             <p style={{ fontSize: 13, color: "#666666", marginBottom: 12 }}>
-              Formatet kan ikke forhåndsvises i nettleseren. Last ned filen for å åpne den.
+              {t.browser.noPreview}
             </p>
           )}
           <a
@@ -465,7 +465,7 @@ function ResourceAccess({ node }: { node: CorpusNode }) {
             download={fileName ?? undefined}
             style={{ fontSize: 14, fontWeight: 600, color: "#1f42aa", wordBreak: "break-all" }}
           >
-            Last ned{fileName ? ` — ${fileName}` : ""} ↓
+            {t.browser.download}{fileName ? ` — ${fileName}` : ""} ↓
           </a>
         </>
       )}

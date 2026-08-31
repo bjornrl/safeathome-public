@@ -2,11 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { QUALITIES, FRICTIONS, QUALITY_COPY } from "@/lib/constants";
+import { QUALITIES, FRICTIONS } from "@/lib/constants";
 import type { CareFriction, CareQuality, CategoryDescription } from "@/lib/types";
 import { getQualityDescriptions } from "@/lib/queries";
 import { loadCorpus, type CorpusNode } from "@/lib/corpus";
 import { FONT_STACK } from "@/lib/design-tokens";
+import { useI18n } from "@/lib/i18n/I18nProvider";
+import { fill } from "@/lib/i18n/dictionary";
 const QUALITY_KEYS = Object.keys(QUALITIES) as CareQuality[];
 
 /**
@@ -34,6 +36,7 @@ function firstSharedCategory(a: CorpusNode, b: CorpusNode): { key: string; color
 }
 
 export default function QualitiesPanel() {
+  const { t, tax } = useI18n();
   const [stories, setStories] = useState<CorpusNode[]>([]);
   const [descriptions, setDescriptions] = useState<Record<string, CategoryDescription>>({});
   const [expandedKey, setExpandedKey] = useState<CareQuality | null>(null);
@@ -68,16 +71,14 @@ export default function QualitiesPanel() {
       <div style={{ fontFamily: FONT_STACK }}>
         {stories.length === 0 && (
           <p style={{ fontSize: 14, lineHeight: 1.6, color: "#666666", maxWidth: 620, marginBottom: 24 }}>
-            Her kommer feltmaterialet. Datainnsamlingen i Alna og Søndre Nordstrand
-            starter høsten 2026 — etter hvert som notater tagges med kvaliteter,
-            dukker de opp her.
+            {t.qualities.corpusEmpty}
           </p>
         )}
 
         <div>
           <div className="qualities-scroll [display:flex] [gap:16px] [overflow-x:auto] [scroll-snap-type:x_mandatory] [padding-bottom:32px]">
             {QUALITY_KEYS.map(k => {
-            const q = QUALITIES[k];
+            const q = tax.qualities[k];
             const bucket = stories.filter(s => s.qualities?.includes(k));
             const desc = descriptions[k];
             const hasDescription = Boolean(desc && (desc.long_description.trim().length > 0 || (desc.examples?.length ?? 0) > 0));
@@ -89,7 +90,7 @@ export default function QualitiesPanel() {
                     <span style={{
                   color: q.color
                 }} className="[display:inline-block] [font-size:11px] [font-weight:600] [text-transform:uppercase] [letter-spacing:0.12em] [margin-bottom:8px]">
-                      {bucket.length} {bucket.length === 1 ? "historie" : "historier"}
+                      {bucket.length} {bucket.length === 1 ? t.common.storyOne : t.common.storyOther}
                     </span>
                     <button
                       type="button"
@@ -98,9 +99,9 @@ export default function QualitiesPanel() {
                       aria-label={
                         hasDescription
                           ? isExpanded
-                            ? `Skjul beskrivelse for ${q.label}`
-                            : `Vis beskrivelse for ${q.label}`
-                          : `${q.label} — beskrivelse kommer snart`
+                            ? fill(t.qualities.hideDescription, { label: q.label })
+                            : fill(t.qualities.showDescription, { label: q.label })
+                          : fill(t.qualities.descriptionComingSoon, { label: q.label })
                       }
                       disabled={!hasDescription}
                       style={{
@@ -147,12 +148,12 @@ export default function QualitiesPanel() {
                           margin: 0,
                         }}
                       >
-                        {QUALITY_COPY[k]}
+                        {tax.qualityCopy[k]}
                       </p>
                     </button>
                     {!hasDescription && (
                       <p style={{ fontSize: 11, color: "#9a9a9a", fontStyle: "italic", marginTop: 8 }}>
-                        Lengre beskrivelse kommer snart.
+                        {t.qualities.descriptionPending}
                       </p>
                     )}
                     {isExpanded && hasDescription && (
@@ -170,7 +171,7 @@ export default function QualitiesPanel() {
                         {(desc.examples?.length ?? 0) > 0 && (
                           <>
                             <p style={{ fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.12em", color: "#808080", marginBottom: 6 }}>
-                              Eksempler
+                              {t.qualities.examples}
                             </p>
                             <ul style={{ listStyle: "disc", paddingLeft: 18, margin: 0 }}>
                               {desc.examples.map((ex, i) => (
@@ -187,7 +188,7 @@ export default function QualitiesPanel() {
 
                   <div className="[display:flex] [flex-direction:column] [gap:8px]">
                     {bucket.length === 0 ? <p className="[font-size:14px] [color:#9a9a9a]">
-                        Ingen historier ennå.
+                        {t.qualities.noStories}
                       </p> : bucket.map(s => {
                         const isHovered = hoveredStory?.id === s.id;
                         const shared = hoveredStory && !isHovered ? firstSharedCategory(hoveredStory, s) : null;
@@ -249,8 +250,9 @@ function QualityStoryCard({
   onEnter?: () => void;
   onLeave?: () => void;
 }) {
+  const { tax, href } = useI18n();
   const preview = story.body.split("\n\n")[0].slice(0, 120);
-  return <Link href={`/internal/content?tab=nodes&focus=${encodeURIComponent(story.id)}`} onMouseEnter={onEnter} onMouseLeave={onLeave} style={{
+  return <Link href={href(`/internal/content?tab=nodes&focus=${encodeURIComponent(story.id)}`)} onMouseEnter={onEnter} onMouseLeave={onLeave} style={{
     background: highlighted ? highlightColor + "10" : "#f9f9f9",
     border: `1px solid ${isOrigin ? highlightColor : highlighted ? highlightColor + "88" : "#e6e6e6"}`,
     boxShadow: isOrigin ? `0 0 0 1px ${highlightColor}` : undefined,
@@ -274,14 +276,14 @@ function QualityStoryCard({
             {story.fieldSite}
           </span>}
         {story.frictions?.slice(0, 2).map(f => <span key={f} style={{
-        background: FRICTIONS[f]?.color + "18",
-        color: FRICTIONS[f]?.color,
+        background: tax.frictions[f]?.color + "18",
+        color: tax.frictions[f]?.color,
         fontSize: 10,
         padding: "2px 8px",
         borderRadius: 4,
         fontWeight: 500,
       }}>
-            {FRICTIONS[f]?.label}
+            {tax.frictions[f]?.label}
           </span>)}
       </div>
     </Link>;

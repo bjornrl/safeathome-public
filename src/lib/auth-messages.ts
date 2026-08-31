@@ -1,8 +1,11 @@
 import type { AuthError } from "@supabase/supabase-js";
+import { fill } from "@/lib/i18n/dictionary";
+import type { Dictionary } from "@/lib/i18n/dictionaries/no";
 
 /**
- * Norwegian auth copy, in one place so /login and /auth/reset never drift
- * apart — and so no raw English Supabase string reaches a user.
+ * Auth copy resolution, in one place so /login and /auth/reset never drift
+ * apart — and so no raw English Supabase string reaches a user. The wording
+ * itself lives in the locale dictionaries under `auth`.
  */
 
 /**
@@ -12,22 +15,12 @@ import type { AuthError } from "@supabase/supabase-js";
  */
 export const CODE_LENGTH = 8;
 
-export const AUTH_MSG = {
-  unknownEmail:
-    "Vi fant ingen bruker med denne adressen. Ta kontakt med prosjektadministrator for tilgang.",
-  badCode: "Koden er feil eller utløpt. Be om en ny kode.",
-  rateLimit: "Du har bedt om for mange koder. Vent noen minutter og prøv igjen.",
-  generic: "Noe gikk galt. Prøv igjen om litt.",
-  noProfile:
-    "Kontoen mangler en profil på plattformen. Ta kontakt med prosjektadministrator.",
-  missingEmail: "Skriv inn e-postadressen din først.",
-  shortCode: `Koden er ${CODE_LENGTH} siffer.`,
-  wrongPassword: "Feil e-postadresse eller passord.",
-  samePassword: "Det nye passordet må være forskjellig fra det forrige.",
-  weakPassword: "Passordet er for svakt. Velg et lengre passord.",
-  recoveryExpired:
-    "Gjenopprettingslenken er utløpt. Be om en ny fra innloggingssiden.",
-} as const;
+export type AuthMessages = Dictionary["auth"];
+
+/** The one message that interpolates: «Koden er 8 siffer.» */
+export function shortCodeMessage(messages: AuthMessages): string {
+  return fill(messages.shortCode, { n: CODE_LENGTH });
+}
 
 /**
  * `context` disambiguates errors that share wording across flows: the same
@@ -39,8 +32,9 @@ export type AuthContext = "send" | "verify" | "password";
 export function authErrorMessage(
   err: AuthError | null,
   context: AuthContext,
+  messages: AuthMessages,
 ): string {
-  if (!err) return AUTH_MSG.generic;
+  if (!err) return messages.generic;
 
   const code = err.code ?? "";
   const message = err.message.toLowerCase();
@@ -54,15 +48,15 @@ export function authErrorMessage(
     message.includes("too many requests") ||
     message.includes("only request this after")
   ) {
-    return AUTH_MSG.rateLimit;
+    return messages.rateLimit;
   }
 
   if (context === "password") {
     if (code === "same_password" || message.includes("should be different")) {
-      return AUTH_MSG.samePassword;
+      return messages.samePassword;
     }
     if (code === "weak_password" || message.includes("password should be")) {
-      return AUTH_MSG.weakPassword;
+      return messages.weakPassword;
     }
     // No usable recovery session left — the link was single-use or timed out.
     if (
@@ -73,9 +67,9 @@ export function authErrorMessage(
       message.includes("expired") ||
       message.includes("jwt")
     ) {
-      return AUTH_MSG.recoveryExpired;
+      return messages.recoveryExpired;
     }
-    return AUTH_MSG.generic;
+    return messages.generic;
   }
 
   // `shouldCreateUser: false` rejects addresses that have no auth.users row.
@@ -87,7 +81,7 @@ export function authErrorMessage(
     message.includes("signup is disabled") ||
     message.includes("user not found")
   ) {
-    return AUTH_MSG.unknownEmail;
+    return messages.unknownEmail;
   }
 
   if (context === "verify") {
@@ -99,9 +93,9 @@ export function authErrorMessage(
       message.includes("invalid") ||
       message.includes("token")
     ) {
-      return AUTH_MSG.badCode;
+      return messages.badCode;
     }
   }
 
-  return AUTH_MSG.generic;
+  return messages.generic;
 }
