@@ -20,7 +20,7 @@ export async function POST(request: Request) {
 
   if (error || !user?.email) {
     return Response.json(
-      { error: "Du må være innlogget for å sende melding." },
+      { error: "Du må være innlogget for å sende melding.", code: "unauthorized" },
       { status: 401 },
     );
   }
@@ -29,18 +29,30 @@ export async function POST(request: Request) {
   try {
     body = await request.json();
   } catch {
-    return Response.json({ error: "Ugyldig forespørsel." }, { status: 400 });
+    return Response.json(
+      { error: "Ugyldig forespørsel.", code: "bad_request" },
+      { status: 400 },
+    );
   }
 
   const { message, subject, fromPath } = (body ?? {}) as Record<string, unknown>;
 
   const text = typeof message === "string" ? message.trim() : "";
   if (!text) {
-    return Response.json({ error: "Skriv en melding først." }, { status: 400 });
+    return Response.json(
+      { error: "Skriv en melding først.", code: "empty" },
+      { status: 400 },
+    );
   }
   if (text.length > MESSAGE_MAX) {
     return Response.json(
-      { error: `Meldingen er for lang (maks ${MESSAGE_MAX} tegn).` },
+      {
+        error: `Meldingen er for lang (maks ${MESSAGE_MAX} tegn).`,
+        code: "too_long",
+        // Klienten trenger tallene for å formulere sin egen versjon.
+        length: text.length,
+        max: MESSAGE_MAX,
+      },
       { status: 400 },
     );
   }
@@ -56,7 +68,10 @@ export async function POST(request: Request) {
   });
 
   if (!result.ok) {
-    return Response.json({ error: result.error }, { status: result.status });
+    return Response.json(
+      { error: result.error, code: result.code },
+      { status: result.status },
+    );
   }
 
   return Response.json({ ok: true });

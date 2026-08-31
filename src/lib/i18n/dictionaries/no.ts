@@ -615,35 +615,39 @@ const no = {
 
   // Kontaktwidgeten nederst til høyre. Ligger på hver side, også for utloggede.
   contact: {
-    launcher: "Send en melding",
-    openLabel: "Åpne meldingsfeltet",
-    closeLabel: "Lukk meldingsfeltet",
+    // Skjemaet er kun for innloggede, og avsenderen leses fra økta. Derfor
+    // ingen navn- eller e-postfelt: det er ingenting å spørre om.
+    launcher: "Melding",
+    openLauncherLabel: "Send en melding",
+    closeLauncherLabel: "Lukk meldingsboks",
+    panelLabel: "Send melding",
     title: "Send en melding",
-    subtitle: "Går rett til prosjektledelsen",
-    greeting:
-      "Hei! Har du et spørsmål, en retting, eller noe fra praksis du vil dele? Skriv i vei — meldingen går rett til prosjektledelsen.",
+    subtitle: "Går rett til plattformteamet.",
+    close: "Lukk",
+
+    subjectLabel: "Emne (valgfritt)",
+    subjectPlaceholder: "Kort om hva det gjelder",
     messageLabel: "Melding",
-    messagePlaceholder: "Skriv meldingen din her…",
-    nameLabel: "Navn",
-    namePlaceholder: "Hva heter du?",
-    emailLabel: "E-post",
-    emailPlaceholder: "navn@eksempel.no",
-    optional: "valgfritt",
-    emailHelper: "Legg igjen adressen din hvis du vil ha svar.",
-    send: "Send",
+    messagePlaceholder: "Skriv meldingen her…",
+    send: "Send melding",
     sending: "Sender…",
-    sentTitle: "Takk — meldingen er mottatt.",
-    // {email} = adressen avsenderen oppga.
-    sentWithEmail: "Vi svarer til {email} så snart vi rekker det.",
-    sentNoEmail:
-      "Du la ikke igjen e-postadresse, så vi har dessverre ingen måte å svare deg på.",
-    again: "Send en til",
+    sentFromAccount: "Sendes fra kontoen du er innlogget med.",
+
+    sentTitle: "Meldingen er sendt.",
+    sentBody: "Takk — den ligger nå i innboksen.",
+    again: "Skriv en til",
+
+    // Ruta svarer med en kode; klienten slår opp teksten her. Uten treff
+    // vises serverens egen melding, så en ny feil aldri blir usynlig.
     errorEmpty: "Skriv en melding først.",
-    errorEmail: "E-postadressen ser ikke riktig ut.",
-    errorRate: "Du har sendt mange meldinger i dag. Prøv igjen i morgen.",
-    errorGeneric: "Noe gikk galt, og meldingen ble ikke sendt. Prøv igjen om litt.",
-    // {n} = tegn igjen av grensen.
-    charsLeft: "{n} tegn igjen",
+    // {n} = antall tegn skrevet, {max} = grensen.
+    errorTooLong: "Meldingen er {n} tegn — maks er {max}.",
+    errorUnauthorized: "Du må være innlogget for å sende melding.",
+    errorBadRequest: "Noe var galt med forespørselen. Last siden på nytt.",
+    errorNotConfigured: "Kontaktskjemaet er ikke satt opp.",
+    errorSendFailed: "E-posten kunne ikke sendes. Prøv igjen om litt.",
+    errorGeneric: "Meldingen ble ikke sendt. Prøv igjen.",
+    errorNetwork: "Fikk ikke kontakt med serveren. Sjekk nettforbindelsen.",
   },
 };
 

@@ -172,34 +172,6 @@ export default function Nav({
         zIndex: 50,
       }}
     >
-      {/* Utility row */}
-      <div
-        style={{
-          borderBottom: `1px solid ${clay.colors.hairline}`,
-          background: clay.colors.surfaceSoft,
-        }}
-      >
-        <div
-          style={{
-            maxWidth: "1280px",
-            margin: "0 auto",
-            padding: `${space.s8} ${space.s24}`,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "flex-end",
-            gap: space.s16,
-            ...typography.sizes.t12,
-            color: clay.colors.muted,
-            fontFamily: clay.font.body,
-          }}
-        >
-          <span>{t.nav.utility}</span>
-          <Suspense fallback={null}>
-            <LanguageSwitcher />
-          </Suspense>
-        </div>
-      </div>
-
       {/* Main nav row */}
       <div
         style={{
@@ -308,6 +280,10 @@ function PublicNavRow({
         })}
       </ul>
 
+      <Suspense fallback={null}>
+        <LanguageSwitcher compact />
+      </Suspense>
+
       {signedIn ? (
         <Link href={href("/admin")} style={{ textDecoration: "none" }}>
           <Button variant="secondary" size="sm">{t.nav.admin}</Button>
@@ -402,32 +378,32 @@ function InternalNavRow({
       >
         {t.nav.newNote}
       </Link>
-    <button
-      ref={toggleRef}
-      type="button"
-      aria-label={menuOpen ? t.nav.closeMenu : t.nav.openMenu}
-      aria-expanded={menuOpen}
-      aria-haspopup="true"
-      onClick={() => setMenuOpen(!menuOpen)}
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: space.s8,
-        padding: `${space.s8} ${space.s12}`,
-        background: menuOpen ? clay.colors.ink : clay.colors.canvas,
-        color: menuOpen ? clay.colors.onPrimary : clay.colors.ink,
-        border: `1px solid ${menuOpen ? clay.colors.ink : clay.colors.hairline}`,
-        borderRadius: "var(--clay-radius-md)",
-        cursor: "pointer",
-        fontFamily: clay.font.body,
-        ...typography.sizes.t14,
-        fontWeight: 600,
-        transition: `background ${motion.fast}, color ${motion.fast}, border-color ${motion.fast}`,
-      }}
-    >
-      <HamburgerIcon open={menuOpen} />
-      <span>{menuOpen ? t.nav.closeShort : t.nav.menu}</span>
-    </button>
+      <button
+        ref={toggleRef}
+        type="button"
+        aria-label={menuOpen ? t.nav.closeMenu : t.nav.openMenu}
+        aria-expanded={menuOpen}
+        aria-haspopup="true"
+        onClick={() => setMenuOpen(!menuOpen)}
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: space.s8,
+          padding: `${space.s8} ${space.s12}`,
+          background: menuOpen ? clay.colors.ink : clay.colors.canvas,
+          color: menuOpen ? clay.colors.onPrimary : clay.colors.ink,
+          border: `1px solid ${menuOpen ? clay.colors.ink : clay.colors.hairline}`,
+          borderRadius: "var(--clay-radius-md)",
+          cursor: "pointer",
+          fontFamily: clay.font.body,
+          ...typography.sizes.t14,
+          fontWeight: 600,
+          transition: `background ${motion.fast}, color ${motion.fast}, border-color ${motion.fast}`,
+        }}
+      >
+        <HamburgerIcon open={menuOpen} />
+        <span>{menuOpen ? t.nav.closeShort : t.nav.menu}</span>
+      </button>
     </div>
   );
 }

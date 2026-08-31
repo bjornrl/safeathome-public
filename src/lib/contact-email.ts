@@ -35,9 +35,22 @@ export interface ContactMessage {
   senderEmail: string;
 }
 
+/**
+ * Feilkoder. Klienten slår opp sin egen oversettelse på koden; `error` er
+ * fortsatt med som fallback og for logging, slik at en feil vi ikke har
+ * oversatt ennå vises som norsk tekst framfor å forsvinne.
+ */
+export type ContactErrorCode =
+  | "unauthorized"
+  | "bad_request"
+  | "empty"
+  | "too_long"
+  | "not_configured"
+  | "send_failed";
+
 export type SendResult =
   | { ok: true }
-  | { ok: false; error: string; status: number };
+  | { ok: false; error: string; code: ContactErrorCode; status: number };
 
 function escapeHtml(value: string): string {
   return value
@@ -60,7 +73,12 @@ export async function sendContactEmail(msg: ContactMessage): Promise<SendResult>
       !apiKey ? "RESEND_API_KEY" : "",
       !to ? "CONTACT_TO_EMAIL" : "",
     );
-    return { ok: false, error: "Kontaktskjemaet er ikke satt opp.", status: 500 };
+    return {
+      ok: false,
+      error: "Kontaktskjemaet er ikke satt opp.",
+      code: "not_configured",
+      status: 500,
+    };
   }
 
   const subject = msg.subject?.trim()
@@ -100,14 +118,24 @@ export async function sendContactEmail(msg: ContactMessage): Promise<SendResult>
     });
   } catch (err) {
     console.error("[contact] Resend nådde ikke fram:", err);
-    return { ok: false, error: "Fikk ikke kontakt med e-posttjenesten.", status: 502 };
+    return {
+      ok: false,
+      error: "Fikk ikke kontakt med e-posttjenesten.",
+      code: "send_failed",
+      status: 502,
+    };
   }
 
   if (!res.ok) {
     // Resend-feil er nesten alltid konfigurasjon (uverifisert domene, ugyldig
     // nøkkel). Detaljene hører hjemme i serverloggen, ikke i nettleseren.
     console.error("[contact] Resend svarte", res.status, await res.text().catch(() => ""));
-    return { ok: false, error: "E-posten kunne ikke sendes.", status: 502 };
+    return {
+      ok: false,
+      error: "E-posten kunne ikke sendes.",
+      code: "send_failed",
+      status: 502,
+    };
   }
 
   return { ok: true };

@@ -6,6 +6,8 @@ import { motion as fm, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { clay, space, typography } from "@/lib/design-tokens";
 import ContactForm from "@/components/ContactForm";
+import { useI18n } from "@/lib/i18n/I18nProvider";
+import { splitLocale } from "@/lib/i18n/config";
 
 /**
  * Meldingsboblen nede til høyre.
@@ -19,6 +21,7 @@ import ContactForm from "@/components/ContactForm";
 const SUPPRESSED_PATHS = new Set(["/internal"]);
 
 export default function ContactWidget() {
+  const { t } = useI18n();
   const pathname = usePathname();
   const [signedIn, setSignedIn] = useState(false);
   const [open, setOpen] = useState(false);
@@ -73,7 +76,10 @@ export default function ContactWidget() {
 
 
   if (!signedIn) return null;
-  if (pathname && SUPPRESSED_PATHS.has(pathname)) return null;
+  // SUPPRESSED_PATHS er uten språkprefiks; pathname har det. Uten å strippe
+  // det ville "/no/internal" aldri matchet, og boblen ville lagt seg oppå
+  // skjemaet som allerede står inline på den sida.
+  if (pathname && SUPPRESSED_PATHS.has(splitLocale(pathname).rest)) return null;
 
   return (
     <div
@@ -95,7 +101,7 @@ export default function ContactWidget() {
             ref={panelRef}
             key="panel"
             role="dialog"
-            aria-label="Send melding"
+            aria-label={t.contact.panelLabel}
             initial={{ opacity: 0, y: 12, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 12, scale: 0.97 }}
@@ -129,16 +135,16 @@ export default function ContactWidget() {
                     margin: 0,
                   }}
                 >
-                  Send en melding
+                  {t.contact.title}
                 </p>
                 <p style={{ ...typography.sizes.t12, color: clay.colors.muted, margin: 0 }}>
-                  Går rett til plattformteamet.
+                  {t.contact.subtitle}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                aria-label="Lukk"
+                aria-label={t.contact.close}
                 style={{
                   background: "transparent",
                   border: "none",
@@ -164,7 +170,7 @@ export default function ContactWidget() {
         ref={launcherRef}
         type="button"
         onClick={() => setOpen((v) => !v)}
-        aria-label={open ? "Lukk meldingsboks" : "Send en melding"}
+        aria-label={open ? t.contact.closeLauncherLabel : t.contact.openLauncherLabel}
         aria-expanded={open}
         style={{
           display: "inline-flex",
@@ -183,7 +189,7 @@ export default function ContactWidget() {
         }}
       >
         <ChatIcon open={open} />
-        <span>{open ? "Lukk" : "Melding"}</span>
+        <span>{open ? t.contact.close : t.contact.launcher}</span>
       </button>
     </div>
   );

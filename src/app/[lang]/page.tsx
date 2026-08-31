@@ -440,94 +440,94 @@ export default async function HomePage({ params }: PageProps<"/[lang]">) {
 
         {/* ── Work packages ──────────────────────────────────── */}
         {SHOW_WORK_PACKAGES && (
-        <section style={{ background: clay.colors.surfaceSoft }}>
-          <div style={{ ...container, ...sectionPad }}>
-            <p style={{ ...eyebrow, marginBottom: space.s16 }}>{t.home.wpEyebrow}</p>
-            <h2 style={{ marginBottom: space.s24, maxWidth: "22ch" }}>{t.home.wpHeading}</h2>
-            <p
-              style={{
-                ...typography.sizes.t18,
-                color: clay.colors.muted,
-                maxWidth: "58ch",
-                marginBottom: space.s48,
-                lineHeight: 1.55,
-              }}
-            >
-              {t.home.wpLead}
-            </p>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-                gap: space.s24,
-              }}
-            >
-              {WORK_PACKAGE_CARDS.map((wp) => (
-                <article
-                  key={wp.code}
-                  style={{
-                    background: wp.bg,
-                    color: wp.ink,
-                    borderRadius: "var(--clay-radius-xl)",
-                    padding: space.s32,
-                    display: "flex",
-                    flexDirection: "column",
-                    minHeight: 320,
-                  }}
-                >
-                  <p
+          <section style={{ background: clay.colors.surfaceSoft }}>
+            <div style={{ ...container, ...sectionPad }}>
+              <p style={{ ...eyebrow, marginBottom: space.s16 }}>{t.home.wpEyebrow}</p>
+              <h2 style={{ marginBottom: space.s24, maxWidth: "22ch" }}>{t.home.wpHeading}</h2>
+              <p
+                style={{
+                  ...typography.sizes.t18,
+                  color: clay.colors.muted,
+                  maxWidth: "58ch",
+                  marginBottom: space.s48,
+                  lineHeight: 1.55,
+                }}
+              >
+                {t.home.wpLead}
+              </p>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
+                  gap: space.s24,
+                }}
+              >
+                {WORK_PACKAGE_CARDS.map((wp) => (
+                  <article
+                    key={wp.code}
                     style={{
-                      fontFamily: clay.font.body,
-                      fontSize: "12px",
-                      fontWeight: 600,
-                      letterSpacing: "1.8px",
-                      textTransform: "uppercase",
-                      color: wp.muted,
-                      marginBottom: space.s24,
-                    }}
-                  >
-                    {wp.code}
-                  </p>
-                  <h3
-                    style={{
-                      fontFamily: clay.font.display,
+                      background: wp.bg,
                       color: wp.ink,
-                      letterSpacing: "-0.5px",
-                      fontSize: "26px",
-                      lineHeight: 1.15,
-                      marginBottom: space.s16,
+                      borderRadius: "var(--clay-radius-xl)",
+                      padding: space.s32,
+                      display: "flex",
+                      flexDirection: "column",
+                      minHeight: 320,
                     }}
                   >
-                    {/* Strip the "WP1: " prefix — the code already sits above. */}
-                    {tax.wpLabels[wp.key].label.replace(/^WP\d:\s*/, "")}
-                  </h3>
-                  <p
-                    style={{
-                      ...typography.sizes.t16,
-                      color: wp.ink,
-                      lineHeight: 1.55,
-                      marginBottom: "auto",
-                      opacity: 0.92,
-                    }}
-                  >
-                    {t.home.workPackages[wp.key]}
-                  </p>
-                  <p
-                    style={{
-                      ...typography.sizes.t12,
-                      color: wp.muted,
-                      marginTop: space.s24,
-                    }}
-                  >
-                    {t.home.wpLedBy}{" "}
-                    <span style={{ color: wp.ink, fontWeight: 600 }}>{wp.lead}</span>
-                    <span> · {wp.institution}</span>
-                  </p>
-                </article>
-              ))}
+                    <p
+                      style={{
+                        fontFamily: clay.font.body,
+                        fontSize: "12px",
+                        fontWeight: 600,
+                        letterSpacing: "1.8px",
+                        textTransform: "uppercase",
+                        color: wp.muted,
+                        marginBottom: space.s24,
+                      }}
+                    >
+                      {wp.code}
+                    </p>
+                    <h3
+                      style={{
+                        fontFamily: clay.font.display,
+                        color: wp.ink,
+                        letterSpacing: "-0.5px",
+                        fontSize: "26px",
+                        lineHeight: 1.15,
+                        marginBottom: space.s16,
+                      }}
+                    >
+                      {/* Strip the "WP1: " prefix — the code already sits above. */}
+                      {tax.wpLabels[wp.key].label.replace(/^WP\d:\s*/, "")}
+                    </h3>
+                    <p
+                      style={{
+                        ...typography.sizes.t16,
+                        color: wp.ink,
+                        lineHeight: 1.55,
+                        marginBottom: "auto",
+                        opacity: 0.92,
+                      }}
+                    >
+                      {t.home.workPackages[wp.key]}
+                    </p>
+                    <p
+                      style={{
+                        ...typography.sizes.t12,
+                        color: wp.muted,
+                        marginTop: space.s24,
+                      }}
+                    >
+                      {t.home.wpLedBy}{" "}
+                      <span style={{ color: wp.ink, fontWeight: 600 }}>{wp.lead}</span>
+                      <span> · {wp.institution}</span>
+                    </p>
+                  </article>
+                ))}
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
         )}
 
         {/* ── Partners ────────────────────────────────────────── */}
@@ -638,24 +638,24 @@ export default async function HomePage({ params }: PageProps<"/[lang]">) {
 
         {/* ── People ─────────────────────────────────────────── */}
         {SHOW_PEOPLE && (
-        <section style={{ background: clay.colors.surfaceCard }}>
-          <div style={{ ...container, ...sectionPad }}>
-            <p style={{ ...eyebrow, marginBottom: space.s16 }}>{t.home.peopleEyebrow}</p>
-            <h2 style={{ marginBottom: space.s24, maxWidth: "22ch" }}>{t.home.peopleHeading}</h2>
-            <p
-              style={{
-                ...typography.sizes.t18,
-                color: clay.colors.muted,
-                maxWidth: "58ch",
-                marginBottom: space.s48,
-                lineHeight: 1.55,
-              }}
-            >
-              {t.home.peopleLead}
-            </p>
-            <People />
-          </div>
-        </section>
+          <section style={{ background: clay.colors.surfaceCard }}>
+            <div style={{ ...container, ...sectionPad }}>
+              <p style={{ ...eyebrow, marginBottom: space.s16 }}>{t.home.peopleEyebrow}</p>
+              <h2 style={{ marginBottom: space.s24, maxWidth: "22ch" }}>{t.home.peopleHeading}</h2>
+              <p
+                style={{
+                  ...typography.sizes.t18,
+                  color: clay.colors.muted,
+                  maxWidth: "58ch",
+                  marginBottom: space.s48,
+                  lineHeight: 1.55,
+                }}
+              >
+                {t.home.peopleLead}
+              </p>
+              <People />
+            </div>
+          </section>
         )}
 
         {/* ── Contact CTA band ────────────────────────────────── */}
@@ -677,7 +677,7 @@ export default async function HomePage({ params }: PageProps<"/[lang]">) {
                 <h2 style={{ fontSize: "40px", lineHeight: 1.1, letterSpacing: "-1px", marginBottom: space.s16, maxWidth: "16ch" }}>
                   {t.home.contactHeading}
                 </h2>
-                <p style={{ ...typography.sizes.t18, color: clay.colors.body, lineHeight: 1.55, maxWidth: "48ch" }}>
+                <p style={{ ...typography.sizes.t12, color: clay.colors.body, lineHeight: 1.55, maxWidth: "48ch" }}>
                   {t.home.contactLead}
                 </p>
               </div>

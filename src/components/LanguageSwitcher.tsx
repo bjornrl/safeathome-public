@@ -12,7 +12,14 @@ import { clay, motion, space, typography } from "@/lib/design-tokens";
  * page. Rendered as links rather than a client-side toggle so the choice is
  * shareable and works without JavaScript.
  */
-export default function LanguageSwitcher({ compact = false }: { compact?: boolean }) {
+export default function LanguageSwitcher({
+  compact = false,
+  variant = "default",
+}: {
+  compact?: boolean;
+  /** Dark pill styling for the internal nav row. */
+  variant?: "default" | "internal";
+}) {
   const { lang, t } = useI18n();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -21,22 +28,29 @@ export default function LanguageSwitcher({ compact = false }: { compact?: boolea
   const query = searchParams.toString();
   const suffix = query ? `?${query}` : "";
 
+  const isInternal = variant === "internal";
+
   return (
     <nav
       aria-label={t.common.languageLabel}
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: space.s4,
-        fontFamily: clay.font.body,
-      }}
+      className={isInternal ? "internal-nav-lang" : undefined}
+      style={
+        isInternal
+          ? undefined
+          : {
+              display: "inline-flex",
+              alignItems: "center",
+              gap: space.s4,
+              fontFamily: clay.font.body,
+            }
+      }
     >
       {LOCALES.map((locale, i) => {
         const active = locale === lang;
         return (
           <span key={locale} style={{ display: "inline-flex", alignItems: "center", gap: space.s4 }}>
             {i > 0 && (
-              <span aria-hidden style={{ color: clay.colors.hairline }}>
+              <span aria-hidden className={isInternal ? "internal-nav-lang__sep" : undefined} style={isInternal ? undefined : { color: clay.colors.hairline }}>
                 /
               </span>
             )}
@@ -44,15 +58,19 @@ export default function LanguageSwitcher({ compact = false }: { compact?: boolea
               href={`${withLocale(locale, rest)}${suffix}`}
               hrefLang={locale}
               aria-current={active ? "true" : undefined}
-              style={{
-                ...typography.sizes.t12,
-                fontWeight: active ? 700 : 500,
-                color: active ? clay.colors.ink : clay.colors.muted,
-                textDecoration: "none",
-                textTransform: compact ? "uppercase" : "none",
-                letterSpacing: compact ? "0.08em" : undefined,
-                transition: `color ${motion.fast}`,
-              }}
+              style={
+                isInternal
+                  ? undefined
+                  : {
+                      ...typography.sizes.t12,
+                      fontWeight: active ? 700 : 500,
+                      color: active ? clay.colors.ink : clay.colors.muted,
+                      textDecoration: "none",
+                      textTransform: compact ? "uppercase" : "none",
+                      letterSpacing: compact ? "0.08em" : undefined,
+                      transition: `color ${motion.fast}`,
+                    }
+              }
             >
               {compact ? locale : LOCALE_NAMES[locale]}
             </Link>

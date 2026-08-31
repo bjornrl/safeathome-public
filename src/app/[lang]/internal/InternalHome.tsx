@@ -130,11 +130,11 @@ export default function InternalHome() {
             borderRadius: radius.lg,
           }}
         >
-          <ProfilePhoto src="/images/bjorn.jpg" name="Bjørn Ravlo-Leira" size={104} />
+          <ProfilePhoto src="/images/bjorn.jpg" name="Bjørn Ravlo-Leira" size={80} />
           <div style={{ flex: "1 1 280px", minWidth: 0 }}>
             <h2
               style={{
-                ...typography.sizes.t22,
+                ...typography.sizes.t18,
                 fontWeight: typography.weights.regular,
                 color: colors.textBody,
                 letterSpacing: "-0.01em",
