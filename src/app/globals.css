@@ -401,14 +401,16 @@ a:hover { color: var(--clay-body); text-decoration-color: var(--clay-body); }
 
 /* ── Navlinje-knapper ──────────────────────────────────────────────────
    Språkvelgeren, Hjem, Nytt notat og Meny står på rad i den interne
-   navlinja. De delte form fra før, men ikke oppførsel: hver var stylet med
-   inline-stiler, og inline-stiler kan ikke uttrykke :hover — så ingen av
-   dem hadde hover-tilstand i det hele tatt. Den felles oppførselen bor her.
+   navlinja og deler nå utseendet til Meny-knappen: lys bakgrunn, tynn
+   ramme, mørk fyll bare når knappen er «på».
+
+   Grunnen til at ingen av dem hadde hover før, er at de var stylet med
+   inline-stiler — og inline-stiler kan ikke uttrykke :hover.
 
    Aktiv tilstand leses av selve markupen (aria-current på lenker,
    aria-expanded på menyknappen) framfor en egen klasse, slik at det som
-   ser aktivt ut og det som *er* aktivt for en skjermleser ikke kan
-   komme i utakt. */
+   ser aktivt ut og det som *er* aktivt for en skjermleser ikke kan komme
+   i utakt. */
 .nav-chip {
   display: inline-flex;
   align-items: center;
@@ -436,11 +438,9 @@ a:hover { color: var(--clay-body); text-decoration-color: var(--clay-body); }
   border-color: var(--clay-ink);
 }
 
-/* Aktiv side, åpen meny, og «Nytt notat» — den primære handlingen, som står
-   fylt hele tiden. Full kontrast, ikke bare en mørkere ramme. */
+/* «På»: gjeldende side, eller åpen meny. */
 .nav-chip[aria-current="page"],
-.nav-chip[aria-expanded="true"],
-.nav-chip--primary {
+.nav-chip[aria-expanded="true"] {
   background: var(--clay-ink);
   color: var(--clay-on-primary);
   border-color: var(--clay-ink);
@@ -449,62 +449,46 @@ a:hover { color: var(--clay-body); text-decoration-color: var(--clay-body); }
 .nav-chip[aria-current="page"]:hover,
 .nav-chip[aria-current="page"]:focus-visible,
 .nav-chip[aria-expanded="true"]:hover,
-.nav-chip[aria-expanded="true"]:focus-visible,
-.nav-chip--primary:hover,
-.nav-chip--primary:focus-visible {
+.nav-chip[aria-expanded="true"]:focus-visible {
   background: var(--clay-body-strong);
   border-color: var(--clay-body-strong);
   color: var(--clay-on-primary);
 }
 
-/* Språkvelgeren er ett valg med to utfall, ikke to knapper, så de to
-   lenkene deler én ramme. Innmaten arver chip-ens hover og aktiv-fyll, så
-   den oppfører seg likt de andre uten å se ut som to av dem. */
-.nav-segment {
-  display: inline-flex;
-  align-items: stretch;
-  padding: 0;
-  overflow: hidden;
+/* Språkknappen viser språket du leser på nå, og bytter til invitasjonen —
+   «Switch to English» — når du hovrer. Begge tekstene ligger i samme
+   grid-celle, så knappen er alltid så bred som den lengste av dem: uten
+   det ville navlinja hoppet i det musepekeren traff, og knappen kunne
+   flyttet seg vekk under pekeren. */
+.nav-lang {
+  display: inline-grid;
+  place-items: center;
 }
 
-.nav-segment:hover {
-  background: var(--clay-canvas);
+.nav-lang > span {
+  grid-area: 1 / 1;
+  transition: opacity var(--pkt-motion-fast);
 }
 
-.nav-segment__item {
-  display: inline-flex;
-  align-items: center;
-  padding: 8px 10px;
-  font-family: var(--clay-font-body);
-  font-size: 14px;
-  line-height: 1.4;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--clay-muted);
-  text-decoration: none;
-  transition: background var(--pkt-motion-fast), color var(--pkt-motion-fast);
+.nav-lang__switch {
+  opacity: 0;
 }
 
-.nav-segment__item + .nav-segment__item {
-  border-left: 1px solid var(--clay-hairline);
+.nav-lang:hover .nav-lang__current,
+.nav-lang:focus-visible .nav-lang__current {
+  opacity: 0;
 }
 
-.nav-segment__item:hover,
-.nav-segment__item:focus-visible {
-  background: var(--clay-surface-soft);
-  color: var(--clay-ink);
+.nav-lang:hover .nav-lang__switch,
+.nav-lang:focus-visible .nav-lang__switch {
+  opacity: 1;
 }
 
-.nav-segment__item[aria-current="true"] {
-  background: var(--clay-ink);
-  color: var(--clay-on-primary);
-}
-
-.nav-segment__item[aria-current="true"]:hover,
-.nav-segment__item[aria-current="true"]:focus-visible {
-  background: var(--clay-body-strong);
-  color: var(--clay-on-primary);
+/* Uten hover — touch, eller redusert bevegelse — er teksten som bytter
+   ingen hjelp. Da står språknavnet, og aria-label bærer betydningen. */
+@media (hover: none) {
+  .nav-lang__switch { display: none; }
+  .nav-lang__current { opacity: 1 !important; }
 }
 
 @media (prefers-reduced-motion: reduce) {

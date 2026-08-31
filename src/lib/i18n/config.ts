@@ -19,6 +19,25 @@ export const LOCALE_NAMES: Record<Locale, string> = {
   en: "English",
 };
 
+/**
+ * Invitation to switch, written *in* the language it switches to — the reader
+ * who needs this text is the one who does not read the current language.
+ * Deliberately not in the dictionaries: those hold one locale at a time, and
+ * this string must be the *other* one.
+ */
+export const SWITCH_TO: Record<Locale, string> = {
+  no: "Bytt til norsk",
+  en: "Switch to English",
+};
+
+/**
+ * The locale to switch to. With two locales this is simply "the other one";
+ * a third would need a real picker rather than a toggle.
+ */
+export function otherLocale(lang: Locale): Locale {
+  return lang === "no" ? "en" : "no";
+}
+
 /** Value for <html lang>. */
 export const HTML_LANG: Record<Locale, string> = {
   no: "nb-NO",

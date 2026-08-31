@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { LOCALES, LOCALE_NAMES, splitLocale, withLocale } from "@/lib/i18n/config";
+import {
+  LOCALES,
+  LOCALE_NAMES,
+  SWITCH_TO,
+  otherLocale,
+  splitLocale,
+  withLocale,
+} from "@/lib/i18n/config";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { clay, motion, space, typography } from "@/lib/design-tokens";
 
@@ -15,7 +22,7 @@ import { clay, motion, space, typography } from "@/lib/design-tokens";
 export default function LanguageSwitcher({
   compact = false,
 }: {
-  /** Segmented pill that matches the Hjem/Nytt notat/Meny chips in the nav. */
+  /** Single toggle chip for the nav row. Otherwise a plain pair of links. */
   compact?: boolean;
 }) {
   const { lang, t } = useI18n();
@@ -25,43 +32,44 @@ export default function LanguageSwitcher({
   const { rest } = splitLocale(pathname ?? "/");
   const query = searchParams.toString();
   const suffix = query ? `?${query}` : "";
+  const hrefFor = (locale: (typeof LOCALES)[number]) =>
+    `${withLocale(locale, rest)}${suffix}`;
+
+  // In the nav row: one chip that reads as the language you are in, and turns
+  // into the invitation to leave it on hover. The visible text changes, so the
+  // accessible name carries the meaning instead — a screen reader announces
+  // "Switch to English" either way, and never the ambiguous "Norsk".
+  if (compact) {
+    const target = otherLocale(lang);
+    return (
+      <Link
+        href={hrefFor(target)}
+        hrefLang={target}
+        aria-label={SWITCH_TO[target]}
+        className="nav-chip nav-lang"
+      >
+        <span className="nav-lang__current" aria-hidden>
+          {LOCALE_NAMES[lang]}
+        </span>
+        <span className="nav-lang__switch" aria-hidden>
+          {SWITCH_TO[target]}
+        </span>
+      </Link>
+    );
+  }
 
   return (
     <nav
       aria-label={t.common.languageLabel}
-      className={compact ? "nav-chip nav-segment" : undefined}
-      style={
-        compact
-          ? undefined
-          : {
-              display: "inline-flex",
-              alignItems: "center",
-              gap: space.s4,
-              fontFamily: clay.font.body,
-            }
-      }
+      style={{
+        display: "inline-flex",
+        alignItems: "center",
+        gap: space.s4,
+        fontFamily: clay.font.body,
+      }}
     >
       {LOCALES.map((locale, i) => {
         const active = locale === lang;
-        const target = `${withLocale(locale, rest)}${suffix}`;
-
-        // I navlinja er dette én kontroll med to utfall og deler ramme med
-        // Hjem, Nytt notat og Meny. I bunnteksten er det fortsatt to
-        // diskrete lenker med skråstrek imellom.
-        if (compact) {
-          return (
-            <Link
-              key={locale}
-              href={target}
-              hrefLang={locale}
-              aria-current={active ? "true" : undefined}
-              className="nav-segment__item"
-            >
-              {locale}
-            </Link>
-          );
-        }
-
         return (
           <span key={locale} style={{ display: "inline-flex", alignItems: "center", gap: space.s4 }}>
             {i > 0 && (
@@ -70,7 +78,7 @@ export default function LanguageSwitcher({
               </span>
             )}
             <Link
-              href={target}
+              href={hrefFor(locale)}
               hrefLang={locale}
               aria-current={active ? "true" : undefined}
               style={{

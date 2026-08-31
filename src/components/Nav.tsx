@@ -345,7 +345,7 @@ function InternalNavRow({
       {/* «Nytt notat» skal nås fra hele det interne området, ikke bare fra en
           fane inne i /admin — å senke terskelen for å levere inn et notat er
           den viktigste enkeltendringen for datainnsamlerne (prompt 03, punkt 3). */}
-      <Link href={href("/admin?tab=notes")} className="nav-chip nav-chip--primary">
+      <Link href={href("/admin?tab=notes")} className="nav-chip">
         {t.nav.newNote}
       </Link>
       <button
