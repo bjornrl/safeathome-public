@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Nav from "@/components/Nav";
-import { Footer } from "@/components/ui";
 import { clay, space, typography } from "@/lib/design-tokens";
 import { isLocale } from "@/lib/i18n/config";
 import { getDictionary, type Dictionary } from "@/lib/i18n/dictionary";
@@ -186,7 +185,6 @@ export default async function AboutPage({ params }: PageProps<"/[lang]/about">) 
           </div>
         </section>
 
-        <Footer />
       </main>
     </>
   );

@@ -73,9 +73,16 @@ const no = {
   },
 
   footer: {
-    tagline: "Forskningsplattform om aldring, omsorg og teknologi i reformen Bo trygt hjemme.",
+    tagline: "Forskningsprosjekt om aldring, omsorg og tilhørighet i reformen Bo trygt hjemme.",
+    navigate: "Naviger",
     researchPartners: "Forskningspartnere",
     municipalPartners: "Kommunepartnere",
+    copyright: "© 2026 SAFE@HOME-konsortiet",
+    links: {
+      about: "Om prosjektet",
+      welfareTech: "Eksisterende initiativer",
+      municipalities: "For kommuner",
+    },
   },
 
   greeting: {
@@ -179,15 +186,6 @@ const no = {
     contactHeading: "Vil du vite mer, eller samarbeide?",
     contactLead: "Ta kontakt med prosjektledelsen eller plattformteamet.",
 
-    footerBlurb: "Forskningsprosjekt om aldring, omsorg og tilhørighet i reformen Bo trygt hjemme.",
-    footerNavigate: "Naviger",
-    footerConsortium: "Konsortium",
-    footerCopyright: "© 2026 SAFE@HOME-konsortiet",
-    footerLinks: {
-      about: "Om prosjektet",
-      welfareTech: "Eksisterende initiativer",
-      municipalities: "For kommuner",
-    },
   },
 
   about: {
@@ -309,13 +307,18 @@ const no = {
     metaDescription:
       "Det som er nytt siden sist, innganger til visningene, og status for materialet.",
     welcomeTo: "Velkommen til",
-    heading: "Arbeidsplatform for SAFE@HOME",
-    workbench: "Safe@HOME-prosjektets interne arbeidsbenk",
+    heading: "SAFE@HOME",
+    lead:
+      "Dette er Safe@HOME-prosjektets interne arbeidsbenk. Den blir kontinuerlig jobbet med og oppdatert gjennom hele prosjektet, i samordning med alle prosjektmedarbeidere.",
     workInProgress: "Alt her er arbeid under utvikling.",
-    // Telefonnummeret står som lenke i JSX-en og oversettes ikke; denne
-    // setningen slutter derfor rett før det.
+    scrollCue: "Se hva som ligger her",
+    contactEyebrow: "Hvem du spør",
+    // Skjemaet ligger til høyre på brede skjermer og under på smale, så
+    // teksten sier «her» framfor «til høyre».
     contactLead:
-      "Denne plattformen vil bli jobbet med kontinuerlig under prosjektet. Dersom noe er uklart, ikke nøl med å sende meg en melding. Det kan du gjøre ved å skrive her, eller ringe meg. Mitt nummer er",
+      "Jeg er Bjørn og har hovedansvar for plattformen. All info om hvordan du bruker den finner du ved å scrolle nedover denne siden. Er noe likevel uklart, kan du sende meg en melding her — eller ringe. Det meste folk lurer på lar seg ordne raskt.",
+    contactPhoneLabel: "Tlf.",
+    formEyebrow: "Send en melding",
     recentNotes: "Siste notater",
     noNotes: "Ingen notater ennå. Det første som legges inn, dukker opp her.",
     entrances: "Innganger",
