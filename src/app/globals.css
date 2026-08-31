@@ -399,6 +399,114 @@ a:hover { color: var(--clay-body); text-decoration-color: var(--clay-body); }
   color: var(--clay-body);
 }
 
+/* ── Navlinje-knapper ──────────────────────────────────────────────────
+   Språkvelgeren, Hjem, Nytt notat og Meny står på rad i den interne
+   navlinja. De delte form fra før, men ikke oppførsel: hver var stylet med
+   inline-stiler, og inline-stiler kan ikke uttrykke :hover — så ingen av
+   dem hadde hover-tilstand i det hele tatt. Den felles oppførselen bor her.
+
+   Aktiv tilstand leses av selve markupen (aria-current på lenker,
+   aria-expanded på menyknappen) framfor en egen klasse, slik at det som
+   ser aktivt ut og det som *er* aktivt for en skjermleser ikke kan
+   komme i utakt. */
+.nav-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--clay-hairline);
+  border-radius: var(--clay-radius-md);
+  background: var(--clay-canvas);
+  color: var(--clay-ink);
+  font-family: var(--clay-font-body);
+  font-size: 14px;
+  line-height: 1.4;
+  font-weight: 600;
+  letter-spacing: -0.1px;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--pkt-motion-fast), color var(--pkt-motion-fast),
+    border-color var(--pkt-motion-fast);
+}
+
+.nav-chip:hover,
+.nav-chip:focus-visible {
+  background: var(--clay-surface-soft);
+  border-color: var(--clay-ink);
+}
+
+/* Aktiv side, åpen meny, og «Nytt notat» — den primære handlingen, som står
+   fylt hele tiden. Full kontrast, ikke bare en mørkere ramme. */
+.nav-chip[aria-current="page"],
+.nav-chip[aria-expanded="true"],
+.nav-chip--primary {
+  background: var(--clay-ink);
+  color: var(--clay-on-primary);
+  border-color: var(--clay-ink);
+}
+
+.nav-chip[aria-current="page"]:hover,
+.nav-chip[aria-current="page"]:focus-visible,
+.nav-chip[aria-expanded="true"]:hover,
+.nav-chip[aria-expanded="true"]:focus-visible,
+.nav-chip--primary:hover,
+.nav-chip--primary:focus-visible {
+  background: var(--clay-body-strong);
+  border-color: var(--clay-body-strong);
+  color: var(--clay-on-primary);
+}
+
+/* Språkvelgeren er ett valg med to utfall, ikke to knapper, så de to
+   lenkene deler én ramme. Innmaten arver chip-ens hover og aktiv-fyll, så
+   den oppfører seg likt de andre uten å se ut som to av dem. */
+.nav-segment {
+  display: inline-flex;
+  align-items: stretch;
+  padding: 0;
+  overflow: hidden;
+}
+
+.nav-segment:hover {
+  background: var(--clay-canvas);
+}
+
+.nav-segment__item {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 10px;
+  font-family: var(--clay-font-body);
+  font-size: 14px;
+  line-height: 1.4;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--clay-muted);
+  text-decoration: none;
+  transition: background var(--pkt-motion-fast), color var(--pkt-motion-fast);
+}
+
+.nav-segment__item + .nav-segment__item {
+  border-left: 1px solid var(--clay-hairline);
+}
+
+.nav-segment__item:hover,
+.nav-segment__item:focus-visible {
+  background: var(--clay-surface-soft);
+  color: var(--clay-ink);
+}
+
+.nav-segment__item[aria-current="true"] {
+  background: var(--clay-ink);
+  color: var(--clay-on-primary);
+}
+
+.nav-segment__item[aria-current="true"]:hover,
+.nav-segment__item[aria-current="true"]:focus-visible {
+  background: var(--clay-body-strong);
+  color: var(--clay-on-primary);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.001ms !important;

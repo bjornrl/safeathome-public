@@ -14,11 +14,9 @@ import { clay, motion, space, typography } from "@/lib/design-tokens";
  */
 export default function LanguageSwitcher({
   compact = false,
-  variant = "default",
 }: {
+  /** Segmented pill that matches the Hjem/Nytt notat/Meny chips in the nav. */
   compact?: boolean;
-  /** Dark pill styling for the internal nav row. */
-  variant?: "default" | "internal";
 }) {
   const { lang, t } = useI18n();
   const pathname = usePathname();
@@ -28,14 +26,12 @@ export default function LanguageSwitcher({
   const query = searchParams.toString();
   const suffix = query ? `?${query}` : "";
 
-  const isInternal = variant === "internal";
-
   return (
     <nav
       aria-label={t.common.languageLabel}
-      className={isInternal ? "internal-nav-lang" : undefined}
+      className={compact ? "nav-chip nav-segment" : undefined}
       style={
-        isInternal
+        compact
           ? undefined
           : {
               display: "inline-flex",
@@ -47,32 +43,45 @@ export default function LanguageSwitcher({
     >
       {LOCALES.map((locale, i) => {
         const active = locale === lang;
+        const target = `${withLocale(locale, rest)}${suffix}`;
+
+        // I navlinja er dette én kontroll med to utfall og deler ramme med
+        // Hjem, Nytt notat og Meny. I bunnteksten er det fortsatt to
+        // diskrete lenker med skråstrek imellom.
+        if (compact) {
+          return (
+            <Link
+              key={locale}
+              href={target}
+              hrefLang={locale}
+              aria-current={active ? "true" : undefined}
+              className="nav-segment__item"
+            >
+              {locale}
+            </Link>
+          );
+        }
+
         return (
           <span key={locale} style={{ display: "inline-flex", alignItems: "center", gap: space.s4 }}>
             {i > 0 && (
-              <span aria-hidden className={isInternal ? "internal-nav-lang__sep" : undefined} style={isInternal ? undefined : { color: clay.colors.hairline }}>
+              <span aria-hidden style={{ color: clay.colors.hairline }}>
                 /
               </span>
             )}
             <Link
-              href={`${withLocale(locale, rest)}${suffix}`}
+              href={target}
               hrefLang={locale}
               aria-current={active ? "true" : undefined}
-              style={
-                isInternal
-                  ? undefined
-                  : {
-                      ...typography.sizes.t12,
-                      fontWeight: active ? 700 : 500,
-                      color: active ? clay.colors.ink : clay.colors.muted,
-                      textDecoration: "none",
-                      textTransform: compact ? "uppercase" : "none",
-                      letterSpacing: compact ? "0.08em" : undefined,
-                      transition: `color ${motion.fast}`,
-                    }
-              }
+              style={{
+                ...typography.sizes.t12,
+                fontWeight: active ? 700 : 500,
+                color: active ? clay.colors.ink : clay.colors.muted,
+                textDecoration: "none",
+                transition: `color ${motion.fast}`,
+              }}
             >
-              {compact ? locale : LOCALE_NAMES[locale]}
+              {LOCALE_NAMES[locale]}
             </Link>
           </span>
         );

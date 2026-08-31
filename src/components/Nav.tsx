@@ -337,21 +337,7 @@ function InternalNavRow({
         <Link
           href={href("/internal")}
           aria-current={homeActive ? "page" : undefined}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            padding: `${space.s8} ${space.s12}`,
-            background: homeActive ? clay.colors.surfaceSoft : clay.colors.canvas,
-            color: clay.colors.ink,
-            border: `1px solid ${homeActive ? clay.colors.ink : clay.colors.hairline}`,
-            borderRadius: "var(--clay-radius-md)",
-            textDecoration: "none",
-            fontFamily: clay.font.body,
-            ...typography.sizes.t14,
-            fontWeight: 600,
-            whiteSpace: "nowrap",
-            transition: `background ${motion.fast}, border-color ${motion.fast}`,
-          }}
+          className="nav-chip"
         >
           {t.nav.home}
         </Link>
@@ -359,23 +345,7 @@ function InternalNavRow({
       {/* «Nytt notat» skal nås fra hele det interne området, ikke bare fra en
           fane inne i /admin — å senke terskelen for å levere inn et notat er
           den viktigste enkeltendringen for datainnsamlerne (prompt 03, punkt 3). */}
-      <Link
-        href={href("/admin?tab=notes")}
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          padding: `${space.s8} ${space.s12}`,
-          background: clay.colors.ink,
-          color: clay.colors.onPrimary,
-          border: `1px solid ${clay.colors.ink}`,
-          borderRadius: "var(--clay-radius-md)",
-          textDecoration: "none",
-          fontFamily: clay.font.body,
-          ...typography.sizes.t14,
-          fontWeight: 600,
-          whiteSpace: "nowrap",
-        }}
-      >
+      <Link href={href("/admin?tab=notes")} className="nav-chip nav-chip--primary">
         {t.nav.newNote}
       </Link>
       <button
@@ -385,21 +355,7 @@ function InternalNavRow({
         aria-expanded={menuOpen}
         aria-haspopup="true"
         onClick={() => setMenuOpen(!menuOpen)}
-        style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: space.s8,
-          padding: `${space.s8} ${space.s12}`,
-          background: menuOpen ? clay.colors.ink : clay.colors.canvas,
-          color: menuOpen ? clay.colors.onPrimary : clay.colors.ink,
-          border: `1px solid ${menuOpen ? clay.colors.ink : clay.colors.hairline}`,
-          borderRadius: "var(--clay-radius-md)",
-          cursor: "pointer",
-          fontFamily: clay.font.body,
-          ...typography.sizes.t14,
-          fontWeight: 600,
-          transition: `background ${motion.fast}, color ${motion.fast}, border-color ${motion.fast}`,
-        }}
+        className="nav-chip"
       >
         <HamburgerIcon open={menuOpen} />
         <span>{menuOpen ? t.nav.closeShort : t.nav.menu}</span>
