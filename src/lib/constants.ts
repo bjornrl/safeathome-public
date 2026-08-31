@@ -289,7 +289,7 @@ export const WP_LABELS: Record<WpId, { label: string; subtitle: string; longDesc
     label: "WP4: Innovasjon og design",
     subtitle: "konkrete tiltak utviklet sammen med beboere og kommuner",
     longDescription:
-      "Tverrgående. Tar funn fra de andre arbeidspakkene og utvikler konkrete tiltak sammen med beboere, ansatte og kommunale partnere. Bruk WP4 når innsikten handler om en mulig løsning, et prøveprosjekt eller en endring i hvordan tjenesten utføres. Ledes av Alejandro Miranda Nieto (OsloMet) og Øystein Evensen (Comte Bureau).",
+      "Tverrgående. Tar funn fra de andre arbeidspakkene og utvikler konkrete tiltak sammen med beboere, ansatte og kommunale partnere. Bruk WP4 når innsikten handler om en mulig løsning, et prøveprosjekt eller en endring i hvordan tjenesten utføres. Ledes av Alejandro Miranda Nieto (OsloMet) og Øystein Evensen (Comte).",
   },
 };
 
@@ -319,3 +319,9 @@ export const HOUSE_HOTSPOTS: { theme: HouseTheme; x: number; y: number; label: s
   { theme: "garden",         x: 55, y: 80, label: "Hage" },
   { theme: "phone",          x: 78, y: 56, label: "Telefon" },
 ];
+
+// ─── Kontaktskjema ───
+// Grensene bor her, ikke i lib/contact-email.ts, slik at klientskjemaet kan
+// importere dem uten å dra serverkoden (og Resend-nøkkelen) inn i bundelen.
+export const CONTACT_MESSAGE_MAX = 5000;
+export const CONTACT_SUBJECT_MAX = 200;

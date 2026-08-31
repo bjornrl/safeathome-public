@@ -233,6 +233,8 @@ export default function Nav({
             menuOpen={menuOpen}
             setMenuOpen={setMenuOpen}
             toggleRef={toggleRef}
+            signedIn={signedIn}
+            pathname={pathname}
           />
         ) : (
           <PublicNavRow pathname={pathname} signedIn={signedIn} />
@@ -337,17 +339,47 @@ function InternalNavRow({
   menuOpen,
   setMenuOpen,
   toggleRef,
+  signedIn,
+  pathname,
 }: {
   menuOpen: boolean;
   setMenuOpen: (v: boolean) => void;
   toggleRef: React.RefObject<HTMLButtonElement | null>;
+  signedIn: boolean | null;
+  pathname: string | null;
 }) {
   const { t, href } = useI18n();
+  const homeActive = isLinkActive(pathname, "/internal");
   return (
     <div style={{ display: "inline-flex", alignItems: "center", gap: space.s8 }}>
       <Suspense fallback={null}>
         <LanguageSwitcher compact />
       </Suspense>
+      {/* Hjem peker til det interne dashbordet — kun for innloggede; utloggede
+          besøkende har ingen /internal å gå til. */}
+      {signedIn && (
+        <Link
+          href={href("/internal")}
+          aria-current={homeActive ? "page" : undefined}
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            padding: `${space.s8} ${space.s12}`,
+            background: homeActive ? clay.colors.surfaceSoft : clay.colors.canvas,
+            color: clay.colors.ink,
+            border: `1px solid ${homeActive ? clay.colors.ink : clay.colors.hairline}`,
+            borderRadius: "var(--clay-radius-md)",
+            textDecoration: "none",
+            fontFamily: clay.font.body,
+            ...typography.sizes.t14,
+            fontWeight: 600,
+            whiteSpace: "nowrap",
+            transition: `background ${motion.fast}, border-color ${motion.fast}`,
+          }}
+        >
+          {t.nav.home}
+        </Link>
+      )}
       {/* «Nytt notat» skal nås fra hele det interne området, ikke bare fra en
           fane inne i /admin — å senke terskelen for å levere inn et notat er
           den viktigste enkeltendringen for datainnsamlerne (prompt 03, punkt 3). */}

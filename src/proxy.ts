@@ -55,21 +55,28 @@ function preferredLocale(request: NextRequest): Locale {
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Rutehåndtererne under /api svarer på fetch(), ikke på navigasjon, og har
+  // derfor ingen locale i stien. Uten dette unntaket ville steg 1 sendt
+  // /api/contact videre til /no/api/contact — en rute som ikke finnes, så
+  // klienten fikk en HTML-404 der den ventet JSON.
+  const isApi = pathname.startsWith("/api/");
+
   // ── 1. Locale in the path, always ──
   const { lang: pathLocale, rest } = splitLocale(pathname);
 
-  if (!pathLocale) {
+  if (!isApi && !pathLocale) {
     const locale = preferredLocale(request);
     const url = request.nextUrl.clone();
     url.pathname = withLocale(locale, pathname);
     return NextResponse.redirect(url);
   }
 
-  const lang = pathLocale;
+  const lang = pathLocale ?? preferredLocale(request);
   const response = NextResponse.next();
 
   // Persist the language actually being viewed, so a later bare URL matches it.
-  if (request.cookies.get(LOCALE_COOKIE)?.value !== lang) {
+  // API-kall bærer ingen locale og skal ikke få lov til å endre den.
+  if (!isApi && request.cookies.get(LOCALE_COOKIE)?.value !== lang) {
     response.cookies.set({
       name: LOCALE_COOKIE,
       value: lang,
@@ -100,8 +107,11 @@ export async function proxy(request: NextRequest) {
   const { data: claims } = await supabase.auth.getClaims();
   const signedIn = Boolean(claims);
 
+  // /api har ingen locale-prefiks å strippe; alt annet vurderes uten sin.
+  const routePath = isApi ? pathname : rest;
+
   // Internal area always requires auth.
-  if (isInternalPath(rest)) {
+  if (isInternalPath(routePath)) {
     if (!signedIn) {
       return NextResponse.redirect(loginRedirect(request, lang));
     }
@@ -109,7 +119,13 @@ export async function proxy(request: NextRequest) {
   }
 
   // Optional dev lock: require auth on every non-public route.
-  if (DEV_LOCK_ENABLED && !isPublicPath(rest) && !signedIn) {
+  if (DEV_LOCK_ENABLED && !isPublicPath(routePath) && !signedIn) {
+    // API-ruter får JSON, ikke en redirect. En fetch() følger redirecten og
+    // ville fått innloggingssida som HTML med status 200 — som klienten ikke
+    // kan tolke, og som ser ut som en tilfeldig parse-feil.
+    if (isApi) {
+      return NextResponse.json({ error: "Ikke innlogget." }, { status: 401 });
+    }
     return NextResponse.redirect(loginRedirect(request, lang));
   }
 

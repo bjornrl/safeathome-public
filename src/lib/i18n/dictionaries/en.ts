@@ -46,6 +46,7 @@ const en: Dictionary = {
     closeMenu: "Close menu",
     closeShort: "Close",
     admin: "Admin",
+    home: "Home",
     signIn: "Sign in",
     signInTeam: "Team sign-in →",
     signOut: "Sign out",
@@ -276,8 +277,12 @@ const en: Dictionary = {
     metaTitle: "The analysis table — safe@home",
     metaDescription:
       "What is new since last time, entrances to the views, and the state of the material.",
-    heading: "The SAFE@HOME analysis table",
+    welcomeTo: "Welcome to",
+    heading: "The SAFE@HOME work platform",
+    workbench: "The SAFE@HOME project's internal workbench",
     workInProgress: "Everything here is work in progress.",
+    contactLead:
+      "This platform will be worked on continuously throughout the project. If anything is unclear, do not hesitate to send me a message. You can do that by writing here, or by calling me. My number is",
     recentNotes: "Latest notes",
     noNotes: "No notes yet. The first one entered will show up here.",
     entrances: "Entrances",

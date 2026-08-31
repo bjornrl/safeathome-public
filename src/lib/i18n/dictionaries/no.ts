@@ -47,6 +47,7 @@ const no = {
     closeMenu: "Lukk meny",
     closeShort: "Lukk",
     admin: "Admin",
+    home: "Hjem",
     signIn: "Innlogging",
     signInTeam: "Innlogging for teamet →",
     signOut: "Logg ut",
@@ -280,8 +281,14 @@ const no = {
     metaTitle: "Analysebordet — safe@home",
     metaDescription:
       "Det som er nytt siden sist, innganger til visningene, og status for materialet.",
-    heading: "Analysebordet for SAFE@HOME",
+    welcomeTo: "Velkommen til",
+    heading: "Arbeidsplatform for SAFE@HOME",
+    workbench: "Safe@HOME-prosjektets interne arbeidsbenk",
     workInProgress: "Alt her er arbeid under utvikling.",
+    // Telefonnummeret står som lenke i JSX-en og oversettes ikke; denne
+    // setningen slutter derfor rett før det.
+    contactLead:
+      "Denne plattformen vil bli jobbet med kontinuerlig under prosjektet. Dersom noe er uklart, ikke nøl med å sende meg en melding. Det kan du gjøre ved å skrive her, eller ringe meg. Mitt nummer er",
     recentNotes: "Siste notater",
     noNotes: "Ingen notater ennå. Det første som legges inn, dukker opp her.",
     entrances: "Innganger",
