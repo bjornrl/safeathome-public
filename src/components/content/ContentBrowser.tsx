@@ -7,6 +7,7 @@ import { loadCorpus, type CorpusKind, type CorpusNode } from "@/lib/corpus";
 import { semanticSearch } from "@/app/actions/search";
 import { FONT_STACK } from "@/lib/design-tokens";
 import ThreadMembership from "@/components/threads/ThreadMembership";
+import InsightCard from "@/components/content/InsightCard";
 import type { CareFriction, CareQuality } from "@/lib/types";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { fill } from "@/lib/i18n/dictionary";
@@ -249,9 +250,9 @@ export default function ContentBrowser() {
                   {bucket.length} {bucket.length === 1 ? t.common.entryOne : t.common.entryOther}
                 </span>
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 16 }}>
-                {bucket.map((n) => (
-                  <NodeCard key={n.id} node={n} onOpen={() => setSelected(n)} />
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 20 }}>
+                {bucket.map((n, i) => (
+                  <InsightCard key={n.id} node={n} colorIndex={i} onOpen={() => setSelected(n)} />
                 ))}
               </div>
             </div>
@@ -353,55 +354,6 @@ function DetailPanel({ node, onClose }: { node: CorpusNode; onClose: () => void 
         </Link>
       </aside>
     </>
-  );
-}
-
-function NodeCard({ node, onOpen }: { node: CorpusNode; onOpen: () => void }) {
-  const { tax } = useI18n();
-  const preview = node.body.replace(/\s+/g, " ").trim().slice(0, 140);
-  return (
-    <button
-      type="button"
-      onClick={onOpen}
-      style={{
-        display: "block",
-        width: "100%",
-        textAlign: "left",
-        padding: 24,
-        background: "#ffffff",
-        border: "1px solid #e6e6e6",
-        borderRadius: 8,
-        color: "#2c2c2c",
-        cursor: "pointer",
-        fontFamily: FONT_STACK,
-      }}
-    >
-      <h4 style={{ fontSize: 17, fontWeight: 600, lineHeight: 1.3, marginBottom: node.authors ? 4 : 8, color: "#2a2859" }}>
-        {node.title}
-      </h4>
-      {node.authors && (
-        <p style={{ fontSize: 13, lineHeight: 1.4, color: "#666666", marginBottom: 8 }}>
-          {node.authors}
-        </p>
-      )}
-      {preview && (
-        <p style={{ fontSize: 13, lineHeight: 1.55, color: "#666666", marginBottom: 12 }}>
-          {preview}
-          {node.body.length > 140 ? "…" : ""}
-        </p>
-      )}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-        {node.resourceType && <Tag label={tax.resourceTypeLabels[node.resourceType]} color="#6b3fa0" />}
-        {node.mapScale && <Tag label={tax.scales[node.mapScale].label} color="#7a756b" />}
-        {node.workPackage && <Tag label={node.workPackage} color="#7a756b" />}
-        {node.frictions.map((f) => (
-          <Tag key={f} label={tax.frictions[f].label} color={tax.frictions[f].color} />
-        ))}
-        {node.qualities.map((q) => (
-          <Tag key={q} label={tax.qualities[q].label} color={tax.qualities[q].color} />
-        ))}
-      </div>
-    </button>
   );
 }
 

@@ -4,7 +4,10 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { clay, space, typography } from "@/lib/design-tokens";
+import { Button } from "@/components/ui";
 import ContactForm from "@/components/ContactForm";
+import InsightCard from "@/components/content/InsightCard";
+import { loadCorpus, type CorpusNode } from "@/lib/corpus";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import type { Dictionary } from "@/lib/i18n/dictionaries/no";
 
@@ -43,6 +46,9 @@ const ENTRANCES: { href: string; key: EntranceKey }[] = [
 
 const PHONE = "+47 954 63 335";
 const PHONE_HREF = "tel:+4795463335";
+
+/** 3×2 on first paint — "Last inn flere" reveals the next row of six. */
+const INSIGHTS_PAGE_SIZE = 6;
 
 /** Ankeret ledeteksten peker på. */
 const ENTRANCES_ID = "innganger";
@@ -84,6 +90,22 @@ export default function InternalHome() {
   const [notes, setNotes] = useState<RecentNote[] | null>(null);
   const [authors, setAuthors] = useState<Record<string, string>>({});
   const [counts, setCounts] = useState<{ notes: number; insights: number; resources: number } | null>(null);
+  const [corpusNodes, setCorpusNodes] = useState<CorpusNode[] | null>(null);
+  const [visibleInsights, setVisibleInsights] = useState(INSIGHTS_PAGE_SIZE);
+
+  useEffect(() => {
+    let active = true;
+    loadCorpus()
+      .then((c) => {
+        if (!active) return;
+        const sorted = [...c.nodes].sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
+        setCorpusNodes(sorted);
+      })
+      .catch(() => active && setCorpusNodes([]));
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -219,6 +241,37 @@ export default function InternalHome() {
           </div>
         </div>
       </section>
+
+      {/* ── Innsikter ────────────────────────────────────────────────── */}
+      <section aria-labelledby="ih-insights-heading" style={{ ...page, paddingBottom: space.s64 }}>
+        <h2 id="ih-insights-heading" style={eyebrow}>
+          {t.internal.insightsHeading}
+        </h2>
+        <p style={{ ...typography.sizes.t16, color: clay.colors.body, maxWidth: "56ch", margin: `0 0 ${space.s32}` }}>
+          {t.internal.insightsLead}
+        </p>
+        {corpusNodes === null ? (
+          <p style={muted}>{t.common.loading}</p>
+        ) : corpusNodes.length === 0 ? (
+          <p style={muted}>{t.internal.noInsights}</p>
+        ) : (
+          <>
+            <div className="ih-insight-grid">
+              {corpusNodes.slice(0, visibleInsights).map((n, i) => (
+                <InsightCard key={n.id} node={n} colorIndex={i} href={href("/internal/content?tab=search")} />
+              ))}
+            </div>
+            {visibleInsights < corpusNodes.length && (
+              <div style={{ textAlign: "center", marginTop: space.s32 }}>
+                <Button variant="secondary" onClick={() => setVisibleInsights((v) => v + INSIGHTS_PAGE_SIZE)}>
+                  {t.internal.loadMoreInsights}
+                </Button>
+              </div>
+            )}
+          </>
+        )}
+      </section>
+
       <div style={{ ...page, padding: `${space.s64} ${space.s24} ${space.s96}` }}>
         <div className="ih-lower">
           <section aria-labelledby="ih-notes-heading">
@@ -521,6 +574,14 @@ const CSS = `
 .ih-door:hover .ih-arrow, .ih-door:focus-visible .ih-arrow {
   transform: translateX(4px);
   color: var(--clay-ink);
+}
+
+.ih-insight-grid { display: grid; grid-template-columns: 1fr; gap: 24px; }
+@media (min-width: 620px) {
+  .ih-insight-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (min-width: 980px) {
+  .ih-insight-grid { grid-template-columns: repeat(3, 1fr); }
 }
 
 .ih-lower { display: grid; grid-template-columns: 1fr; gap: 48px; align-items: start; }
