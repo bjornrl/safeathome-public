@@ -7,6 +7,7 @@ import { clay, space, typography } from "@/lib/design-tokens";
 import { Button } from "@/components/ui";
 import ContactForm from "@/components/ContactForm";
 import InsightCard from "@/components/content/InsightCard";
+import CorpusDetailPanel from "@/components/content/CorpusDetailPanel";
 import { loadCorpus, type CorpusNode } from "@/lib/corpus";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import type { Dictionary } from "@/lib/i18n/dictionaries/no";
@@ -92,6 +93,7 @@ export default function InternalHome() {
   const [counts, setCounts] = useState<{ notes: number; insights: number; resources: number } | null>(null);
   const [corpusNodes, setCorpusNodes] = useState<CorpusNode[] | null>(null);
   const [visibleInsights, setVisibleInsights] = useState(INSIGHTS_PAGE_SIZE);
+  const [selected, setSelected] = useState<CorpusNode | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -258,9 +260,10 @@ export default function InternalHome() {
           <>
             <div className="ih-insight-grid">
               {corpusNodes.slice(0, visibleInsights).map((n, i) => (
-                <InsightCard key={n.id} node={n} colorIndex={i} href={href("/internal/content?tab=search")} />
+                <InsightCard key={n.id} node={n} colorIndex={i} onOpen={() => setSelected(n)} />
               ))}
             </div>
+            <CorpusDetailPanel node={selected} onClose={() => setSelected(null)} />
             {visibleInsights < corpusNodes.length && (
               <div style={{ textAlign: "center", marginTop: space.s32 }}>
                 <Button variant="secondary" onClick={() => setVisibleInsights((v) => v + INSIGHTS_PAGE_SIZE)}>

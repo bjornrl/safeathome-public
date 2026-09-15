@@ -30,9 +30,9 @@ export interface InsightCardProps {
   node: CorpusNode;
   /** Picks the accent from PALETTE — pass a running index so neighbouring cards don't repeat a color. */
   colorIndex: number;
-  /** Opens the node in-place (search tab's detail panel). Mutually exclusive with `href`. */
+  /** Opens the node in-place (detail panel). Mutually exclusive with `href`. */
   onOpen?: () => void;
-  /** Navigates instead of opening a panel — used where there is no detail view (e.g. /internal). */
+  /** Navigates instead of opening a panel. */
   href?: string;
 }
 
