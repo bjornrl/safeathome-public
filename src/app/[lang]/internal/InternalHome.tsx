@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { clay, space, typography } from "@/lib/design-tokens";
 import { Button } from "@/components/ui";
 import ContactForm from "@/components/ContactForm";
-import InsightCard from "@/components/content/InsightCard";
+import InsightCard, { cardRotation } from "@/components/content/InsightCard";
 import CorpusDetailPanel from "@/components/content/CorpusDetailPanel";
 import { loadCorpus, type CorpusNode } from "@/lib/corpus";
 import { useI18n } from "@/lib/i18n/I18nProvider";
@@ -246,12 +246,12 @@ export default function InternalHome() {
 
       {/* ── Innsikter ────────────────────────────────────────────────── */}
       <section aria-labelledby="ih-insights-heading" style={{ ...page, paddingBottom: space.s64 }}>
-        <h2 id="ih-insights-heading" style={eyebrow}>
+        {/* <h2 id="ih-insights-heading" style={eyebrow}>
           {t.internal.insightsHeading}
         </h2>
         <p style={{ ...typography.sizes.t16, color: clay.colors.body, maxWidth: "56ch", margin: `0 0 ${space.s32}` }}>
           {t.internal.insightsLead}
-        </p>
+        </p> */}
         {corpusNodes === null ? (
           <p style={muted}>{t.common.loading}</p>
         ) : corpusNodes.length === 0 ? (
@@ -260,7 +260,13 @@ export default function InternalHome() {
           <>
             <div className="ih-insight-grid">
               {corpusNodes.slice(0, visibleInsights).map((n, i) => (
-                <InsightCard key={n.id} node={n} colorIndex={i} onOpen={() => setSelected(n)} />
+                <InsightCard
+                  key={n.id}
+                  node={n}
+                  colorIndex={i}
+                  rotation={cardRotation(n.id)}
+                  onOpen={() => setSelected(n)}
+                />
               ))}
             </div>
             <CorpusDetailPanel node={selected} onClose={() => setSelected(null)} />

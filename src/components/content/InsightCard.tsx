@@ -34,12 +34,25 @@ export interface InsightCardProps {
   onOpen?: () => void;
   /** Navigates instead of opening a panel. */
   href?: string;
+  /** Resting rotation in degrees (e.g. -4…4). Hover keeps this tilt and lifts. */
+  rotation?: number;
 }
 
-export default function InsightCard({ node, colorIndex, onOpen, href }: InsightCardProps) {
+export default function InsightCard({ node, colorIndex, onOpen, href, rotation }: InsightCardProps) {
   const { t, tax, intlLocale } = useI18n();
   const c = PALETTE[colorIndex % PALETTE.length];
-  const tilt = colorIndex % 2 === 0 ? "insight-card--tilt-a" : "insight-card--tilt-b";
+  const tilt =
+    rotation != null
+      ? "insight-card--tilted"
+      : colorIndex % 2 === 0
+        ? "insight-card--tilt-a"
+        : "insight-card--tilt-b";
+  const style = {
+    background: c.bg,
+    ...(rotation != null
+      ? ({ ["--insight-rotate" as string]: `${rotation}deg` } as React.CSSProperties)
+      : null),
+  };
 
   const preview = node.body.replace(/\s+/g, " ").trim().slice(0, 140);
   const meta = node.authors ?? (node.createdAt ? formatDate(node.createdAt, intlLocale) : null);
@@ -93,15 +106,23 @@ export default function InsightCard({ node, colorIndex, onOpen, href }: InsightC
 
   if (href) {
     return (
-      <Link href={href} className={className} style={{ background: c.bg }}>
+      <Link href={href} className={className} style={style}>
         {body}
       </Link>
     );
   }
 
   return (
-    <button type="button" onClick={onOpen} className={className} style={{ background: c.bg }}>
+    <button type="button" onClick={onOpen} className={className} style={style}>
       {body}
     </button>
   );
+}
+
+/** Stable pseudo-random degrees in [-max, max] from a string id. */
+export function cardRotation(id: string, max = 4): number {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = (Math.imul(h, 31) + id.charCodeAt(i)) | 0;
+  const unit = (Math.abs(h) % 1000) / 999; // 0…1
+  return unit * (max * 2) - max;
 }

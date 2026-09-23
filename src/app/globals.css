@@ -419,6 +419,13 @@ a:hover { color: var(--clay-body); text-decoration-color: var(--clay-body); }
 .insight-card:focus-visible {
   box-shadow: 0 16px 32px rgba(10, 10, 10, 0.14);
 }
+.insight-card--tilted {
+  transform: rotate(var(--insight-rotate, 0deg));
+}
+.insight-card--tilted:hover,
+.insight-card--tilted:focus-visible {
+  transform: translateY(-4px) rotate(var(--insight-rotate, 0deg));
+}
 .insight-card--tilt-a:hover,
 .insight-card--tilt-a:focus-visible {
   transform: translateY(-4px) rotate(-0.6deg);
@@ -477,16 +484,22 @@ a:hover { color: var(--clay-body); text-decoration-color: var(--clay-body); }
 }
 @media (prefers-reduced-motion: reduce) {
   .insight-card,
+  .insight-card--tilted,
   .insight-card--tilt-a,
   .insight-card--tilt-b {
     transition: none;
   }
   .insight-card:hover,
   .insight-card:focus-visible,
+  .insight-card--tilted:hover,
+  .insight-card--tilted:focus-visible,
   .insight-card--tilt-a:hover,
   .insight-card--tilt-a:focus-visible,
   .insight-card--tilt-b:hover,
   .insight-card--tilt-b:focus-visible {
+    transform: none;
+  }
+  .insight-card--tilted {
     transform: none;
   }
 }
