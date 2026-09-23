@@ -62,9 +62,8 @@ export function Footer() {
   return (
     <footer
       style={{
-        background: clay.colors.surfaceSoft,
-        borderTop: `1px solid ${clay.colors.hairline}`,
-        color: clay.colors.body,
+        background: clay.colors.lavender,
+        color: clay.colors.ink,
         fontFamily: clay.font.body,
       }}
     >
@@ -85,7 +84,7 @@ export function Footer() {
           >
             safe@home
           </p>
-          <p style={{ ...typography.sizes.t14, color: clay.colors.body, maxWidth: "32ch", lineHeight: 1.55 }}>
+          <p style={{ ...typography.sizes.t14, color: clay.colors.ink, maxWidth: "32ch", lineHeight: 1.55, opacity: 0.85 }}>
             {t.footer.tagline}
           </p>
         </div>
@@ -122,9 +121,9 @@ export function Footer() {
         </div>
       </div>
 
-      <div style={{ borderTop: `1px solid ${clay.colors.hairline}` }}>
+      <div style={{ borderTop: "1px solid rgba(10, 10, 10, 0.15)" }}>
         <div className="sf-bottom">
-          <p style={{ ...typography.sizes.t12, color: clay.colors.mutedSoft }}>{t.footer.copyright}</p>
+          <p style={{ ...typography.sizes.t12, color: clay.colors.ink, opacity: 0.65 }}>{t.footer.copyright}</p>
           {signedIn === false && (
             <Link className="sf-signin" href={href("/login")}>
               {t.nav.signInTeam}
@@ -142,7 +141,8 @@ const eyebrow: React.CSSProperties = {
   fontWeight: 600,
   letterSpacing: "1.5px",
   textTransform: "uppercase",
-  color: clay.colors.muted,
+  color: clay.colors.ink,
+  opacity: 0.55,
   margin: `0 0 ${space.s16}`,
 };
 
@@ -170,17 +170,18 @@ const CSS = `
   gap: 6px;
   font-size: 14px;
   line-height: 22px;
-  color: var(--clay-body);
+  color: var(--clay-ink);
 }
 
 .sf-link {
-  color: var(--clay-body);
+  color: var(--clay-ink);
   text-decoration: none;
   border-bottom: 1px solid transparent;
-  transition: color 0.18s ease, border-color 0.18s ease;
+  transition: color 0.18s ease, border-color 0.18s ease, opacity 0.18s ease;
+  opacity: 0.85;
 }
 .sf-link:hover, .sf-link:focus-visible {
-  color: var(--clay-ink);
+  opacity: 1;
   border-bottom-color: var(--clay-ink);
 }
 
@@ -200,14 +201,15 @@ const CSS = `
 .sf-signin {
   font-size: 12px;
   line-height: 20px;
-  color: var(--clay-muted);
+  color: var(--clay-ink);
+  opacity: 0.65;
   text-decoration: none;
-  border-bottom: 1px dashed var(--clay-hairline);
+  border-bottom: 1px dashed rgba(10, 10, 10, 0.35);
   padding-bottom: 2px;
-  transition: color 0.18s ease, border-color 0.18s ease;
+  transition: opacity 0.18s ease, border-color 0.18s ease;
 }
 .sf-signin:hover, .sf-signin:focus-visible {
-  color: var(--clay-ink);
+  opacity: 1;
   border-bottom-color: var(--clay-ink);
 }
 
